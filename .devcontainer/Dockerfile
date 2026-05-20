@@ -1,10 +1,10 @@
-FROM python:3.14.5-trixie
+FROM node:26.1.0-trixie
 
-ARG USER_ID=1000
-ARG GROUP_ID=1000
+ARG USER_ID=1001
+ARG GROUP_ID=1001
 ARG USERNAME=lovely
 
-RUN $(groupadd -g $GROUP_ID customgroup || true) && \
+RUN $(groupadd -g $GROUP_ID $USERNAME || true) && \
     useradd -m -s /bin/bash -u $USER_ID -g $GROUP_ID $USERNAME
 
 # Install basic development tools

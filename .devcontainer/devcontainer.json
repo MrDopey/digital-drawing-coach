@@ -8,22 +8,10 @@
 	// Set *default* container specific settings.json values on container create.
 	"customizations": {
 		 "vscode": {
-				"settings": { 
-					"pylint.ignorePatterns": [
-					],
-					"[python]": {
-						"editor.tabSize": 4,
-						"editor.formatOnSave": true
-					}
-				},
-			
+				"settings": {},
 				// Add the IDs of extensions you want installed when the container is created.
 				"extensions": [
-					"ms-python.black-formatter",
-					"ms-python.isort",
-					"ms-python.python",
-					"ms-python.pylint"
-			]
+				]
 		 }
 	},
 
