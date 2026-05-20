@@ -19,7 +19,12 @@ dependencies = [
 gui = ["PyQt6>=6.6", "pynput>=1.7"]
 windows = ["pywin32>=306"]
 macos = ["pyobjc-framework-Quartz>=10.0", "pyobjc-framework-AppKit>=10.0"]
+
+[dependency-groups]
 dev = ["pytest>=8.0", "pytest-qt>=4.4"]
+
+[tool.uv]
+package = true
 
 [project.scripts]
 drawing-coach = "drawing_coach.__main__:main"

@@ -219,7 +219,9 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
+## App
 .DS_Store
+.tmp
 
 .claude/commands/opsx/
 .claude/skills/openspec-*
