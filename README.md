@@ -7,7 +7,6 @@ An AI-powered desktop app that watches your digital drawing session and gives re
 ## Architecture
 
 ```mermaid
-%%{init: {"theme": "base", "themeVariables": {"background": "#ffffff", "primaryBackground": "#ffffff"}}}%%
 flowchart LR
     A([Drawing App]) -->|screenshots via mss| CAP[CaptureEngine]
     CAP -->|PNG frames| DISK[(Session Storage\n~/.drawing-coach)]

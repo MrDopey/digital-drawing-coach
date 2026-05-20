@@ -222,6 +222,7 @@ __marimo__/
 ## App
 .DS_Store
 .tmp
+.claude/settings.local.json
 
 .claude/commands/opsx/
 .claude/skills/openspec-*
