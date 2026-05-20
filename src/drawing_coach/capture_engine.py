@@ -4,6 +4,7 @@ import json
 import shutil
 import threading
 import time
+from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -30,12 +31,13 @@ class CaptureEngine:
     """Captures the drawing window periodically; stores frames to disk with dedup."""
 
     DEFAULT_INTERVAL = 30
+    BUFFER_SIZE = 50
 
     def __init__(self, manager: WindowManager, config=None) -> None:
         self._manager = manager
         self._config = config        # LLMConfig reference for live thresholds
         self._target: WindowInfo | None = None
-        self._frames: list[CapturedFrame] = []
+        self._buffer: deque[CapturedFrame] = deque(maxlen=self.BUFFER_SIZE)
         self._interval: int = self.DEFAULT_INTERVAL
         self._paused: bool = False
         self._running: bool = False
@@ -76,7 +78,7 @@ class CaptureEngine:
 
     def get_frames(self) -> list[CapturedFrame]:
         with self._lock:
-            return list(self._frames)
+            return list(self._buffer)
 
     def start(self) -> None:
         if self._running:
@@ -163,7 +165,7 @@ class CaptureEngine:
             except Exception:
                 continue
         with self._lock:
-            self._frames = loaded
+            self._buffer = deque(loaded, maxlen=self.BUFFER_SIZE)
             self._frame_count = len(loaded)
         if loaded:
             self._last_stored_image = loaded[-1].image
@@ -223,7 +225,7 @@ class CaptureEngine:
         self._last_stored_image = img
 
         with self._lock:
-            self._frames.append(frame)
+            self._buffer.append(frame)
 
         if self.on_frame_captured:
             self.on_frame_captured(frame)

@@ -33,7 +33,10 @@ class LLMConfig:
 
     @property
     def api_key(self) -> str:
-        return keyring.get_password(_SERVICE, "api_key") or ""
+        try:
+            return keyring.get_password(_SERVICE, "api_key") or ""
+        except keyring.errors.NoKeyringError:
+            return ""
 
     @api_key.setter
     def api_key(self, value: str) -> None:
