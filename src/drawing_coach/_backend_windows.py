@@ -5,9 +5,9 @@ from drawing_coach.window_manager import WindowInfo
 
 class WindowsBackend:
     def list_windows(self) -> list[WindowInfo]:
+        import psutil
         import win32gui
         import win32process
-        import psutil
 
         results: list[WindowInfo] = []
 

@@ -1,17 +1,23 @@
 from __future__ import annotations
 
-from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QListWidget, QListWidgetItem,
-    QPushButton, QLabel, QMessageBox,
-)
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QPixmap, QImage
+from PyQt6.QtWidgets import (
+    QDialog,
+    QHBoxLayout,
+    QLabel,
+    QListWidget,
+    QListWidgetItem,
+    QMessageBox,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 from drawing_coach.window_manager import WindowInfo, WindowManager
 
 
 class AppSelectionDialog(QDialog):
-    def __init__(self, manager: WindowManager, parent=None) -> None:
+    def __init__(self, manager: WindowManager, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setWindowTitle("Select Drawing Application")
         self.setMinimumSize(480, 400)
@@ -53,14 +59,18 @@ class AppSelectionDialog(QDialog):
             return
         self._status_label.setText("Select the window you are drawing in:")
         for win in windows:
-            item = QListWidgetItem(f"{win.app_name}  —  {win.title}" if win.app_name else win.title)
+            item = QListWidgetItem(
+                f"{win.app_name}  —  {win.title}" if win.app_name else win.title
+            )
             item.setData(Qt.ItemDataRole.UserRole, win)
             self._list.addItem(item)
 
     def _confirm(self) -> None:
         item = self._list.currentItem()
         if item is None:
-            QMessageBox.information(self, "No selection", "Please select a window first.")
+            QMessageBox.information(
+                self, "No selection", "Please select a window first."
+            )
             return
         self.selected_window = item.data(Qt.ItemDataRole.UserRole)
         self.accept()

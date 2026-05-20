@@ -1,13 +1,10 @@
 """Unit tests for CaptureEngine ring buffer behaviour."""
 
-from collections import deque
-from datetime import datetime
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
-import pytest
 from PIL import Image
 
-from drawing_coach.capture_engine import CaptureEngine, CapturedFrame
+from drawing_coach.capture_engine import CapturedFrame, CaptureEngine
 from drawing_coach.window_manager import WindowInfo
 
 
@@ -47,7 +44,7 @@ def test_buffer_overflow_drops_oldest():
     frames = [_fake_frame(engine) for _ in range(CaptureEngine.BUFFER_SIZE + 5)]
     stored = engine.get_frames()
     assert len(stored) == CaptureEngine.BUFFER_SIZE
-    assert stored[0] is frames[5]   # oldest 5 dropped
+    assert stored[0] is frames[5]  # oldest 5 dropped
 
 
 def test_pause_prevents_capture():
@@ -60,9 +57,9 @@ def test_pause_prevents_capture():
 
 def test_interval_clamped():
     engine = _make_engine()
-    engine.interval = 1      # below min
+    engine.interval = 1  # below min
     assert engine.interval == 5
-    engine.interval = 9999   # above max
+    engine.interval = 9999  # above max
     assert engine.interval == 300
 
 

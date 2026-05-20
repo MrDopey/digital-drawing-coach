@@ -3,7 +3,9 @@ import sys
 
 def main() -> None:
     from PyQt6.QtWidgets import QApplication
+
     from drawing_coach.main_window import MainWindow
+
     app = QApplication(sys.argv)
     app.setApplicationName("Drawing Coach")
     window = MainWindow()

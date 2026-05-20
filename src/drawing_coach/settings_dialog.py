@@ -1,23 +1,35 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QFormLayout, QLineEdit, QSpinBox, QDoubleSpinBox,
-    QPushButton, QLabel, QHBoxLayout, QFileDialog, QMessageBox, QGroupBox,
-    QTabWidget, QWidget,
+    QDialog,
+    QDoubleSpinBox,
+    QFileDialog,
+    QFormLayout,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QPushButton,
+    QSpinBox,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
 )
-from PyQt6.QtCore import Qt
 
-from drawing_coach.llm_config import LLMConfig
 from drawing_coach.hotkey_manager import HotkeyManager
+from drawing_coach.llm_config import LLMConfig
 
 # Common hotkeys known to conflict with drawing apps
 _KNOWN_CONFLICTS = {"<ctrl>+z", "<ctrl>+s", "<ctrl>+c", "<ctrl>+v", "<ctrl>+a"}
 
 
 class SettingsDialog(QDialog):
-    def __init__(self, config: LLMConfig, hotkey_manager: HotkeyManager, parent=None) -> None:
+    def __init__(
+        self,
+        config: LLMConfig,
+        hotkey_manager: HotkeyManager,
+        parent: QWidget | None = None,
+    ) -> None:
         super().__init__(parent)
         self.setWindowTitle("Settings")
         self.setMinimumWidth(480)
@@ -67,7 +79,9 @@ class SettingsDialog(QDialog):
         form.addRow("Base URL:", self._base_edit)
 
         self._custom_edit = QLineEdit(self._config.custom_instructions)
-        self._custom_edit.setPlaceholderText("Extra coaching instructions appended to every prompt")
+        self._custom_edit.setPlaceholderText(
+            "Extra coaching instructions appended to every prompt"
+        )
         form.addRow("Custom Instructions:", self._custom_edit)
 
         layout.addLayout(form)
@@ -128,14 +142,18 @@ class SettingsDialog(QDialog):
         self._consecutive_spin = QSpinBox()
         self._consecutive_spin.setRange(1, 20)
         self._consecutive_spin.setValue(self._config.stuck_consecutive)
-        self._consecutive_spin.setToolTip("Number of consecutive low-change intervals before triggering (default: 3)")
+        self._consecutive_spin.setToolTip(
+            "Number of consecutive low-change intervals before triggering (default: 3)"
+        )
         form.addRow("Consecutive Intervals:", self._consecutive_spin)
 
         self._cooldown_spin = QSpinBox()
         self._cooldown_spin.setRange(1, 60)
         self._cooldown_spin.setValue(self._config.stuck_cooldown_minutes)
         self._cooldown_spin.setSuffix(" min")
-        self._cooldown_spin.setToolTip("Minimum time between automatic triggers (default: 5 min)")
+        self._cooldown_spin.setToolTip(
+            "Minimum time between automatic triggers (default: 5 min)"
+        )
         form.addRow("Cooldown Duration:", self._cooldown_spin)
         return w
 
@@ -146,20 +164,28 @@ class SettingsDialog(QDialog):
         self._retention_spin = QSpinBox()
         self._retention_spin.setRange(1, 100)
         self._retention_spin.setValue(self._config.history_retention_sessions)
-        self._retention_spin.setToolTip("Number of past sessions to keep on disk (default: 10)")
+        self._retention_spin.setToolTip(
+            "Number of past sessions to keep on disk (default: 10)"
+        )
         form.addRow("Keep Last N Sessions:", self._retention_spin)
 
         self._dedup_spin = QDoubleSpinBox()
         self._dedup_spin.setRange(0.1, 50.0)
         self._dedup_spin.setSingleStep(0.5)
         self._dedup_spin.setValue(self._config.dedup_threshold)
-        self._dedup_spin.setToolTip("MAE below this drops duplicate frames (default: 2.0; lower = more aggressive)")
+        self._dedup_spin.setToolTip(
+            "MAE below this drops duplicate frames"
+            " (default: 2.0; lower = more aggressive)"
+        )
         form.addRow("Dedup Threshold:", self._dedup_spin)
 
         self._lookback_spin = QSpinBox()
         self._lookback_spin.setRange(0, 10)
         self._lookback_spin.setValue(self._config.lookback_frames)
-        self._lookback_spin.setToolTip("Prior history frames sent to LLM alongside the latest (default: 2; 0 = latest only)")
+        self._lookback_spin.setToolTip(
+            "Prior history frames sent to LLM alongside the latest"
+            " (default: 2; 0 = latest only)"
+        )
         form.addRow("Look-back Frames:", self._lookback_spin)
         return w
 
@@ -170,7 +196,8 @@ class SettingsDialog(QDialog):
     def _check_hotkey_conflict(self, text: str) -> None:
         if text.lower() in _KNOWN_CONFLICTS:
             self._conflict_label.setText(
-                f"⚠ '{text}' is commonly used by drawing apps — consider a different hotkey."
+                f"⚠ '{text}' is commonly used by drawing apps"
+                " — consider a different hotkey."
             )
         else:
             self._conflict_label.setText("")
@@ -186,7 +213,10 @@ class SettingsDialog(QDialog):
             return
         self._test_label.setText("Testing…")
         try:
-            kwargs: dict = {"model": model, "messages": [{"role": "user", "content": "hi"}]}
+            kwargs: dict = {
+                "model": model,
+                "messages": [{"role": "user", "content": "hi"}],
+            }
             if key:
                 kwargs["api_key"] = key
             if base:
@@ -205,7 +235,9 @@ class SettingsDialog(QDialog):
         if path:
             self._apply_to_config()
             self._config.export_portable(path)
-            QMessageBox.information(self, "Exported", f"Config saved to {path} (API key excluded).")
+            QMessageBox.information(
+                self, "Exported", f"Config saved to {path} (API key excluded)."
+            )
 
     def _import(self) -> None:
         path, _ = QFileDialog.getOpenFileName(

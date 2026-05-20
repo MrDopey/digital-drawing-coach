@@ -5,9 +5,12 @@ from drawing_coach.window_manager import WindowInfo
 
 class MacOSBackend:
     def list_windows(self) -> list[WindowInfo]:
-        import Quartz
+        import Quartz  # type: ignore[import-not-found]
 
-        options = Quartz.kCGWindowListOptionOnScreenOnly | Quartz.kCGWindowListExcludeDesktopElements
+        options = (
+            Quartz.kCGWindowListOptionOnScreenOnly
+            | Quartz.kCGWindowListExcludeDesktopElements
+        )
         win_list = Quartz.CGWindowListCopyWindowInfo(options, Quartz.kCGNullWindowID)
 
         results: list[WindowInfo] = []
@@ -22,7 +25,7 @@ class MacOSBackend:
         return results
 
     def get_window_rect(self, window_id: int | str) -> tuple[int, int, int, int] | None:
-        import Quartz
+        import Quartz  # type: ignore[import-not-found]
 
         wid = int(window_id)
         win_list = Quartz.CGWindowListCopyWindowInfo(

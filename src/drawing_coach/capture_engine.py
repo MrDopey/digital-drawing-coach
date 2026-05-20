@@ -8,13 +8,16 @@ from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Callable
+from typing import TYPE_CHECKING, Callable
 
 import mss
 import numpy as np
 from PIL import Image
 
 from drawing_coach.window_manager import WindowInfo, WindowManager
+
+if TYPE_CHECKING:
+    from drawing_coach.llm_config import LLMConfig
 
 _SESSIONS_DIR = Path.home() / ".drawing-coach" / "sessions"
 _SESSION_RESUME_HOURS = 24
@@ -24,7 +27,7 @@ _SESSION_RESUME_HOURS = 24
 class CapturedFrame:
     image: Image.Image
     timestamp: datetime = field(default_factory=datetime.now)
-    path: Path | None = None       # disk path, None for in-memory only
+    path: Path | None = None  # disk path, None for in-memory only
 
 
 class CaptureEngine:
@@ -33,9 +36,9 @@ class CaptureEngine:
     DEFAULT_INTERVAL = 30
     BUFFER_SIZE = 50
 
-    def __init__(self, manager: WindowManager, config=None) -> None:
+    def __init__(self, manager: WindowManager, config: LLMConfig | None = None) -> None:
         self._manager = manager
-        self._config = config        # LLMConfig reference for live thresholds
+        self._config = config  # LLMConfig reference for live thresholds
         self._target: WindowInfo | None = None
         self._buffer: deque[CapturedFrame] = deque(maxlen=self.BUFFER_SIZE)
         self._interval: int = self.DEFAULT_INTERVAL
@@ -209,7 +212,9 @@ class CaptureEngine:
             return None
 
         with mss.mss() as sct:
-            shot = sct.grab({"left": left, "top": top, "width": width, "height": height})
+            shot = sct.grab(
+                {"left": left, "top": top, "width": width, "height": height}
+            )
             img = Image.frombytes("RGB", shot.size, shot.bgra, "raw", "BGRX")
 
         # Dedup check

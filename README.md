@@ -48,10 +48,10 @@ The app runs as a **GUI desktop window** — PyQt6 with a live feedback panel, s
 
 | Tool | Version | Notes |
 |------|---------|-------|
-| Python | `>=3.11` | |
-| pip | latest stable | Bundled with Python |
+| Python | `>=3.13` | |
+| uv | latest stable | [Install uv][uv-install] |
 | xdotool | any | Linux only — `apt install xdotool` |
-| pyobjc | latest stable | macOS only — installed via `.[macos]` extra |
+| pyobjc | `>=9.0` | macOS only — installed via `.[macos]` extra |
 | pywin32 | `>=306` | Windows only — installed via `.[windows]` extra |
 
 > A vision-capable LLM API key is required (e.g. OpenAI `gpt-4o`, Anthropic `claude-3-5-sonnet-20241022`, or a local [Ollama][ollama] model such as `ollama/llava`). API keys are stored in the system keyring — never in plain text on disk.
@@ -83,14 +83,13 @@ git clone <repo>
 cd drawing-coach
 
 # GUI desktop app
-pip install -e ".[gui]"
+uv sync --extra gui
 
 # macOS — also install pyobjc bindings
-pip install -e ".[gui,macos]"
+uv sync --extra gui --extra macos
 
 # Windows — also install pywin32
-pip install -e ".[gui,windows]"
-
+uv sync --extra gui --extra windows
 ```
 
 ---
@@ -116,9 +115,9 @@ In the GUI, all settings (capture interval, stuck-detection thresholds, look-bac
 ## Running Locally
 
 ```bash
-python -m drawing_coach
-# or after pip install:
-drawing-coach
+uv run drawing-coach
+# or equivalently:
+uv run python -m drawing_coach
 ```
 
 On first launch, the onboarding dialog guides you through:
@@ -147,51 +146,28 @@ Configurable in **Settings → Capture** tab.
 
 ## Testing
 
-```bash
-# Install dev dependencies
-pip install -e ".[dev]"
+Dev dependencies (pytest, pytest-qt, black, ruff, pyright) are declared in the `dev` dependency group and installed automatically by `uv sync`.
 
+```bash
 # Run all tests
-pytest
+uv run pytest
 
 # Run with verbose output
-pytest -v
+uv run pytest -v
+
+# Check formatting
+uv run black --check src/ tests/
+
+# Lint
+uv run ruff check src/ tests/
+
+# Type-check
+uv run pyright src/
 ```
 
 The test suite covers the capture engine (ring buffer, dedup), stuck detector, feedback engine (LiteLLM mocked), LLM config persistence, overlay renderer, drawing style injection, and version embedding.
 
 ---
-
-## Project Structure
-
-```
-drawing-coach/
-├── src/drawing_coach/       # Application source
-│   ├── __main__.py          # Entry point (GUI)
-│   ├── capture_engine.py    # Screenshot capture, ring buffer, disk-backed session storage
-│   ├── feedback_engine.py   # LLM requests, mode templates, error handling
-│   ├── stuck_detector.py    # MAE-based inactivity detection
-│   ├── overlay_renderer.py  # Pillow annotation rendering from LLM JSON
-│   ├── llm_config.py        # Config dataclass, keyring integration, env overrides
-│   ├── window_manager.py    # Cross-platform window enumeration
-│   ├── main_window.py       # PyQt6 main window
-│   ├── feedback_panel.py    # Feedback display widget
-│   ├── history_panel.py     # Session history thumbnails widget
-│   ├── hotkey_manager.py    # Global hotkey registration (pynput)
-│   ├── settings_dialog.py   # Settings UI dialog
-│   ├── app_selection_dialog.py  # Drawing app window picker
-│   └── _backend_*.py        # Platform-specific window backends (Linux/macOS/Windows)
-├── tests/                   # pytest suite
-├── scripts/
-│   ├── build_version.py     # Stamps _version.py from GITHUB_REF_NAME
-│   ├── package.sh           # PyInstaller + zip for Linux and macOS
-│   ├── package.ps1          # PyInstaller + zip for Windows
-│   └── macos/Info.plist     # macOS bundle entitlements
-├── .github/workflows/
-│   └── release.yml          # Builds binaries and creates GitHub Release
-├── drawing_coach.spec       # PyInstaller spec (onedir, hidden imports)
-└── pyproject.toml           # Project metadata and dependency extras
-```
 
 ---
 
@@ -199,3 +175,4 @@ drawing-coach/
 [releases]: ../../releases/latest
 [litellm]: https://docs.litellm.ai/
 [ollama]: https://ollama.com/
+[uv-install]: https://docs.astral.sh/uv/getting-started/installation/

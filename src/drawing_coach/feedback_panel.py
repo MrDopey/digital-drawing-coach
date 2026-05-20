@@ -1,13 +1,19 @@
 from __future__ import annotations
 
-from pathlib import Path
-
+from PIL import Image as PilImage
+from PyQt6.QtCore import QPoint, Qt
+from PyQt6.QtGui import QImage, QKeyEvent, QMouseEvent, QPixmap
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
-    QTextEdit, QComboBox, QFileDialog, QStackedWidget,
+    QComboBox,
+    QFileDialog,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QStackedWidget,
+    QTextEdit,
+    QVBoxLayout,
+    QWidget,
 )
-from PyQt6.QtCore import Qt, QPoint
-from PyQt6.QtGui import QMouseEvent, QPixmap, QImage
 
 from drawing_coach.feedback_engine import FeedbackResponse
 
@@ -19,18 +25,20 @@ MODE_LABELS = {
 }
 
 
-def _pil_to_pixmap(img) -> QPixmap:
-    from PIL import Image
+def _pil_to_pixmap(img: PilImage.Image) -> QPixmap:
+
     rgb = img.convert("RGB")
     data = rgb.tobytes("raw", "RGB")
-    qimg = QImage(data, rgb.width, rgb.height, rgb.width * 3, QImage.Format.Format_RGB888)
+    qimg = QImage(
+        data, rgb.width, rgb.height, rgb.width * 3, QImage.Format.Format_RGB888
+    )
     return QPixmap.fromImage(qimg)
 
 
 class FeedbackPanel(QWidget):
     """Floating, draggable panel that shows LLM feedback."""
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent, Qt.WindowType.Tool | Qt.WindowType.FramelessWindowHint)
         self.setWindowTitle("Drawing Coach — Feedback")
         self.setMinimumSize(380, 300)
@@ -45,7 +53,7 @@ class FeedbackPanel(QWidget):
         self._drag_pos: QPoint | None = None
         self._history: list[FeedbackResponse] = []
         self._history_idx: int = -1
-        self._overlay_images: dict[int, object] = {}   # idx → PIL Image
+        self._overlay_images: dict[int, PilImage.Image] = {}
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(8, 8, 8, 8)
@@ -82,12 +90,12 @@ class FeedbackPanel(QWidget):
         self._stack = QStackedWidget()
         self._text_edit = QTextEdit()
         self._text_edit.setReadOnly(True)
-        self._stack.addWidget(self._text_edit)       # index 0
+        self._stack.addWidget(self._text_edit)  # index 0
 
         self._image_label = QLabel()
         self._image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._image_label.setScaledContents(False)
-        self._stack.addWidget(self._image_label)     # index 1
+        self._stack.addWidget(self._image_label)  # index 1
         layout.addWidget(self._stack)
 
         # Overlay save row (shown only in overlay mode)
@@ -129,7 +137,9 @@ class FeedbackPanel(QWidget):
         self.show()
         self.raise_()
 
-    def show_feedback(self, response: FeedbackResponse, overlay_image=None) -> None:
+    def show_feedback(
+        self, response: FeedbackResponse, overlay_image: PilImage.Image | None = None
+    ) -> None:
         idx = len(self._history)
         self._history.append(response)
         self._history_idx = idx
@@ -181,7 +191,8 @@ class FeedbackPanel(QWidget):
             pixmap = _pil_to_pixmap(overlay_img)
             self._image_label.setPixmap(
                 pixmap.scaled(
-                    self._stack.width() - 8, self._stack.height() - 8,
+                    self._stack.width() - 8,
+                    self._stack.height() - 8,
                     Qt.AspectRatioMode.KeepAspectRatio,
                     Qt.TransformationMode.SmoothTransformation,
                 )
@@ -189,7 +200,9 @@ class FeedbackPanel(QWidget):
             self._stack.setCurrentIndex(1)
             self._save_btn.show()
             if resp.text:
-                self._overlay_notice.setText(resp.text[:120] + ("…" if len(resp.text) > 120 else ""))
+                self._overlay_notice.setText(
+                    resp.text[:120] + ("…" if len(resp.text) > 120 else "")
+                )
             else:
                 self._overlay_notice.setText("")
         else:
@@ -214,7 +227,9 @@ class FeedbackPanel(QWidget):
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
-            self._drag_pos = event.globalPosition().toPoint() - self.frameGeometry().topLeft()
+            self._drag_pos = (
+                event.globalPosition().toPoint() - self.frameGeometry().topLeft()
+            )
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         if self._drag_pos and event.buttons() & Qt.MouseButton.LeftButton:
@@ -223,7 +238,7 @@ class FeedbackPanel(QWidget):
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         self._drag_pos = None
 
-    def keyPressEvent(self, event) -> None:
+    def keyPressEvent(self, event: QKeyEvent) -> None:
         if event.key() == Qt.Key.Key_Escape:
             self.hide()
         super().keyPressEvent(event)

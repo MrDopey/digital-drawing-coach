@@ -1,7 +1,6 @@
 """Unit tests for StuckDetector MAE logic."""
 
 from datetime import datetime
-from unittest.mock import MagicMock
 
 import numpy as np
 from PIL import Image
@@ -34,10 +33,10 @@ def test_identical_frames_trigger_after_consecutive_count():
     detector.on_stuck = lambda: fired.append(1)
 
     f = _frame(_solid(128))
-    detector.feed(f)          # sets last_frame
-    detector.feed(f)          # consecutive=1
+    detector.feed(f)  # sets last_frame
+    detector.feed(f)  # consecutive=1
     assert not fired
-    detector.feed(f)          # consecutive=2 → trigger
+    detector.feed(f)  # consecutive=2 → trigger
     assert len(fired) == 1
 
 
@@ -47,7 +46,7 @@ def test_different_frames_do_not_trigger():
     detector.on_stuck = lambda: fired.append(1)
 
     detector.feed(_frame(_solid(0)))
-    detector.feed(_frame(_solid(100)))   # high MAE → resets consecutive
+    detector.feed(_frame(_solid(100)))  # high MAE → resets consecutive
     detector.feed(_frame(_solid(200)))
     assert not fired
 
@@ -59,8 +58,8 @@ def test_cooldown_blocks_retrigger():
 
     f = _frame(_solid(50))
     detector.feed(f)
-    detector.feed(f)    # trigger 1
-    detector.feed(f)    # should be blocked by cooldown
+    detector.feed(f)  # trigger 1
+    detector.feed(f)  # should be blocked by cooldown
     detector.feed(f)
     assert len(fired) == 1
 
@@ -72,10 +71,10 @@ def test_manual_trigger_bypasses_cooldown():
 
     f = _frame(_solid(50))
     detector.feed(f)
-    detector.feed(f)    # first trigger
+    detector.feed(f)  # first trigger
     assert len(fired) == 1
 
-    detector.manual_trigger()   # should fire despite cooldown
+    detector.manual_trigger()  # should fire despite cooldown
     assert len(fired) == 2
 
 

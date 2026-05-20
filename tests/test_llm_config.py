@@ -1,11 +1,7 @@
 """Unit tests for LLMConfig validation and export/import."""
 
 import json
-import tempfile
-from pathlib import Path
-from unittest.mock import patch, MagicMock
-
-import pytest
+from unittest.mock import patch
 
 from drawing_coach.llm_config import LLMConfig
 
@@ -23,7 +19,9 @@ def test_is_configured_true_when_model_set():
 def test_save_and_load_round_trip(tmp_path):
     config_path = tmp_path / "config.json"
     with patch("drawing_coach.llm_config._CONFIG_PATH", config_path):
-        cfg = LLMConfig(model="gpt-4o", api_base="http://localhost", capture_interval=60)
+        cfg = LLMConfig(
+            model="gpt-4o", api_base="http://localhost", capture_interval=60
+        )
         cfg.save()
         loaded = LLMConfig.load()
     assert loaded.model == "gpt-4o"

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import os
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from pathlib import Path
 
 import keyring
@@ -61,7 +61,11 @@ class LLMConfig:
         if not s:
             return ""
         if self.style_focus_is_preset:
-            return f"The user is currently practising: **{s}**. Tailor all feedback to conventions and techniques specific to that style."
+            return (
+                f"The user is currently practising: **{s}**."
+                " Tailor all feedback to conventions and techniques"
+                " specific to that style."
+            )
         return f"The user is currently focusing on: **{s}**."
 
     def save(self) -> None:

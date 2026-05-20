@@ -22,3 +22,4 @@ schema: spec-driven
 rules:
   tasks:
     - Always include a final task group "Documentation" with tasks to update README.md and .claude/CLAUDE.md to reflect any changes made (new features, changed tech stack, updated commands, removed modes, etc.)
+    - Always include a final verification task to run `uv run pytest` and confirm all tests pass

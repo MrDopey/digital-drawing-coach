@@ -1,11 +1,11 @@
 """Renders LLM annotation JSON onto a Pillow image copy."""
+
 from __future__ import annotations
 
 import json
 import math
-from typing import Any
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 
 _COLOR_MAP = {
     "red": (220, 50, 50),
@@ -17,7 +17,7 @@ _COLOR_MAP = {
 }
 _DEFAULT_COLOR = (220, 50, 50)
 _LINE_WIDTH = 3
-_ARROW_HEAD = 12   # pixels
+_ARROW_HEAD = 12  # pixels
 
 
 def render(image: Image.Image, annotation_json: str) -> tuple[Image.Image, str | None]:

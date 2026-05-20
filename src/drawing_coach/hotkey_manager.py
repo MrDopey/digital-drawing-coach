@@ -37,9 +37,7 @@ class HotkeyManager:
         if not self._hotkey_str:
             return
         try:
-            self._listener = keyboard.GlobalHotKeys(
-                {self._hotkey_str: self._fired}
-            )
+            self._listener = keyboard.GlobalHotKeys({self._hotkey_str: self._fired})
             self._listener.start()
         except Exception:
             self._listener = None

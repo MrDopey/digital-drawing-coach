@@ -3,26 +3,36 @@ from __future__ import annotations
 import platform
 import threading
 
+from PIL import Image as PilImage
+from PyQt6.QtCore import QObject, Qt, QTimer, pyqtSignal
+from PyQt6.QtGui import QAction, QCloseEvent
 from PyQt6.QtWidgets import (
-    QMainWindow, QLabel, QVBoxLayout, QHBoxLayout, QWidget,
-    QPushButton, QSystemTrayIcon, QMenu, QMessageBox, QApplication,
-    QComboBox, QLineEdit,
+    QApplication,
+    QComboBox,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QMainWindow,
+    QMenu,
+    QMessageBox,
+    QPushButton,
+    QSystemTrayIcon,
+    QVBoxLayout,
+    QWidget,
 )
-from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QObject
-from PyQt6.QtGui import QAction
 
-from drawing_coach.llm_config import LLMConfig
-from drawing_coach.window_manager import WindowManager
-from drawing_coach.capture_engine import CaptureEngine, CapturedFrame
-from drawing_coach.stuck_detector import StuckDetector
-from drawing_coach.hotkey_manager import HotkeyManager
+from drawing_coach._version import __version__
+from drawing_coach.app_selection_dialog import AppSelectionDialog
+from drawing_coach.capture_engine import CapturedFrame, CaptureEngine
 from drawing_coach.feedback_engine import FeedbackEngine, FeedbackResponse
 from drawing_coach.feedback_panel import FeedbackPanel
-from drawing_coach.app_selection_dialog import AppSelectionDialog
 from drawing_coach.history_panel import HistoryPanel
-from drawing_coach.settings_dialog import SettingsDialog
+from drawing_coach.hotkey_manager import HotkeyManager
+from drawing_coach.llm_config import LLMConfig
 from drawing_coach.overlay_renderer import render as render_overlay
-from drawing_coach._version import __version__
+from drawing_coach.settings_dialog import SettingsDialog
+from drawing_coach.stuck_detector import StuckDetector
+from drawing_coach.window_manager import WindowManager
 
 _STYLE_PRESETS = [
     "",  # blank = "General"
@@ -111,7 +121,9 @@ class MainWindow(QMainWindow):
         style_row.addWidget(self._style_combo)
 
         self._focus_edit = QLineEdit()
-        self._focus_edit.setPlaceholderText("or type custom focus e.g. 'gothic pokemon'")
+        self._focus_edit.setPlaceholderText(
+            "or type custom focus e.g. 'gothic pokemon'"
+        )
         self._focus_edit.setMaxLength(200)
         if self._config.style_focus and not self._config.style_focus_is_preset:
             self._focus_edit.setText(self._config.style_focus)
@@ -119,7 +131,9 @@ class MainWindow(QMainWindow):
         style_row.addWidget(self._focus_edit, 1)
         layout.addLayout(style_row)
 
-        self._coaching_label = QLabel(f"Coaching for: {self._config.effective_style_label()}")
+        self._coaching_label = QLabel(
+            f"Coaching for: {self._config.effective_style_label()}"
+        )
         self._coaching_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._coaching_label.setStyleSheet("color: #888; font-size: 11px;")
         layout.addWidget(self._coaching_label)
@@ -176,7 +190,9 @@ class MainWindow(QMainWindow):
         else:
             self._config.style_focus = ""
             self._config.style_focus_is_preset = True
-        self._coaching_label.setText(f"Coaching for: {self._config.effective_style_label()}")
+        self._coaching_label.setText(
+            f"Coaching for: {self._config.effective_style_label()}"
+        )
         self._config.save()
 
     def _on_focus_text_edited(self, text: str) -> None:
@@ -194,7 +210,9 @@ class MainWindow(QMainWindow):
         else:
             self._config.style_focus = ""
             self._config.style_focus_is_preset = True
-        self._coaching_label.setText(f"Coaching for: {self._config.effective_style_label()}")
+        self._coaching_label.setText(
+            f"Coaching for: {self._config.effective_style_label()}"
+        )
         self._config.save()
 
     # ------------------------------------------------------------------
@@ -211,14 +229,17 @@ class MainWindow(QMainWindow):
         self._detector.feed(frame)
         self._signals.frame_captured.emit()
 
-    def _on_feedback_ready(self, response: FeedbackResponse, overlay_image) -> None:
+    def _on_feedback_ready(
+        self, response: FeedbackResponse, overlay_image: PilImage.Image | None
+    ) -> None:
         self._feedback_panel.show_feedback(response, overlay_image)
 
     def _on_window_lost(self) -> None:
         self._capture.pause()
         self._update_status()
         QMessageBox.warning(
-            self, "Window Closed",
+            self,
+            "Window Closed",
             "The drawing window was closed. Select a new window to resume capture.",
         )
         self._open_app_selection()
@@ -257,8 +278,9 @@ class MainWindow(QMainWindow):
     def _trigger_feedback(self) -> None:
         if not self._config.is_configured():
             QMessageBox.information(
-                self, "LLM Not Configured",
-                "No LLM configured — open Settings to add your model details."
+                self,
+                "LLM Not Configured",
+                "No LLM configured — open Settings to add your model details.",
             )
             return
         self._feedback_panel.show_loading()
@@ -300,7 +322,8 @@ class MainWindow(QMainWindow):
 
     def _run_onboarding(self) -> None:
         QMessageBox.information(
-            self, "Welcome to Drawing Coach",
+            self,
+            "Welcome to Drawing Coach",
             "To get started:\n\n"
             "1. Open Settings and configure your LLM (model name + API key).\n"
             "2. Click 'Select Window' to choose your drawing application.\n"
@@ -309,15 +332,18 @@ class MainWindow(QMainWindow):
             + (
                 "\n\n⚠ On macOS, you'll need to grant Screen Recording permission.\n"
                 "Go to System Settings → Privacy & Security → Screen Recording."
-                if platform.system() == "Darwin" else ""
+                if platform.system() == "Darwin"
+                else ""
             ),
         )
         self._open_settings()
 
     def _show_about(self) -> None:
-        QMessageBox.about(self, "Drawing Coach", f"Drawing Coach\nVersion {__version__}")
+        QMessageBox.about(
+            self, "Drawing Coach", f"Drawing Coach\nVersion {__version__}"
+        )
 
-    def closeEvent(self, event) -> None:
+    def closeEvent(self, event: QCloseEvent) -> None:
         event.ignore()
         self.hide()
         self._tray.showMessage(

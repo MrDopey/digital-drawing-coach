@@ -7,7 +7,6 @@ get_window_rect(window_id) -> tuple[int,int,int,int] | None.
 from __future__ import annotations
 
 import platform
-import sys
 from dataclasses import dataclass
 from typing import Protocol
 
@@ -21,19 +20,24 @@ class WindowInfo:
 
 class WindowBackend(Protocol):
     def list_windows(self) -> list[WindowInfo]: ...
-    def get_window_rect(self, window_id: int | str) -> tuple[int, int, int, int] | None: ...
+    def get_window_rect(
+        self, window_id: int | str
+    ) -> tuple[int, int, int, int] | None: ...
 
 
 def _make_backend() -> WindowBackend:
     system = platform.system()
     if system == "Windows":
         from drawing_coach._backend_windows import WindowsBackend
+
         return WindowsBackend()
     elif system == "Darwin":
         from drawing_coach._backend_macos import MacOSBackend
+
         return MacOSBackend()
     else:
         from drawing_coach._backend_linux import LinuxBackend
+
         return LinuxBackend()
 
 

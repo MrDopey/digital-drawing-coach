@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import subprocess
 import re
+import subprocess
 
 from drawing_coach.window_manager import WindowInfo
 

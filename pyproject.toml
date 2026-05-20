@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "drawing-coach"
 version = "0.1.0"
 description = "AI-powered digital drawing coach that watches your canvas and gives real-time feedback"
-requires-python = ">=3.11"
+requires-python = ">=3.13"
 dependencies = [
     "mss>=9.0",
     "Pillow>=10.0",
@@ -17,14 +17,24 @@ dependencies = [
 
 [project.optional-dependencies]
 gui = ["PyQt6>=6.6", "pynput>=1.7"]
-windows = ["pywin32>=306"]
-macos = ["pyobjc-framework-Quartz>=10.0", "pyobjc-framework-AppKit>=10.0"]
+windows = ["pywin32>=306 ; sys_platform == 'win32'"]
+macos = [
+    "pyobjc-framework-Quartz>=9.0 ; sys_platform == 'darwin'",
+    "pyobjc-framework-AppKit>=9.0 ; sys_platform == 'darwin'",
+]
 
 [dependency-groups]
-dev = ["pytest>=8.0", "pytest-qt>=4.4"]
+dev = [
+    "black>=26.5.1",
+    "pyright>=1.1.409",
+    "pytest>=8.0",
+    "pytest-qt>=4.4",
+    "ruff>=0.15.13",
+]
 
 [tool.uv]
 package = true
+environments = ["sys_platform == 'linux'"]
 
 [project.scripts]
 drawing-coach = "drawing_coach.__main__:main"
@@ -32,5 +42,25 @@ drawing-coach = "drawing_coach.__main__:main"
 [tool.hatch.build.targets.wheel]
 packages = ["src/drawing_coach"]
 
+[tool.black]
+target-version = ["py311"]
+line-length = 88
+
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+[tool.pyright]
+pythonVersion = "3.11"
+typeCheckingMode = "basic"
+reportMissingModuleSource = false
+venvPath = "."
+venv = ".venv"
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "--strict-markers -q"
+filterwarnings = ["error"]

@@ -1,9 +1,7 @@
 """Integration test for FeedbackEngine using a mocked LiteLLM response."""
 
-from datetime import datetime
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
-import pytest
 from PIL import Image
 
 from drawing_coach.capture_engine import CapturedFrame
@@ -31,7 +29,7 @@ def _mock_response(text: str):
 
 
 def test_returns_error_when_no_config():
-    cfg = LLMConfig()   # no model
+    cfg = LLMConfig()  # no model
     engine = FeedbackEngine(cfg)
     result = engine.request_feedback([_frame()])
     assert isinstance(result, str)
@@ -49,7 +47,10 @@ def test_successful_feedback():
     engine = _configured_engine()
     engine._last_call = 0  # bypass rate limit
 
-    with patch("litellm.completion", return_value=_mock_response("Great work! Fix the arm rotation.")):
+    with patch(
+        "litellm.completion",
+        return_value=_mock_response("Great work! Fix the arm rotation."),
+    ):
         result = engine.request_feedback([_frame()], mode="quick_hint")
 
     assert isinstance(result, FeedbackResponse)
@@ -59,10 +60,16 @@ def test_successful_feedback():
 
 def test_auth_error_surface():
     import litellm
+
     engine = _configured_engine()
     engine._last_call = 0
 
-    with patch("litellm.completion", side_effect=litellm.exceptions.AuthenticationError("bad key", llm_provider="openai", model="gpt-4o")):
+    with patch(
+        "litellm.completion",
+        side_effect=litellm.exceptions.AuthenticationError(
+            "bad key", llm_provider="openai", model="gpt-4o"
+        ),
+    ):
         result = engine.request_feedback([_frame()])
 
     assert isinstance(result, str)
@@ -87,6 +94,7 @@ def test_custom_instructions_in_prompt():
     engine._last_call = 0
 
     captured_messages = []
+
     def _capture(**kwargs):
         captured_messages.extend(kwargs["messages"])
         return _mock_response("ok")

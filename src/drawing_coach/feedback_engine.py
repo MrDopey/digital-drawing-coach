@@ -5,7 +5,7 @@ import io
 import time
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Callable
+from typing import Any, Callable
 
 import litellm
 from PIL import Image
@@ -29,8 +29,9 @@ _MODE_TEMPLATES = {
         "Be specific and reference what you observe."
     ),
     "practice_exercise": (
-        "Based on the main weakness you observe, describe ONE specific practice exercise "
-        "the artist should do next to improve that area. Be concrete and actionable."
+        "Based on the main weakness you observe, describe ONE specific practice"
+        " exercise the artist should do next to improve that area."
+        " Be concrete and actionable."
     ),
     "overlay": (
         "Analyse this drawing and return your response in two parts:\n\n"
@@ -54,7 +55,7 @@ class FeedbackResponse:
     mode: str
     text: str
     timestamp: datetime = field(default_factory=datetime.now)
-    annotation_json: str | None = None   # raw JSON string for overlay mode
+    annotation_json: str | None = None  # raw JSON string for overlay mode
 
 
 class FeedbackEngine:
@@ -85,7 +86,7 @@ class FeedbackEngine:
         system = self._build_system_prompt(mode)
         messages = self._build_messages(system, frames, mode)
 
-        kwargs: dict = {"model": self._config.model, "messages": messages}
+        kwargs: dict[str, Any] = {"model": self._config.model, "messages": messages}
         if self._config.api_key:
             kwargs["api_key"] = self._config.api_key
         if self._config.api_base:
@@ -108,7 +109,9 @@ class FeedbackEngine:
                 annotation_json = _extract_json_block(text)
                 text = _strip_json_block(text)
 
-            result = FeedbackResponse(mode=mode, text=text, annotation_json=annotation_json)
+            result = FeedbackResponse(
+                mode=mode, text=text, annotation_json=annotation_json
+            )
             self._history.append(result)
             if self.on_feedback:
                 self.on_feedback(result)
@@ -123,7 +126,9 @@ class FeedbackEngine:
         except Exception as exc:
             msg = str(exc).lower()
             if "quota" in msg or "budget" in msg or "insufficient" in msg:
-                return "Your API credits are exhausted — top up your account to continue"
+                return (
+                    "Your API credits are exhausted — top up your account to continue"
+                )
             if "network" in msg or "connection" in msg or "timeout" in msg:
                 return "Network error — check your connection and try again"
             return f"LLM error: {exc}"
@@ -140,21 +145,27 @@ class FeedbackEngine:
         parts.append(_MODE_TEMPLATES.get(mode, _MODE_TEMPLATES["full_critique"]))
         return "\n\n".join(parts)
 
-    def _build_messages(self, system: str, frames: list[CapturedFrame], mode: str) -> list[dict]:
+    def _build_messages(
+        self, system: str, frames: list[CapturedFrame], mode: str
+    ) -> list[dict[str, object]]:
         lookback = max(0, self._config.lookback_frames)
         # latest frame + up to `lookback` prior frames
         if lookback == 0:
             selected = [frames[-1]]
         else:
-            selected = frames[-(lookback + 1):]
+            selected = frames[-(lookback + 1) :]
 
-        content: list[dict] = [{"type": "text", "text": "Please review my drawing:"}]
+        content: list[dict[str, object]] = [
+            {"type": "text", "text": "Please review my drawing:"}
+        ]
         for frame in selected:
             b64 = _image_to_b64(frame.image)
-            content.append({
-                "type": "image_url",
-                "image_url": {"url": f"data:image/png;base64,{b64}"},
-            })
+            content.append(
+                {
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/png;base64,{b64}"},
+                }
+            )
         return [
             {"role": "system", "content": system},
             {"role": "user", "content": content},
@@ -165,6 +176,7 @@ class FeedbackEngine:
 # Helpers
 # ------------------------------------------------------------------
 
+
 def _image_to_b64(img: Image.Image) -> str:
     buf = io.BytesIO()
     img.save(buf, format="PNG")
@@ -173,10 +185,12 @@ def _image_to_b64(img: Image.Image) -> str:
 
 def _extract_json_block(text: str) -> str | None:
     import re
+
     m = re.search(r"```json\s*(.*?)\s*```", text, re.DOTALL)
     return m.group(1).strip() if m else None
 
 
 def _strip_json_block(text: str) -> str:
     import re
+
     return re.sub(r"```json.*?```", "", text, flags=re.DOTALL).strip()
