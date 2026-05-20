@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDisplayName</key>
+    <string>Drawing Coach</string>
+    <key>CFBundleExecutable</key>
+    <string>drawing-coach</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.drawing-coach.app</string>
+    <key>CFBundleName</key>
+    <string>Drawing Coach</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>12.0</string>
+    <key>NSAccessibilityUsageDescription</key>
+    <string>Drawing Coach needs Accessibility access to detect the active drawing window and register a global hotkey for on-demand feedback.</string>
+    <key>NSScreenCaptureUsageDescription</key>
+    <string>Drawing Coach captures screenshots of your drawing canvas to analyse your progress and provide AI-powered feedback.</string>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+</dict>
+</plist>
