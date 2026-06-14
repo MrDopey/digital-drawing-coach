@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from PyQt6.QtCore import QSize, Qt
-from PyQt6.QtGui import QImage, QPixmap
+from PyQt6.QtGui import QIcon, QImage, QPixmap
 from PyQt6.QtWidgets import (
     QDialog,
     QHBoxLayout,
@@ -52,12 +52,12 @@ class HistoryPanel(QDialog):
                 ts = frame.timestamp.strftime("%H:%M:%S")
                 item = QListWidgetItem(ts)
                 item.setIcon(
-                    _pil_to_pixmap(frame).scaled(
+                    QIcon(_pil_to_pixmap(frame).scaled(
                         120,
                         120,
                         Qt.AspectRatioMode.KeepAspectRatio,
                         Qt.TransformationMode.SmoothTransformation,
-                    )
+                    ))
                 )
                 item.setSizeHint(QSize(140, 150))
                 list_widget.addItem(item)
