@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -10,6 +11,8 @@ from drawing_coach import env
 from drawing_coach.paths import config_path, sessions_dir
 
 load_dotenv(dotenv_path=config_path().parent / ".env", override=False)
+
+_log = logging.getLogger("drawing_coach.llm_config")
 
 
 @dataclass
@@ -77,18 +80,27 @@ class LLMConfig:
         p = config_path()
         if not p.exists():
             cfg = cls()
+            _log.info("No config file found, using defaults")
         else:
             try:
                 data = json.loads(p.read_text())
                 known = {f for f in cls.__dataclass_fields__}  # type: ignore[attr-defined]
                 cfg = cls(**{k: v for k, v in data.items() if k in known})
+                _log.info("Config loaded from %s", p)
             except Exception:
                 cfg = cls()
+                _log.info("No config file found, using defaults")
         # Environment variable overrides (used in headless / Docker mode)
         if env.model():
             cfg.model = env.model()
         if env.api_base():
             cfg.api_base = env.api_base()
+        if env.api_key():
+            _log.info("API key present")
+        else:
+            _log.warning(
+                "No API key configured — LLM calls will fail unless using a local model"
+            )
         return cfg
 
     def export_portable(self, path: str | Path) -> None:

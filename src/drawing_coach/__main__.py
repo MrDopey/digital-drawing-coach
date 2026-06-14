@@ -2,6 +2,16 @@ import sys
 
 
 def main() -> None:
+    import logging
+
+    from drawing_coach.logging_config import setup_logging
+
+    setup_logging()
+
+    from drawing_coach._version import __version__
+
+    logging.getLogger("drawing_coach").info("Drawing Coach v%s starting", __version__)
+
     from PyQt6.QtWidgets import QApplication
 
     from drawing_coach.main_window import MainWindow

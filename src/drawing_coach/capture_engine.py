@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import shutil
 import threading
 import time
@@ -19,6 +20,8 @@ from drawing_coach.window_manager import WindowInfo, WindowManager
 
 if TYPE_CHECKING:
     from drawing_coach.llm_config import LLMConfig
+
+_log = logging.getLogger("drawing_coach.capture_engine")
 _SESSION_RESUME_HOURS = 24
 
 
@@ -95,9 +98,11 @@ class CaptureEngine:
 
     def pause(self) -> None:
         self._paused = True
+        _log.info("Capture paused by user")
 
     def resume(self) -> None:
         self._paused = False
+        _log.info("Capture resumed")
 
     def capture_once(self) -> CapturedFrame | None:
         return self._do_capture()
@@ -129,6 +134,8 @@ class CaptureEngine:
                 if datetime.now() - start < timedelta(hours=_SESSION_RESUME_HOURS):
                     self._session_dir = candidate
                     self._load_frames_from_disk()
+                    n = len(self._buffer)
+                    _log.info("Resumed session: %s (%d existing frames)", candidate, n)
                     return
             except Exception:
                 continue
@@ -138,6 +145,7 @@ class CaptureEngine:
         self._session_dir = sessions_dir() / session_id
         (self._session_dir / "frames").mkdir(parents=True)
         self._write_meta()
+        _log.info("New session: %s", self._session_dir)
 
     def _write_meta(self) -> None:
         if not self._session_dir:
@@ -179,11 +187,14 @@ class CaptureEngine:
         if not sd.exists():
             return
         sessions = sorted(sd.iterdir())
-        for old in sessions[: max(0, len(sessions) - keep)]:
+        to_delete = sessions[: max(0, len(sessions) - keep)]
+        for old in to_delete:
             try:
                 shutil.rmtree(old)
             except Exception:
                 pass
+        if to_delete:
+            _log.info("Pruned %d old sessions (retention: %d)", len(to_delete), keep)
 
     # ------------------------------------------------------------------
     # Capture loop
@@ -204,6 +215,7 @@ class CaptureEngine:
             return None
         rect = self._manager.get_window_rect(self._target.id)
         if rect is None:
+            _log.warning("Drawing window lost — capture paused")
             if self.on_window_lost:
                 self.on_window_lost()
             return None
@@ -223,6 +235,7 @@ class CaptureEngine:
         if self._last_stored_image is not None:
             mae = _compute_mae(self._last_stored_image, img)
             if mae < dedup_threshold:
+                _log.debug("Frame skipped: MAE=%.2f < threshold=%.2f", mae, dedup_threshold)
                 return None  # duplicate — discard
 
         # Write to disk
@@ -246,6 +259,7 @@ class CaptureEngine:
         path = self._session_dir / "frames" / filename
         try:
             img.save(path, format="PNG")
+            _log.debug("Frame saved: %s (%dx%d)", filename, img.width, img.height)
             return path
         except Exception:
             return None

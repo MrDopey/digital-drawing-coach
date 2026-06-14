@@ -110,3 +110,42 @@ def test_api_key_setter_raises_on_permission_error(tmp_path):
             cfg = LLMConfig()
             with pytest.raises(PermissionError, match="Could not save API key"):
                 cfg.api_key = "sk-test"
+
+
+# --- load() log emissions ---
+
+def test_load_logs_info_when_config_found(tmp_path, caplog):
+    p = tmp_path / "config.json"
+    p.write_text('{"model": "gpt-4o"}')
+    with patch("drawing_coach.llm_config.config_path", return_value=p):
+        with patch("drawing_coach.env.api_key", return_value="sk-x"):
+            with caplog.at_level("INFO", logger="drawing_coach"):
+                LLMConfig.load()
+    assert any("Config loaded from" in r.message for r in caplog.records)
+
+
+def test_load_logs_info_when_no_config(tmp_path, caplog):
+    missing = tmp_path / "nope.json"
+    with patch("drawing_coach.llm_config.config_path", return_value=missing):
+        with patch("drawing_coach.env.api_key", return_value=""):
+            with caplog.at_level("INFO", logger="drawing_coach"):
+                LLMConfig.load()
+    assert any("No config file found" in r.message for r in caplog.records)
+
+
+def test_load_logs_info_when_api_key_present(tmp_path, caplog):
+    missing = tmp_path / "nope.json"
+    with patch("drawing_coach.llm_config.config_path", return_value=missing):
+        with patch("drawing_coach.env.api_key", return_value="sk-present"):
+            with caplog.at_level("INFO", logger="drawing_coach"):
+                LLMConfig.load()
+    assert any("API key present" in r.message for r in caplog.records)
+
+
+def test_load_logs_warning_when_api_key_absent(tmp_path, caplog):
+    missing = tmp_path / "nope.json"
+    with patch("drawing_coach.llm_config.config_path", return_value=missing):
+        with patch("drawing_coach.env.api_key", return_value=""):
+            with caplog.at_level("WARNING", logger="drawing_coach"):
+                LLMConfig.load()
+    assert any("No API key configured" in r.message for r in caplog.records)

@@ -125,6 +125,9 @@ Real shell environment variables always take precedence over the `.env` file. Th
 | `DRAWING_COACH_API_KEY` | Yes | — | API key for the chosen provider |
 | `DRAWING_COACH_MODEL` | No | *(from settings)* | LiteLLM model identifier (e.g. `gpt-4o`, `claude-3-5-sonnet-20241022`, `ollama/llava`) |
 | `DRAWING_COACH_API_BASE` | No | *(blank)* | Override API base URL (Ollama: `http://localhost:11434`, LiteLLM proxy, etc.) |
+| `DRAWING_COACH_LOG_LEVEL` | No | `WARNING` | Log verbosity: `DEBUG`, `INFO`, `WARNING`, `ERROR`, or `CRITICAL`. Set to `INFO` to see the session directory path, API key status, and LLM call outcomes. |
+| `DRAWING_COACH_LOG_FILE` | No | *(stderr only)* | Path to a log file. Log output is written here in addition to stderr. Parent directory must exist. |
+| `DRAWING_COACH_LOG_MAX_BYTES` | No | `10485760` | Maximum log file size in bytes (10 MB). When reached, the file is discarded and a new one begins. |
 | `XDG_CONFIG_HOME` | No | `~/.config` | Override config directory root (Linux/macOS) |
 | `XDG_DATA_HOME` | No | `~/.local/share` | Override data directory root (Linux/macOS) |
 
