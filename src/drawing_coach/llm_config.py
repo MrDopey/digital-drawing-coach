@@ -43,6 +43,7 @@ class LLMConfig:
                 set_key(str(dotenv_path), "DRAWING_COACH_API_KEY", value)
             else:
                 unset_key(str(dotenv_path), "DRAWING_COACH_API_KEY")
+            env.set_api_key(value)
         except PermissionError as e:
             raise PermissionError(f"Could not save API key: {e}") from e
 

@@ -1,4 +1,4 @@
-"""Single location for all os.environ reads in the application."""
+"""Single location for all os.environ reads and writes in the application."""
 
 from __future__ import annotations
 
@@ -15,6 +15,13 @@ def xdg_data_home() -> str:
 
 def api_key() -> str:
     return os.environ.get("DRAWING_COACH_API_KEY", "")
+
+
+def set_api_key(value: str) -> None:
+    if value:
+        os.environ["DRAWING_COACH_API_KEY"] = value
+    else:
+        os.environ.pop("DRAWING_COACH_API_KEY", None)
 
 
 def model() -> str:
