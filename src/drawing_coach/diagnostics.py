@@ -11,7 +11,9 @@ from typing import Callable
 
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtWidgets import (
+    QApplication,
     QDialog,
+    QFrame,
     QGridLayout,
     QHBoxLayout,
     QLabel,
@@ -257,6 +259,7 @@ class DiagnosticsDialog(QDialog):
         self._checks = build_checks(config)
         self._executor: ThreadPoolExecutor | None = None
         self._coordinator: DiagnosticsCoordinator | None = None
+        self._completed_results: list[CheckResult] = []
 
         layout = QVBoxLayout(self)
 
@@ -273,6 +276,11 @@ class DiagnosticsDialog(QDialog):
         self._msg_labels: dict[str, QLabel] = {}
         self._hint_labels: dict[str, QLabel] = {}
 
+        _selectable = (
+            Qt.TextInteractionFlag.TextSelectableByMouse
+            | Qt.TextInteractionFlag.TextSelectableByKeyboard
+        )
+
         for row_idx, (name, _) in enumerate(self._checks):
             grid_row = row_idx * 2
             status_lbl = QLabel("⏳")
@@ -284,12 +292,14 @@ class DiagnosticsDialog(QDialog):
             msg_lbl.setTextFormat(Qt.TextFormat.RichText)
             msg_lbl.setAlignment(Qt.AlignmentFlag.AlignTop)
             msg_lbl.setMinimumWidth(1)
+            msg_lbl.setTextInteractionFlags(_selectable)
 
             hint_lbl = QLabel("")
             hint_lbl.setWordWrap(True)
             hint_lbl.setTextFormat(Qt.TextFormat.RichText)
             hint_lbl.setStyleSheet("color: #888; padding-left: 2px; padding-bottom: 6px;")
             hint_lbl.setMinimumWidth(1)
+            hint_lbl.setTextInteractionFlags(_selectable)
             hint_lbl.setVisible(False)
 
             grid.addWidget(status_lbl, grid_row, 0)
@@ -303,24 +313,31 @@ class DiagnosticsDialog(QDialog):
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
-        scroll.setFrameShape(QScrollArea.Shape.NoFrame)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
         scroll.setWidget(rows_widget)
         layout.addWidget(scroll, 1)
 
         btn_row = QHBoxLayout()
         self._rerun_btn = QPushButton("Re-run")
         self._rerun_btn.clicked.connect(self._start_checks)
+        self._copy_report_btn = QPushButton("Copy Report")
+        self._copy_report_btn.clicked.connect(self._copy_report)
+        self._copy_report_btn.setEnabled(False)
         btn_row.addStretch()
+        btn_row.addWidget(self._copy_report_btn)
         btn_row.addWidget(self._rerun_btn)
         layout.addLayout(btn_row)
 
         self._start_checks()
+        self.adjustSize()
 
     def _start_checks(self) -> None:
         if self._coordinator and self._coordinator.isRunning():
             if self._executor:
                 self._executor.shutdown(wait=False, cancel_futures=True)
             self._coordinator.wait()
+
+        self._completed_results = []
 
         for name in self._status_labels:
             self._status_labels[name].setText("⏳")
@@ -331,16 +348,22 @@ class DiagnosticsDialog(QDialog):
             self._hint_labels[name].setVisible(False)
 
         self._rerun_btn.setEnabled(False)
+        self._copy_report_btn.setEnabled(False)
 
         self._executor = ThreadPoolExecutor(max_workers=len(self._checks))
         futures = [self._executor.submit(fn) for _, fn in self._checks]
 
         self._coordinator = DiagnosticsCoordinator(self._executor, futures, parent=self)
         self._coordinator.check_done.connect(self._on_check_done)
-        self._coordinator.all_done.connect(lambda: self._rerun_btn.setEnabled(True))
+        self._coordinator.all_done.connect(self._on_all_done)
         self._coordinator.start()
 
+    def _on_all_done(self) -> None:
+        self._rerun_btn.setEnabled(True)
+        self._copy_report_btn.setEnabled(True)
+
     def _on_check_done(self, result: CheckResult) -> None:
+        self._completed_results.append(result)
         status_lbl = self._status_labels.get(result.name)
         msg_lbl = self._msg_labels.get(result.name)
         hint_lbl = self._hint_labels.get(result.name)
@@ -363,6 +386,15 @@ class DiagnosticsDialog(QDialog):
                 hint_lbl.setVisible(True)
             elif hint_lbl:
                 hint_lbl.setVisible(False)
+
+    def _copy_report(self) -> None:
+        lines: list[str] = []
+        for result in self._completed_results:
+            icon = "✓" if result.passed else "✗"
+            lines.append(f"[{icon}] {result.name} — {result.message}")
+            if not result.passed and result.hint:
+                lines.append(f"      Hint: {result.hint}")
+        QApplication.clipboard().setText("\n".join(lines))
 
     def closeEvent(self, event) -> None:  # type: ignore[override]
         if self._executor:

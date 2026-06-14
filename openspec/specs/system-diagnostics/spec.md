@@ -4,11 +4,11 @@
 TBD - created by archiving change setup-diagnostics-button. Update Purpose after archive.
 ## Requirements
 ### Requirement: Diagnostics dialog accessible from Settings
-The system SHALL provide a "Diagnostics…" button in the Settings dialog that opens a DiagnosticsDialog showing the status of all system health checks. When a check fails and has a remediation hint, the hint SHALL be displayed on a separate row below the check (in grey), not inline with the error message.
+The system SHALL provide a "Diagnostics…" button in the Settings dialog that opens a DiagnosticsDialog showing the status of all system health checks. The dialog SHALL display check results with selectable text and a "Copy Report" button.
 
 #### Scenario: User opens diagnostics from Settings
 - **WHEN** the user opens the Settings dialog and clicks the "Diagnostics…" button
-- **THEN** a DiagnosticsDialog opens modally (blocking the Settings dialog) and immediately begins running checks
+- **THEN** a non-modal DiagnosticsDialog opens and immediately begins running checks
 
 #### Scenario: Dialog can be re-run
 - **WHEN** the DiagnosticsDialog is already open and the user clicks "Re-run"
@@ -80,7 +80,7 @@ The system SHALL verify that a model name is configured and that a minimal text 
 
 #### Scenario: LLM call fails
 - **WHEN** diagnostics run, a model name is set, but the `litellm.completion` call raises an exception
-- **THEN** the LLM check shows ✗, the message (in red) includes the exception type and summary, and below it a separate hint row shows "Check your API key, Base URL, and network connection in Settings → LLM" in grey
+- **THEN** the LLM check shows ✗, the message includes the exception type and summary, and the hint "Check your API key, Base URL, and network connection in Settings → LLM"
 
 ---
 
