@@ -210,8 +210,8 @@ class SettingsDialog(QDialog):
             self._conflict_label.setText("")
 
     def _open_diagnostics(self) -> None:
-        dlg = DiagnosticsDialog(config=self._config, parent=self.parent())
-        dlg.show()
+        dlg = DiagnosticsDialog(config=self._config, parent=self)
+        dlg.exec()
 
     def _test_connection(self) -> None:
         import litellm

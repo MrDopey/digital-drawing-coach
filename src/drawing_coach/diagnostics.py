@@ -16,6 +16,7 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QPushButton,
+    QScrollArea,
     QVBoxLayout,
     QWidget,
 )
@@ -251,7 +252,7 @@ class DiagnosticsDialog(QDialog):
     def __init__(self, config: LLMConfig, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setWindowTitle("System Diagnostics")
-        self.setMinimumWidth(540)
+        self.setMinimumWidth(580)
         self._config = config
         self._checks = build_checks(config)
         self._executor: ThreadPoolExecutor | None = None
@@ -261,27 +262,50 @@ class DiagnosticsDialog(QDialog):
 
         rows_widget = QWidget()
         grid = QGridLayout(rows_widget)
-        grid.setColumnMinimumWidth(0, 24)
-        grid.setColumnMinimumWidth(1, 160)
+        grid.setColumnMinimumWidth(0, 28)
+        grid.setColumnMinimumWidth(1, 170)
         grid.setColumnStretch(2, 1)
+        grid.setVerticalSpacing(2)
+        grid.setHorizontalSpacing(10)
+        grid.setContentsMargins(8, 8, 8, 8)
 
         self._status_labels: dict[str, QLabel] = {}
         self._msg_labels: dict[str, QLabel] = {}
+        self._hint_labels: dict[str, QLabel] = {}
 
         for row_idx, (name, _) in enumerate(self._checks):
+            grid_row = row_idx * 2
             status_lbl = QLabel("⏳")
-            status_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            status_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignTop)
             name_lbl = QLabel(f"<b>{name}</b>")
+            name_lbl.setAlignment(Qt.AlignmentFlag.AlignTop)
             msg_lbl = QLabel("checking…")
             msg_lbl.setWordWrap(True)
             msg_lbl.setTextFormat(Qt.TextFormat.RichText)
-            grid.addWidget(status_lbl, row_idx, 0)
-            grid.addWidget(name_lbl, row_idx, 1)
-            grid.addWidget(msg_lbl, row_idx, 2)
+            msg_lbl.setAlignment(Qt.AlignmentFlag.AlignTop)
+            msg_lbl.setMinimumWidth(1)
+
+            hint_lbl = QLabel("")
+            hint_lbl.setWordWrap(True)
+            hint_lbl.setTextFormat(Qt.TextFormat.RichText)
+            hint_lbl.setStyleSheet("color: #888; padding-left: 2px; padding-bottom: 6px;")
+            hint_lbl.setMinimumWidth(1)
+            hint_lbl.setVisible(False)
+
+            grid.addWidget(status_lbl, grid_row, 0)
+            grid.addWidget(name_lbl, grid_row, 1)
+            grid.addWidget(msg_lbl, grid_row, 2)
+            grid.addWidget(hint_lbl, grid_row + 1, 1, 1, 2)
+
             self._status_labels[name] = status_lbl
             self._msg_labels[name] = msg_lbl
+            self._hint_labels[name] = hint_lbl
 
-        layout.addWidget(rows_widget)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QScrollArea.Shape.NoFrame)
+        scroll.setWidget(rows_widget)
+        layout.addWidget(scroll, 1)
 
         btn_row = QHBoxLayout()
         self._rerun_btn = QPushButton("Re-run")
@@ -303,6 +327,8 @@ class DiagnosticsDialog(QDialog):
             self._status_labels[name].setStyleSheet("")
             self._msg_labels[name].setText("checking…")
             self._msg_labels[name].setStyleSheet("")
+            self._hint_labels[name].setText("")
+            self._hint_labels[name].setVisible(False)
 
         self._rerun_btn.setEnabled(False)
 
@@ -317,6 +343,7 @@ class DiagnosticsDialog(QDialog):
     def _on_check_done(self, result: CheckResult) -> None:
         status_lbl = self._status_labels.get(result.name)
         msg_lbl = self._msg_labels.get(result.name)
+        hint_lbl = self._hint_labels.get(result.name)
         if status_lbl is None or msg_lbl is None:
             return
         if result.passed:
@@ -324,14 +351,18 @@ class DiagnosticsDialog(QDialog):
             status_lbl.setStyleSheet("color: green;")
             msg_lbl.setText(result.message)
             msg_lbl.setStyleSheet("")
+            if hint_lbl:
+                hint_lbl.setVisible(False)
         else:
             status_lbl.setText("✗")
             status_lbl.setStyleSheet("color: red;")
-            text = result.message
-            if result.hint:
-                text += f'<br><span style="color: gray; font-size: small;">{result.hint}</span>'
-            msg_lbl.setText(text)
+            msg_lbl.setText(result.message)
             msg_lbl.setStyleSheet("color: red;")
+            if hint_lbl and result.hint:
+                hint_lbl.setText(result.hint)
+                hint_lbl.setVisible(True)
+            elif hint_lbl:
+                hint_lbl.setVisible(False)
 
     def closeEvent(self, event) -> None:  # type: ignore[override]
         if self._executor:

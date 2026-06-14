@@ -366,4 +366,5 @@ def test_dialog_llm_fail_row(qtbot):
     assert dlg._status_labels["LLM Connection"].text() == "✗"
     msg = dlg._msg_labels["LLM Connection"].text()
     assert "AuthenticationError" in msg
-    assert "Check your API key" in msg
+    hint = dlg._hint_labels["LLM Connection"].text()
+    assert "Check your API key" in hint
