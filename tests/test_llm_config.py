@@ -1,9 +1,4 @@
-"""Unit tests for LLMConfig validation and export/import."""
-
-import json
-from unittest.mock import call, patch
-
-import pytest
+"""Unit tests for LLMConfig — plain dataclass behaviour."""
 
 from drawing_coach.llm_config import LLMConfig
 
@@ -18,138 +13,54 @@ def test_is_configured_true_when_model_set():
     assert cfg.is_configured()
 
 
-def test_save_and_load_round_trip(tmp_path):
-    p = tmp_path / "config.json"
-    with patch("drawing_coach.llm_config.config_path", return_value=p):
-        cfg = LLMConfig(
-            model="gpt-4o", api_base="http://localhost", capture_interval=60
-        )
-        cfg.save()
-        loaded = LLMConfig.load()
-    assert loaded.model == "gpt-4o"
-    assert loaded.api_base == "http://localhost"
-    assert loaded.capture_interval == 60
-
-
-def test_load_returns_defaults_when_no_file(tmp_path):
-    missing = tmp_path / "nope.json"
-    with patch("drawing_coach.llm_config.config_path", return_value=missing):
-        cfg = LLMConfig.load()
+def test_defaults():
+    cfg = LLMConfig()
     assert cfg.model == ""
+    assert cfg.api_base == ""
+    assert cfg.api_key == ""
     assert cfg.capture_interval == 30
+    assert cfg.hotkey == "<ctrl>+<shift>+f"
+    assert cfg.stuck_threshold == 10.0
+    assert cfg.stuck_consecutive == 3
+    assert cfg.stuck_cooldown_minutes == 5
+    assert cfg.lookback_frames == 2
+    assert cfg.dedup_threshold == 2.0
+    assert cfg.history_retention_sessions == 10
+    assert cfg.style_focus == ""
+    assert cfg.style_focus_is_preset is True
 
 
-def test_export_excludes_api_key(tmp_path):
-    cfg = LLMConfig(model="gpt-4o", api_base="http://x")
-    out = tmp_path / "export.json"
-    cfg.export_portable(out)
-    data = json.loads(out.read_text())
-    assert "api_key" not in data
-    assert data["model"] == "gpt-4o"
-
-
-def test_import_portable_sets_model_and_base(tmp_path):
-    src = LLMConfig(model="claude-3-5-sonnet-20241022", api_base="http://proxy")
-    out = tmp_path / "export.json"
-    src.export_portable(out)
-    imported = LLMConfig.import_portable(out)
-    assert imported.model == "claude-3-5-sonnet-20241022"
-    assert imported.api_base == "http://proxy"
-
-
-def test_load_ignores_unknown_fields(tmp_path):
-    p = tmp_path / "config.json"
-    p.write_text(json.dumps({"model": "gpt-4o", "unknown_future_field": 42}))
-    with patch("drawing_coach.llm_config.config_path", return_value=p):
-        cfg = LLMConfig.load()
+def test_field_assignment():
+    cfg = LLMConfig(model="gpt-4o", api_key="sk-test", capture_interval=60)
     assert cfg.model == "gpt-4o"
+    assert cfg.api_key == "sk-test"
+    assert cfg.capture_interval == 60
 
 
-# --- api_key property ---
-
-def test_api_key_getter_returns_env_var():
-    with patch("drawing_coach.env.api_key", return_value="sk-from-env"):
-        cfg = LLMConfig()
-        assert cfg.api_key == "sk-from-env"
+def test_effective_style_label_general_when_empty():
+    cfg = LLMConfig()
+    assert cfg.effective_style_label() == "General"
 
 
-def test_api_key_getter_returns_empty_when_unset():
-    with patch("drawing_coach.env.api_key", return_value=""):
-        cfg = LLMConfig()
-        assert cfg.api_key == ""
+def test_effective_style_label_returns_focus():
+    cfg = LLMConfig(style_focus="Anime/Manga")
+    assert cfg.effective_style_label() == "Anime/Manga"
 
 
-def test_api_key_setter_writes_to_dotenv_and_environ(tmp_path):
-    config_file = tmp_path / "config.json"
-    with patch("drawing_coach.llm_config.config_path", return_value=config_file):
-        with patch("drawing_coach.llm_config.set_key") as mock_set_key:
-            with patch("drawing_coach.env.set_api_key") as mock_set_api_key:
-                cfg = LLMConfig()
-                cfg.api_key = "sk-test"
-                mock_set_key.assert_called_once_with(
-                    str(tmp_path / ".env"), "DRAWING_COACH_API_KEY", "sk-test"
-                )
-                mock_set_api_key.assert_called_once_with("sk-test")
+def test_style_prompt_fragment_empty_when_no_focus():
+    cfg = LLMConfig()
+    assert cfg.style_prompt_fragment() == ""
 
 
-def test_api_key_setter_clears_via_unset_key_and_environ(tmp_path):
-    config_file = tmp_path / "config.json"
-    with patch("drawing_coach.llm_config.config_path", return_value=config_file):
-        with patch("drawing_coach.llm_config.unset_key") as mock_unset_key:
-            with patch("drawing_coach.env.set_api_key") as mock_set_api_key:
-                cfg = LLMConfig()
-                cfg.api_key = ""
-                mock_unset_key.assert_called_once_with(
-                    str(tmp_path / ".env"), "DRAWING_COACH_API_KEY"
-                )
-                mock_set_api_key.assert_called_once_with("")
+def test_style_prompt_fragment_preset():
+    cfg = LLMConfig(style_focus="Line Drawing", style_focus_is_preset=True)
+    fragment = cfg.style_prompt_fragment()
+    assert "Line Drawing" in fragment
+    assert "practising" in fragment
 
 
-def test_api_key_setter_raises_on_permission_error(tmp_path):
-    config_file = tmp_path / "config.json"
-    with patch("drawing_coach.llm_config.config_path", return_value=config_file):
-        with patch(
-            "drawing_coach.llm_config.set_key", side_effect=PermissionError("read-only")
-        ):
-            cfg = LLMConfig()
-            with pytest.raises(PermissionError, match="Could not save API key"):
-                cfg.api_key = "sk-test"
-
-
-# --- load() log emissions ---
-
-def test_load_logs_info_when_config_found(tmp_path, caplog):
-    p = tmp_path / "config.json"
-    p.write_text('{"model": "gpt-4o"}')
-    with patch("drawing_coach.llm_config.config_path", return_value=p):
-        with patch("drawing_coach.env.api_key", return_value="sk-x"):
-            with caplog.at_level("INFO", logger="drawing_coach"):
-                LLMConfig.load()
-    assert any("Config loaded from" in r.message for r in caplog.records)
-
-
-def test_load_logs_info_when_no_config(tmp_path, caplog):
-    missing = tmp_path / "nope.json"
-    with patch("drawing_coach.llm_config.config_path", return_value=missing):
-        with patch("drawing_coach.env.api_key", return_value=""):
-            with caplog.at_level("INFO", logger="drawing_coach"):
-                LLMConfig.load()
-    assert any("No config file found" in r.message for r in caplog.records)
-
-
-def test_load_logs_info_when_api_key_present(tmp_path, caplog):
-    missing = tmp_path / "nope.json"
-    with patch("drawing_coach.llm_config.config_path", return_value=missing):
-        with patch("drawing_coach.env.api_key", return_value="sk-present"):
-            with caplog.at_level("INFO", logger="drawing_coach"):
-                LLMConfig.load()
-    assert any("API key present" in r.message for r in caplog.records)
-
-
-def test_load_logs_warning_when_api_key_absent(tmp_path, caplog):
-    missing = tmp_path / "nope.json"
-    with patch("drawing_coach.llm_config.config_path", return_value=missing):
-        with patch("drawing_coach.env.api_key", return_value=""):
-            with caplog.at_level("WARNING", logger="drawing_coach"):
-                LLMConfig.load()
-    assert any("No API key configured" in r.message for r in caplog.records)
+def test_style_prompt_fragment_custom():
+    cfg = LLMConfig(style_focus="gothic pokemon", style_focus_is_preset=False)
+    fragment = cfg.style_prompt_fragment()
+    assert "gothic pokemon" in fragment
+    assert "focusing on" in fragment

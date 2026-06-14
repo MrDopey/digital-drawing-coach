@@ -15,6 +15,7 @@ Two runtime modes:
 | GUI | PyQt6, pynput |
 | LLM | LiteLLM (supports OpenAI, Anthropic, Ollama, etc.) |
 | Image processing | Pillow, mss, numpy |
-| Secrets | python-dotenv (`.env` in XDG config dir) |
+| Config | `ConfigManager` (`config_manager.py`) — single load/save owner; merges `config.json`, `.env`, and env vars with explicit precedence |
+| Secrets | python-dotenv (`.env` in XDG config dir) — API key only; written by `ConfigManager.save()` |
 | Tests | pytest, pytest-qt |
 | Build | hatchling, PyInstaller |
