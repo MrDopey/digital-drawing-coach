@@ -1,0 +1,28 @@
+{
+  "version": "2.0.0",
+  "inputs": [
+    {
+      "id": "proposalFile",
+      "type": "command",
+      "command": "extension.commandvariable.file.pickFile",
+      "args": {
+        "include": ".claude/worktrees/*/openspec/changes/*/proposal.md",
+        "description": "Select worktree"
+      }
+    }
+  ],
+  "tasks": [
+    {
+      "label": "Focus worktree in Explorer",
+      "type": "shell",
+      "command": "p=\"${input:proposalFile}\"; [ -n \"$p\" ] && code \"$p\"",
+      "options": {
+        "shell": {
+          "executable": "bash",
+          "args": ["-c"]
+        }
+      },
+      "problemMatcher": []
+    }
+  ]
+}
