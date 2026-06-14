@@ -1,13 +1,18 @@
 from __future__ import annotations
 
-from PyQt6.QtCore import QSize, Qt
-from PyQt6.QtGui import QIcon, QImage, QPixmap
+import os
+import tempfile
+from pathlib import Path
+
+from PyQt6.QtCore import QSize, Qt, QUrl
+from PyQt6.QtGui import QDesktopServices, QIcon, QImage, QPixmap
 from PyQt6.QtWidgets import (
     QDialog,
     QHBoxLayout,
     QLabel,
     QListWidget,
     QListWidgetItem,
+    QMessageBox,
     QPushButton,
     QVBoxLayout,
     QWidget,
@@ -16,7 +21,7 @@ from PyQt6.QtWidgets import (
 from drawing_coach.capture_engine import CapturedFrame
 
 
-def _pil_to_pixmap(frame: CapturedFrame, max_size: int = 120) -> QPixmap:
+def _pil_to_pixmap(frame: CapturedFrame, max_size: int = 48) -> QPixmap:
     img = frame.image.copy()
     img.thumbnail((max_size, max_size))
     data = img.convert("RGB").tobytes("raw", "RGB")
@@ -43,26 +48,28 @@ class HistoryPanel(QDialog):
             layout.addWidget(label)
 
             list_widget = QListWidget()
-            list_widget.setViewMode(QListWidget.ViewMode.IconMode)
-            list_widget.setIconSize(QSize(120, 120))
-            list_widget.setResizeMode(QListWidget.ResizeMode.Adjust)
-            list_widget.setSpacing(8)
+            list_widget.setIconSize(QSize(48, 48))
 
-            for frame in frames:
-                ts = frame.timestamp.strftime("%H:%M:%S")
+            for frame in reversed(frames):
+                ts = frame.timestamp.strftime("%Y-%m-%d %H:%M:%S")
                 item = QListWidgetItem(ts)
                 item.setIcon(
                     QIcon(_pil_to_pixmap(frame).scaled(
-                        120,
-                        120,
+                        48,
+                        48,
                         Qt.AspectRatioMode.KeepAspectRatio,
                         Qt.TransformationMode.SmoothTransformation,
                     ))
                 )
-                item.setSizeHint(QSize(140, 150))
+                item.setData(Qt.ItemDataRole.UserRole, frame)
                 list_widget.addItem(item)
 
+            list_widget.itemDoubleClicked.connect(self._open_frame)
             layout.addWidget(list_widget)
+
+            hint = QLabel("Double-click a thumbnail to open it in the default viewer.")
+            hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            layout.addWidget(hint)
 
         close_btn = QPushButton("Close")
         close_btn.clicked.connect(self.accept)
@@ -70,3 +77,22 @@ class HistoryPanel(QDialog):
         row.addStretch()
         row.addWidget(close_btn)
         layout.addLayout(row)
+
+    def _open_frame(self, item: QListWidgetItem) -> None:
+        frame: CapturedFrame = item.data(Qt.ItemDataRole.UserRole)
+
+        if frame.path is not None:
+            path = frame.path
+        else:
+            fd, tmp = tempfile.mkstemp(suffix=".png")
+            os.close(fd)
+            path = Path(tmp)
+            frame.image.save(path, format="PNG")
+
+        ok = QDesktopServices.openUrl(QUrl.fromLocalFile(str(path)))
+        if not ok:
+            QMessageBox.warning(
+                self,
+                "Cannot Open Image",
+                "No default image viewer is registered for PNG files.",
+            )
