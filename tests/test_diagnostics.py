@@ -55,7 +55,7 @@ def test_has_input_monitoring_permission_true():
     mock_lib.AXIsProcessTrustedWithOptions.return_value = True
     with (
         patch("ctypes.util.find_library", return_value="/lib/ApplicationServices"),
-        patch("ctypes.cdll.LoadLibrary", return_value=mock_lib),
+        patch("ctypes.CDLL", return_value=mock_lib),
     ):
         from drawing_coach._backend_macos import has_input_monitoring_permission
 
@@ -67,7 +67,7 @@ def test_has_input_monitoring_permission_false():
     mock_lib.AXIsProcessTrustedWithOptions.return_value = False
     with (
         patch("ctypes.util.find_library", return_value="/lib/ApplicationServices"),
-        patch("ctypes.cdll.LoadLibrary", return_value=mock_lib),
+        patch("ctypes.CDLL", return_value=mock_lib),
     ):
         from drawing_coach._backend_macos import has_input_monitoring_permission
 

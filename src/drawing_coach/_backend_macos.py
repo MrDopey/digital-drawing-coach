@@ -19,7 +19,7 @@ def has_input_monitoring_permission() -> bool:
     path = ctypes.util.find_library("ApplicationServices")
     if not path:
         return False
-    lib = ctypes.cdll.LoadLibrary(path)
+    lib = ctypes.CDLL(path)
     lib.AXIsProcessTrustedWithOptions.restype = ctypes.c_bool
     lib.AXIsProcessTrustedWithOptions.argtypes = [ctypes.c_void_p]
     return bool(lib.AXIsProcessTrustedWithOptions(None))
