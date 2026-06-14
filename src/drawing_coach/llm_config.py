@@ -7,9 +7,9 @@ from pathlib import Path
 
 import keyring
 
+from drawing_coach.paths import config_path, sessions_dir
+
 _SERVICE = "drawing-coach"
-_CONFIG_PATH = Path.home() / ".drawing-coach" / "config.json"
-_SESSIONS_DIR = Path.home() / ".drawing-coach" / "sessions"
 
 
 @dataclass
@@ -69,17 +69,19 @@ class LLMConfig:
         return f"The user is currently focusing on: **{s}**."
 
     def save(self) -> None:
-        _CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        p = config_path()
+        p.parent.mkdir(parents=True, exist_ok=True)
         data = asdict(self)
-        _CONFIG_PATH.write_text(json.dumps(data, indent=2))
+        p.write_text(json.dumps(data, indent=2))
 
     @classmethod
     def load(cls) -> "LLMConfig":
-        if not _CONFIG_PATH.exists():
+        p = config_path()
+        if not p.exists():
             cfg = cls()
         else:
             try:
-                data = json.loads(_CONFIG_PATH.read_text())
+                data = json.loads(p.read_text())
                 known = {f for f in cls.__dataclass_fields__}  # type: ignore[attr-defined]
                 cfg = cls(**{k: v for k, v in data.items() if k in known})
             except Exception:

@@ -17,8 +17,8 @@ def test_is_configured_true_when_model_set():
 
 
 def test_save_and_load_round_trip(tmp_path):
-    config_path = tmp_path / "config.json"
-    with patch("drawing_coach.llm_config._CONFIG_PATH", config_path):
+    p = tmp_path / "config.json"
+    with patch("drawing_coach.llm_config.config_path", return_value=p):
         cfg = LLMConfig(
             model="gpt-4o", api_base="http://localhost", capture_interval=60
         )
@@ -31,7 +31,7 @@ def test_save_and_load_round_trip(tmp_path):
 
 def test_load_returns_defaults_when_no_file(tmp_path):
     missing = tmp_path / "nope.json"
-    with patch("drawing_coach.llm_config._CONFIG_PATH", missing):
+    with patch("drawing_coach.llm_config.config_path", return_value=missing):
         cfg = LLMConfig.load()
     assert cfg.model == ""
     assert cfg.capture_interval == 30
@@ -56,8 +56,8 @@ def test_import_portable_sets_model_and_base(tmp_path):
 
 
 def test_load_ignores_unknown_fields(tmp_path):
-    config_path = tmp_path / "config.json"
-    config_path.write_text(json.dumps({"model": "gpt-4o", "unknown_future_field": 42}))
-    with patch("drawing_coach.llm_config._CONFIG_PATH", config_path):
+    p = tmp_path / "config.json"
+    p.write_text(json.dumps({"model": "gpt-4o", "unknown_future_field": 42}))
+    with patch("drawing_coach.llm_config.config_path", return_value=p):
         cfg = LLMConfig.load()
     assert cfg.model == "gpt-4o"

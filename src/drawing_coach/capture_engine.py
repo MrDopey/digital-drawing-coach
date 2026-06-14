@@ -14,12 +14,11 @@ import mss
 import numpy as np
 from PIL import Image
 
+from drawing_coach.paths import sessions_dir
 from drawing_coach.window_manager import WindowInfo, WindowManager
 
 if TYPE_CHECKING:
     from drawing_coach.llm_config import LLMConfig
-
-_SESSIONS_DIR = Path.home() / ".drawing-coach" / "sessions"
 _SESSION_RESUME_HOURS = 24
 
 
@@ -112,13 +111,14 @@ class CaptureEngine:
     # ------------------------------------------------------------------
 
     def _init_session(self) -> None:
-        _SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
+        sd = sessions_dir()
+        sd.mkdir(parents=True, exist_ok=True)
         self._cleanup_old_sessions(
             self._config.history_retention_sessions if self._config else 10
         )
 
         # Try to resume the most recent session if < 24 hours old
-        existing = sorted(_SESSIONS_DIR.iterdir()) if _SESSIONS_DIR.exists() else []
+        existing = sorted(sd.iterdir()) if sd.exists() else []
         for candidate in reversed(existing):
             meta_path = candidate / "meta.json"
             if not meta_path.exists():
@@ -135,7 +135,7 @@ class CaptureEngine:
 
         # Start a new session
         session_id = datetime.now().strftime("%Y-%m-%d_%H%M%S")
-        self._session_dir = _SESSIONS_DIR / session_id
+        self._session_dir = sessions_dir() / session_id
         (self._session_dir / "frames").mkdir(parents=True)
         self._write_meta()
 
@@ -175,9 +175,10 @@ class CaptureEngine:
 
     @staticmethod
     def _cleanup_old_sessions(keep: int) -> None:
-        if not _SESSIONS_DIR.exists():
+        sd = sessions_dir()
+        if not sd.exists():
             return
-        sessions = sorted(_SESSIONS_DIR.iterdir())
+        sessions = sorted(sd.iterdir())
         for old in sessions[: max(0, len(sessions) - keep)]:
             try:
                 shutil.rmtree(old)

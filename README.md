@@ -9,7 +9,7 @@ An AI-powered desktop app that watches your digital drawing session and gives re
 ```mermaid
 flowchart LR
     A([Drawing App]) -->|screenshots via mss| CAP[CaptureEngine]
-    CAP -->|PNG frames| DISK[(Session Storage\n~/.drawing-coach)]
+    CAP -->|PNG frames| DISK[(Session Storage\nXDG_DATA_HOME)]
     CAP --> SD[StuckDetector]
     SD -->|inactivity event| FB[FeedbackEngine]
     USR([User]) -->|hotkey| FB
@@ -95,7 +95,20 @@ uv sync --extra gui --extra windows
 
 ## Configuration
 
-The application stores its configuration in `~/.drawing-coach/config.json`. The API key is stored separately in the system keyring.
+### File locations
+
+The app follows the [XDG Base Directory Specification](https://specifications.freedesktop.org/basedir-spec/latest/) on Linux and macOS:
+
+| File | Default path |
+|------|-------------|
+| Config | `$XDG_CONFIG_HOME/drawing-coach/config.json` → `~/.config/drawing-coach/config.json` |
+| Sessions | `$XDG_DATA_HOME/drawing-coach/sessions/` → `~/.local/share/drawing-coach/sessions/` |
+
+On **Windows** the legacy paths are used instead (`~/.drawing-coach/config.json` and `~/.drawing-coach/sessions/`).
+
+The API key is stored separately in the system keyring — never in plain text on disk.
+
+### Environment variables
 
 The following environment variables override the file config at startup. Only `DRAWING_COACH_MODEL` and `DRAWING_COACH_API_KEY` need to be set consciously; the rest have working defaults.
 
@@ -104,8 +117,10 @@ The following environment variables override the file config at startup. Only `D
 | `DRAWING_COACH_MODEL` | Yes | — | LiteLLM model identifier (e.g. `gpt-4o`, `claude-3-5-sonnet-20241022`, `ollama/llava`) |
 | `DRAWING_COACH_API_KEY` | Yes | — | API key for the chosen provider |
 | `DRAWING_COACH_API_BASE` | No | *(blank)* | Override API base URL (Ollama: `http://localhost:11434`, LiteLLM proxy, etc.) |
+| `XDG_CONFIG_HOME` | No | `~/.config` | Override config directory root (Linux/macOS) |
+| `XDG_DATA_HOME` | No | `~/.local/share` | Override data directory root (Linux/macOS) |
 
-> `DRAWING_COACH_MODEL` and `DRAWING_COACH_API_BASE` override `~/.drawing-coach/config.json` at startup. API keys are always read from the system keyring.
+> `DRAWING_COACH_MODEL` and `DRAWING_COACH_API_BASE` override the config file at startup. API keys are always read from the system keyring.
 
 In the GUI, all settings (capture interval, stuck-detection thresholds, look-back frames, session retention, style focus) are accessible via **Settings**.
 
