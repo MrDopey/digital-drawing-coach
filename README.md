@@ -53,7 +53,7 @@ The app runs as a **GUI desktop window** — PyQt6 with a live feedback panel, s
 | pyobjc | `>=9.0` | macOS only — installed via `.[macos]` extra |
 | pywin32 | `>=306` | Windows only — installed via `.[windows]` extra |
 
-> A vision-capable LLM API key is required (e.g. OpenAI `gpt-4o`, Anthropic `claude-3-5-sonnet-20241022`, or a local [Ollama][ollama] model such as `ollama/llava`). API keys are stored in the system keyring — never in plain text on disk.
+> A vision-capable LLM API key is required (e.g. OpenAI `gpt-4o`, Anthropic `claude-3-5-sonnet-20241022`, or a local [Ollama][ollama] model such as `ollama/llava`). API keys are stored in `~/.config/drawing-coach/.env` — ensure that file has restricted permissions (`chmod 600`).
 
 ---
 
@@ -106,21 +106,29 @@ The app follows the [XDG Base Directory Specification](https://specifications.fr
 
 On **Windows** the legacy paths are used instead (`~/.drawing-coach/config.json` and `~/.drawing-coach/sessions/`).
 
-The API key is stored separately in the system keyring — never in plain text on disk.
+### .env file
+
+The app loads `~/.config/drawing-coach/.env` at startup (before any settings are read). Copy `.env.example` from the repo root to get started:
+
+```bash
+cp .env.example ~/.config/drawing-coach/.env
+chmod 600 ~/.config/drawing-coach/.env
+# then edit the file and fill in your API key
+```
 
 ### Environment variables
 
-The following environment variables override the file config at startup. Only `DRAWING_COACH_MODEL` and `DRAWING_COACH_API_KEY` need to be set consciously; the rest have working defaults.
+Real shell environment variables always take precedence over the `.env` file. This makes it easy to override settings in CI/CD or Docker without modifying files.
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `DRAWING_COACH_MODEL` | Yes | — | LiteLLM model identifier (e.g. `gpt-4o`, `claude-3-5-sonnet-20241022`, `ollama/llava`) |
 | `DRAWING_COACH_API_KEY` | Yes | — | API key for the chosen provider |
+| `DRAWING_COACH_MODEL` | No | *(from settings)* | LiteLLM model identifier (e.g. `gpt-4o`, `claude-3-5-sonnet-20241022`, `ollama/llava`) |
 | `DRAWING_COACH_API_BASE` | No | *(blank)* | Override API base URL (Ollama: `http://localhost:11434`, LiteLLM proxy, etc.) |
 | `XDG_CONFIG_HOME` | No | `~/.config` | Override config directory root (Linux/macOS) |
 | `XDG_DATA_HOME` | No | `~/.local/share` | Override data directory root (Linux/macOS) |
 
-> `DRAWING_COACH_MODEL` and `DRAWING_COACH_API_BASE` override the config file at startup. API keys are always read from the system keyring.
+> **Migration from keyring**: If you previously stored your API key in the system keyring it will no longer be read. Re-enter your key once via **Settings → API Key** or add it to `~/.config/drawing-coach/.env` manually.
 
 In the GUI, all settings (capture interval, stuck-detection thresholds, look-back frames, session retention, style focus) are accessible via **Settings**.
 

@@ -15,7 +15,7 @@ Two runtime modes:
 | GUI | PyQt6, pynput |
 | LLM | LiteLLM (supports OpenAI, Anthropic, Ollama, etc.) |
 | Image processing | Pillow, mss, numpy |
-| Secrets | keyring (never plain text on disk) |
+| Secrets | python-dotenv (`.env` in XDG config dir) |
 | Tests | pytest, pytest-qt |
 | Build | hatchling, PyInstaller |
 

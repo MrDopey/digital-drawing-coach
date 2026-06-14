@@ -1,0 +1,25 @@
+"""Single location for all os.environ reads in the application."""
+
+from __future__ import annotations
+
+import os
+
+
+def xdg_config_home() -> str:
+    return os.environ.get("XDG_CONFIG_HOME", "").strip()
+
+
+def xdg_data_home() -> str:
+    return os.environ.get("XDG_DATA_HOME", "").strip()
+
+
+def api_key() -> str:
+    return os.environ.get("DRAWING_COACH_API_KEY", "")
+
+
+def model() -> str:
+    return os.environ.get("DRAWING_COACH_MODEL", "")
+
+
+def api_base() -> str:
+    return os.environ.get("DRAWING_COACH_API_BASE", "")

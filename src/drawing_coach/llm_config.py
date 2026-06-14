@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 import json
-import os
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-import keyring
+from dotenv import load_dotenv, set_key, unset_key
 
+from drawing_coach import env
 from drawing_coach.paths import config_path, sessions_dir
 
-_SERVICE = "drawing-coach"
+load_dotenv(dotenv_path=config_path().parent / ".env", override=False)
 
 
 @dataclass
@@ -33,20 +33,18 @@ class LLMConfig:
 
     @property
     def api_key(self) -> str:
-        try:
-            return keyring.get_password(_SERVICE, "api_key") or ""
-        except keyring.errors.NoKeyringError:
-            return ""
+        return env.api_key()
 
     @api_key.setter
     def api_key(self, value: str) -> None:
-        if value:
-            keyring.set_password(_SERVICE, "api_key", value)
-        else:
-            try:
-                keyring.delete_password(_SERVICE, "api_key")
-            except keyring.errors.PasswordDeleteError:
-                pass
+        dotenv_path = config_path().parent / ".env"
+        try:
+            if value:
+                set_key(str(dotenv_path), "DRAWING_COACH_API_KEY", value)
+            else:
+                unset_key(str(dotenv_path), "DRAWING_COACH_API_KEY")
+        except PermissionError as e:
+            raise PermissionError(f"Could not save API key: {e}") from e
 
     def is_configured(self) -> bool:
         return bool(self.model)
@@ -87,10 +85,10 @@ class LLMConfig:
             except Exception:
                 cfg = cls()
         # Environment variable overrides (used in headless / Docker mode)
-        if os.environ.get("DRAWING_COACH_MODEL"):
-            cfg.model = os.environ["DRAWING_COACH_MODEL"]
-        if os.environ.get("DRAWING_COACH_API_BASE"):
-            cfg.api_base = os.environ["DRAWING_COACH_API_BASE"]
+        if env.model():
+            cfg.model = env.model()
+        if env.api_base():
+            cfg.api_base = env.api_base()
         return cfg
 
     def export_portable(self, path: str | Path) -> None:

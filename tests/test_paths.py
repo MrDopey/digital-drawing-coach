@@ -8,14 +8,13 @@ from drawing_coach.paths import config_path, sessions_dir
 
 
 def test_config_path_xdg_config_home_set(tmp_path):
-    with patch.dict("os.environ", {"XDG_CONFIG_HOME": str(tmp_path)}, clear=False):
+    with patch("drawing_coach.env.xdg_config_home", return_value=str(tmp_path)):
         with patch.object(paths_mod.sys, "platform", "linux"):
             assert config_path() == tmp_path / "drawing-coach" / "config.json"
 
 
 def test_config_path_xdg_config_home_unset(tmp_path):
-    env = {"XDG_CONFIG_HOME": ""}
-    with patch.dict("os.environ", env, clear=False):
+    with patch("drawing_coach.env.xdg_config_home", return_value=""):
         with patch.object(paths_mod.sys, "platform", "linux"):
             with patch.object(paths_mod.Path, "home", return_value=tmp_path):
                 result = config_path()
@@ -23,18 +22,17 @@ def test_config_path_xdg_config_home_unset(tmp_path):
 
 
 def test_sessions_dir_xdg_data_home_set(tmp_path):
-    with patch.dict("os.environ", {"XDG_DATA_HOME": str(tmp_path)}, clear=False):
+    with patch("drawing_coach.env.xdg_data_home", return_value=str(tmp_path)):
         with patch.object(paths_mod.sys, "platform", "linux"):
             assert sessions_dir() == tmp_path / "drawing-coach" / "sessions"
 
 
 def test_sessions_dir_xdg_data_home_unset(tmp_path):
-    env = {"XDG_DATA_HOME": ""}
-    with patch.dict("os.environ", env, clear=False):
+    with patch("drawing_coach.env.xdg_data_home", return_value=""):
         with patch.object(paths_mod.sys, "platform", "linux"):
             with patch.object(paths_mod.Path, "home", return_value=tmp_path):
                 result = sessions_dir()
-    assert result == tmp_path / ".local" / "share" / "drawing-coach" / "sessions"
+    assert result == tmp_path / ".local/share" / "drawing-coach" / "sessions"
 
 
 def test_config_path_windows(tmp_path):

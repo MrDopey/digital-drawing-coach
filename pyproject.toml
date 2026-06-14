@@ -12,7 +12,7 @@ dependencies = [
     "Pillow>=10.0",
     "numpy>=1.26",
     "litellm>=1.40",
-    "keyring>=24.0",
+    "python-dotenv>=1.0",
 ]
 
 [project.optional-dependencies]

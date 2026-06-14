@@ -1,7 +1,7 @@
 # llm-config Specification
 
 ## Purpose
-TBD - created by archiving change digital-drawing-coach. Update Purpose after archive.
+Defines how the user configures the LLM provider, model, API key, and base URL. API key storage uses a `.env` file in the XDG config dir (see `env-file-secrets` spec); the platform keyring is not used.
 ## Requirements
 ### Requirement: User configures LLM provider and model
 The system SHALL provide a settings panel where the user can configure the LLM provider, model name, API key, and optional base URL. Configuration SHALL be validated before saving and persisted to a platform-appropriate config file whose location respects the XDG Base Directory Specification on Linux and macOS (see `xdg-config-paths` spec).
@@ -18,9 +18,13 @@ The system SHALL provide a settings panel where the user can configure the LLM p
 - **WHEN** the user fills in only Model Name (e.g. "ollama/llava") with no API key
 - **THEN** the system saves the configuration without requiring an API key
 
-#### Scenario: API key is stored securely
-- **WHEN** the API key is saved
-- **THEN** the system stores it using the platform's keychain or a local encrypted config file, NOT plain text
+#### Scenario: API key is saved via settings dialog
+- **WHEN** the user enters an API key and saves settings
+- **THEN** the system writes the key to `~/.config/drawing-coach/.env` as `DRAWING_COACH_API_KEY=<value>`
+
+#### Scenario: API key is cleared via settings dialog
+- **WHEN** the user clears the API key field and saves settings
+- **THEN** the system removes `DRAWING_COACH_API_KEY` from the `.env` file using `dotenv.unset_key()`
 
 ### Requirement: LLM configuration is validated before use
 The system SHALL verify the LLM configuration is valid before allowing feedback requests. If configuration is incomplete or invalid, the system SHALL direct the user to settings.
