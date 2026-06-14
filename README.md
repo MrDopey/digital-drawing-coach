@@ -165,6 +165,21 @@ DRAWING_COACH_LOG_LEVEL=DEBUG DRAWING_COACH_LOG_FILE=/tmp/drawing_coach.log uv r
 
 Add these to `~/.config/drawing-coach/.env` to make them permanent.
 
+### Frame save failures
+
+If Drawing Coach cannot write a captured frame to disk (disk full, permission denied, etc.) a warning appears in the **status bar** at the bottom of the window:
+
+> ⚠ Frame saves failing — images will be lost if the app closes.
+
+Hover over the warning to see the full error, the exact path that failed, and remediation steps. The warning text is selectable and can be copied. It clears automatically once the next frame saves successfully.
+
+To fix write failures:
+- Ensure the sessions directory is writable (see **Sessions Directory** in Diagnostics above).
+- Check available disk space.
+- On macOS: **System Settings → Privacy & Security → Files and Folders** — verify Drawing Coach has access.
+
+Write-failure events are also logged at `WARNING` level; set `DRAWING_COACH_LOG_LEVEL=WARNING` (default) or lower to capture them.
+
 ---
 
 ## Running Locally

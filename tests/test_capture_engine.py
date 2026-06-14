@@ -1,7 +1,9 @@
 """Unit tests for CaptureEngine ring buffer behaviour."""
 
-from unittest.mock import MagicMock
+import logging
+from unittest.mock import MagicMock, patch
 
+import pytest
 from PIL import Image
 
 from drawing_coach.capture_engine import CapturedFrame, CaptureEngine
@@ -71,3 +73,49 @@ def test_get_frames_returns_copy():
     b = engine.get_frames()
     assert len(a) == 1
     assert len(b) == 2
+
+
+# ---------------------------------------------------------------------------
+# Write-error surfacing
+# ---------------------------------------------------------------------------
+
+def test_write_frame_logs_warning_on_failure(tmp_path, caplog):
+    engine = _make_engine()
+    engine._session_dir = tmp_path
+    (tmp_path / "frames").mkdir()
+    img = Image.new("RGB", (10, 10))
+    with patch.object(img, "save", side_effect=OSError("disk full")):
+        with caplog.at_level(logging.WARNING, logger="drawing_coach.capture_engine"):
+            result = engine._write_frame(img)
+    assert result is None
+    assert any("Frame write failed" in r.message for r in caplog.records)
+
+
+def test_write_frame_calls_on_write_error_callback(tmp_path):
+    engine = _make_engine()
+    engine._session_dir = tmp_path
+    (tmp_path / "frames").mkdir()
+
+    received: list[tuple] = []
+    engine.on_write_error = lambda path, exc: received.append((path, exc))
+
+    img = Image.new("RGB", (10, 10))
+    err = OSError("disk full")
+    with patch.object(img, "save", side_effect=err):
+        engine._write_frame(img)
+
+    assert len(received) == 1
+    called_path, called_exc = received[0]
+    assert called_path.parent == tmp_path / "frames"
+    assert called_exc is err
+
+
+def test_write_frame_no_callback_no_error(tmp_path):
+    """on_write_error=None must not raise when a write fails."""
+    engine = _make_engine()
+    engine._session_dir = tmp_path
+    (tmp_path / "frames").mkdir()
+    img = Image.new("RGB", (10, 10))
+    with patch.object(img, "save", side_effect=OSError("disk full")):
+        result = engine._write_frame(img)
+    assert result is None

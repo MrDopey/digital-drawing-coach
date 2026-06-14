@@ -55,6 +55,7 @@ class CaptureEngine:
 
         self.on_frame_captured: Callable[[CapturedFrame], None] | None = None
         self.on_window_lost: Callable[[], None] | None = None
+        self.on_write_error: Callable[[Path, Exception], None] | None = None
 
     # ------------------------------------------------------------------
     # Public API
@@ -261,7 +262,10 @@ class CaptureEngine:
             img.save(path, format="PNG")
             _log.debug("Frame saved: %s (%dx%d)", filename, img.width, img.height)
             return path
-        except Exception:
+        except Exception as exc:
+            _log.warning("Frame write failed: %s", path, exc_info=True)
+            if self.on_write_error:
+                self.on_write_error(path, exc)
             return None
 
 

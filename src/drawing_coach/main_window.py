@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import platform
 import threading
+from pathlib import Path
 
 from PIL import Image as PilImage
 from PyQt6.QtCore import QObject, QPoint, Qt, QTimer, pyqtSignal
@@ -9,12 +10,14 @@ from PyQt6.QtGui import QAction, QCloseEvent, QColor, QIcon, QPainter, QPen, QPi
 from PyQt6.QtWidgets import (
     QApplication,
     QComboBox,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QMainWindow,
     QMenu,
     QMessageBox,
+    QPlainTextEdit,
     QPushButton,
     QSystemTrayIcon,
     QVBoxLayout,
@@ -46,11 +49,109 @@ _STYLE_PRESETS = [
 ]
 
 
+class _WriteErrorPopup(QFrame):
+    """Borderless floating popup that shows the full write-error detail."""
+
+    def __init__(self, label: "_WriteErrorLabel") -> None:
+        super().__init__(
+            None,
+            Qt.WindowType.Tool
+            | Qt.WindowType.FramelessWindowHint
+            | Qt.WindowType.WindowStaysOnTopHint,
+        )
+        self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
+        self._label = label
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(8, 6, 8, 6)
+        self._text = QPlainTextEdit()
+        self._text.setReadOnly(True)
+        self._text.setTextInteractionFlags(
+            Qt.TextInteractionFlag.TextSelectableByMouse
+            | Qt.TextInteractionFlag.TextSelectableByKeyboard
+        )
+        self._text.setFrameShape(QFrame.Shape.NoFrame)
+        self._text.setFixedWidth(480)
+        layout.addWidget(self._text)
+        self.setStyleSheet(
+            "_WriteErrorPopup { background: #fffde7; border: 1px solid #f9a825; }"
+        )
+
+    def set_body(self, text: str) -> None:
+        self._text.setPlainText(text)
+        self._text.document().adjustSize()
+        doc_h = int(self._text.document().size().height()) + 24
+        self._text.setFixedHeight(min(doc_h, 220))
+        self.adjustSize()
+
+    def enterEvent(self, event) -> None:  # type: ignore[override]
+        self._label._cancel_hide()
+        super().enterEvent(event)
+
+    def leaveEvent(self, event) -> None:  # type: ignore[override]
+        self._label._schedule_hide()
+        super().leaveEvent(event)
+
+
+class _WriteErrorLabel(QLabel):
+    """Status-bar label for write failures — selectable text, hover popup."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.setTextInteractionFlags(
+            Qt.TextInteractionFlag.TextSelectableByMouse
+            | Qt.TextInteractionFlag.TextSelectableByKeyboard
+        )
+        self.setStyleSheet("color: #d97706;")
+        self._popup = _WriteErrorPopup(self)
+        self._hide_timer = QTimer(self)
+        self._hide_timer.setSingleShot(True)
+        self._hide_timer.setInterval(150)
+        self._hide_timer.timeout.connect(self._popup.hide)
+
+    def set_error(self, path: Path, exc: Exception) -> None:
+        self.setText("⚠ Frame saves failing — images will be lost if the app closes.")
+        body = (
+            f"Frame write failed: {path}\n"
+            f"Error: {exc}\n\n"
+            f"To fix:\n"
+            f"• Ensure this directory is writable:\n"
+            f"    {path.parent}\n"
+            f"• Check available disk space.\n"
+            f"• On macOS, check System Settings → Privacy & Security → Files and Folders."
+        )
+        self._popup.set_body(body)
+
+    def clear_error(self) -> None:
+        self.clear()
+        self._popup.hide()
+
+    def _schedule_hide(self) -> None:
+        self._hide_timer.start()
+
+    def _cancel_hide(self) -> None:
+        self._hide_timer.stop()
+
+    def enterEvent(self, event) -> None:  # type: ignore[override]
+        self._cancel_hide()
+        if self.text():
+            pos = self.mapToGlobal(QPoint(0, 0))
+            popup_h = self._popup.sizeHint().height()
+            self._popup.move(pos.x(), pos.y() - popup_h - 4)
+            self._popup.show()
+        super().enterEvent(event)
+
+    def leaveEvent(self, event) -> None:  # type: ignore[override]
+        self._schedule_hide()
+        super().leaveEvent(event)
+
+
 class _Signals(QObject):
     feedback_ready = pyqtSignal(object, object)  # FeedbackResponse, overlay_image|None
     feedback_error = pyqtSignal(str)
     window_lost = pyqtSignal()
     frame_captured = pyqtSignal()
+    write_error = pyqtSignal(str, str)  # path_str, exc_str
+    write_error_clear = pyqtSignal()
 
 
 class MainWindow(QMainWindow):
@@ -86,6 +187,8 @@ class MainWindow(QMainWindow):
         self._signals.feedback_error.connect(self._feedback_panel.show_error)
         self._signals.window_lost.connect(self._on_window_lost)
         self._signals.frame_captured.connect(self._update_status)
+        self._signals.write_error.connect(self._on_write_error_main)
+        self._signals.write_error_clear.connect(self._write_error_label.clear_error)
 
         if not self._config.is_configured():
             QTimer.singleShot(200, self._run_onboarding)
@@ -162,6 +265,10 @@ class MainWindow(QMainWindow):
         btn_row.addWidget(settings_btn)
 
         layout.addLayout(btn_row)
+
+        self._write_error_label = _WriteErrorLabel()
+        self.statusBar().addPermanentWidget(self._write_error_label, 1)
+        self.statusBar().setSizeGripEnabled(False)
 
     def _build_tray(self) -> None:
         self._tray = QSystemTrayIcon(self)
@@ -264,12 +371,22 @@ class MainWindow(QMainWindow):
     def _setup_callbacks(self) -> None:
         self._capture.on_frame_captured = self._on_frame_captured
         self._capture.on_window_lost = lambda: self._signals.window_lost.emit()
+        self._capture.on_write_error = self._on_write_error
         self._detector.on_stuck = self._trigger_feedback
         self._hotkeys.on_trigger = lambda: self._detector.manual_trigger()
 
     def _on_frame_captured(self, frame: CapturedFrame) -> None:
+        if frame.path is not None:
+            self._signals.write_error_clear.emit()
         self._detector.feed(frame)
         self._signals.frame_captured.emit()
+
+    def _on_write_error(self, path: Path, exc: Exception) -> None:
+        # Called from capture thread — marshal to main thread via signal.
+        self._signals.write_error.emit(str(path), str(exc))
+
+    def _on_write_error_main(self, path_str: str, exc_str: str) -> None:
+        self._write_error_label.set_error(Path(path_str), Exception(exc_str))
 
     def _on_feedback_ready(
         self, response: FeedbackResponse, overlay_image: PilImage.Image | None
