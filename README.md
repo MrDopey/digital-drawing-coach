@@ -153,6 +153,16 @@ Open **Settings → Diagnostics…** to run a built-in health check. It verifies
 
 Click **Re-run** after making changes (e.g. granting a permission in System Settings) to recheck without restarting the app. Click **Copy Report** to copy all results as plain text — useful for pasting into a support channel or issue report. Error messages can also be selected and copied individually by clicking and dragging over the text.
 
+### Getting more log output
+
+Set `DRAWING_COACH_LOG_LEVEL` to one of `DEBUG`, `INFO`, `WARNING` (default), `ERROR`, or `CRITICAL`. Optionally set `DRAWING_COACH_LOG_FILE` to a file path to capture logs there in addition to stderr.
+
+```bash
+DRAWING_COACH_LOG_LEVEL=DEBUG DRAWING_COACH_LOG_FILE=/tmp/drawing_coach.log uv run drawing-coach
+```
+
+Add these to `~/.config/drawing-coach/.env` to make them permanent.
+
 ---
 
 ## Running Locally
