@@ -72,6 +72,23 @@ def check_screen_capture() -> CheckResult:
             )
 
 
+def check_accessibility() -> CheckResult:
+    name = "Accessibility"
+    try:
+        from drawing_coach._backend_macos import has_accessibility_permission
+
+        if has_accessibility_permission():
+            return CheckResult(name, True, "Accessibility permission granted")
+        return CheckResult(
+            name,
+            False,
+            "Accessibility permission denied",
+            "Open System Settings → Privacy & Security → Accessibility and enable Drawing Coach",
+        )
+    except Exception as exc:
+        return CheckResult(name, False, f"Could not check: {exc}")
+
+
 def check_input_monitoring() -> CheckResult:
     name = "Input Monitoring"
     try:
@@ -208,6 +225,7 @@ def build_checks(config: LLMConfig) -> list[tuple[str, Callable[[], CheckResult]
         ("Screen Capture", check_screen_capture),
     ]
     if sys.platform == "darwin":
+        checks.append(("Accessibility", check_accessibility))
         checks.append(("Input Monitoring", check_input_monitoring))
     elif sys.platform == "linux":
         checks.append(("xdotool", check_xdotool))

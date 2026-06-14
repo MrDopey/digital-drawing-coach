@@ -12,6 +12,7 @@ from PyQt6.QtWidgets import QApplication
 from drawing_coach.diagnostics import (
     CheckResult,
     DiagnosticsDialog,
+    check_accessibility,
     check_config_path,
     check_input_monitoring,
     check_llm,
@@ -50,12 +51,36 @@ def test_has_screen_recording_permission_false():
         assert has_screen_recording_permission() is False
 
 
-def test_has_input_monitoring_permission_true():
+def test_has_accessibility_permission_true():
     mock_lib = MagicMock()
     mock_lib.AXIsProcessTrustedWithOptions.return_value = True
     with (
         patch("ctypes.util.find_library", return_value="/lib/ApplicationServices"),
-        patch("ctypes.cdll.LoadLibrary", return_value=mock_lib),
+        patch("ctypes.CDLL", return_value=mock_lib),
+    ):
+        from drawing_coach._backend_macos import has_accessibility_permission
+
+        assert has_accessibility_permission() is True
+
+
+def test_has_accessibility_permission_false():
+    mock_lib = MagicMock()
+    mock_lib.AXIsProcessTrustedWithOptions.return_value = False
+    with (
+        patch("ctypes.util.find_library", return_value="/lib/ApplicationServices"),
+        patch("ctypes.CDLL", return_value=mock_lib),
+    ):
+        from drawing_coach._backend_macos import has_accessibility_permission
+
+        assert has_accessibility_permission() is False
+
+
+def test_has_input_monitoring_permission_true():
+    mock_lib = MagicMock()
+    mock_lib.IOHIDCheckAccess.return_value = 0  # kIOHIDAccessTypeGranted
+    with (
+        patch("ctypes.util.find_library", return_value="/lib/IOKit"),
+        patch("ctypes.CDLL", return_value=mock_lib),
     ):
         from drawing_coach._backend_macos import has_input_monitoring_permission
 
@@ -64,10 +89,10 @@ def test_has_input_monitoring_permission_true():
 
 def test_has_input_monitoring_permission_false():
     mock_lib = MagicMock()
-    mock_lib.AXIsProcessTrustedWithOptions.return_value = False
+    mock_lib.IOHIDCheckAccess.return_value = 1  # kIOHIDAccessTypeDenied
     with (
-        patch("ctypes.util.find_library", return_value="/lib/ApplicationServices"),
-        patch("ctypes.cdll.LoadLibrary", return_value=mock_lib),
+        patch("ctypes.util.find_library", return_value="/lib/IOKit"),
+        patch("ctypes.CDLL", return_value=mock_lib),
     ):
         from drawing_coach._backend_macos import has_input_monitoring_permission
 
@@ -132,6 +157,32 @@ def test_check_screen_capture_macos_denied(monkeypatch):
     assert not result.passed
     assert "denied" in result.message
     assert result.hint
+
+
+# ---------------------------------------------------------------------------
+# check_accessibility
+# ---------------------------------------------------------------------------
+
+
+def test_check_accessibility_granted():
+    with patch("drawing_coach.diagnostics.sys.platform", "darwin"), patch(
+        "drawing_coach._backend_macos.has_accessibility_permission",
+        return_value=True,
+    ):
+        result = check_accessibility()
+    assert result.passed
+    assert "granted" in result.message
+
+
+def test_check_accessibility_denied():
+    with patch("drawing_coach.diagnostics.sys.platform", "darwin"), patch(
+        "drawing_coach._backend_macos.has_accessibility_permission",
+        return_value=False,
+    ):
+        result = check_accessibility()
+    assert not result.passed
+    assert result.hint
+    assert "Accessibility" in result.hint
 
 
 # ---------------------------------------------------------------------------

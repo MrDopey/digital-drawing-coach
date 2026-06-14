@@ -12,7 +12,7 @@ def has_screen_recording_permission() -> bool:
     return bool(win_list)
 
 
-def has_input_monitoring_permission() -> bool:
+def has_accessibility_permission() -> bool:
     import ctypes
     import ctypes.util
 
@@ -23,6 +23,25 @@ def has_input_monitoring_permission() -> bool:
     lib.AXIsProcessTrustedWithOptions.restype = ctypes.c_bool
     lib.AXIsProcessTrustedWithOptions.argtypes = [ctypes.c_void_p]
     return bool(lib.AXIsProcessTrustedWithOptions(None))
+
+
+def has_input_monitoring_permission() -> bool:
+    import ctypes
+    import ctypes.util
+
+    try:
+        path = ctypes.util.find_library("IOKit")
+        if not path:
+            return False
+        lib = ctypes.CDLL(path)
+        lib.IOHIDCheckAccess.restype = ctypes.c_uint32
+        lib.IOHIDCheckAccess.argtypes = [ctypes.c_uint32]
+        kIOHIDRequestTypeListenEvent = 1
+        kIOHIDAccessTypeGranted = 0
+        result = lib.IOHIDCheckAccess(kIOHIDRequestTypeListenEvent)
+        return int(result) == kIOHIDAccessTypeGranted
+    except Exception:
+        return False
 
 
 class MacOSBackend:
