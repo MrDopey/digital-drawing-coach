@@ -1,7 +1,7 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
 // https://github.com/microsoft/vscode-dev-containers/tree/v0.154.0/containers/python-3
 {
-	"name": "openspec-playground",
+	"name": "digital-drawing-coach.git",
 	"build": {
 		"dockerfile": "./Dockerfile"
 	},
@@ -16,6 +16,7 @@
 		 }
 	},
 
+	"mounts": ["source=${localEnv:CLAUDE_HOME}/,target=/home/lovely/.claude,type=bind"],
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	// "forwardPorts": [],
 
