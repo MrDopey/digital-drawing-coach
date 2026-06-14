@@ -226,3 +226,4 @@ __marimo__/
 
 .claude/commands/opsx/
 .claude/skills/openspec-*
+.claude/worktrees/
