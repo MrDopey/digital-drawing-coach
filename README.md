@@ -151,7 +151,7 @@ Open **Settings → Diagnostics…** to run a built-in health check. It verifies
 | Sessions Directory | Session data directory exists (or can be created) and is writable |
 | Pillow PNG | Pillow can encode PNG images — without this, captured frames are silently dropped |
 
-Click **Re-run** after making changes (e.g. granting a permission in System Settings) to recheck without restarting the app.
+Click **Re-run** after making changes (e.g. granting a permission in System Settings) to recheck without restarting the app. Click **Copy Report** to copy all results as plain text — useful for pasting into a support channel or issue report. Error messages can also be selected and copied individually by clicking and dragging over the text.
 
 ---
 

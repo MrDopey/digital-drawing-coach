@@ -4,7 +4,7 @@
 TBD - created by archiving change setup-diagnostics-button. Update Purpose after archive.
 ## Requirements
 ### Requirement: Diagnostics dialog accessible from Settings
-The system SHALL provide a "Diagnostics…" button in the Settings dialog that opens a DiagnosticsDialog showing the status of all system health checks.
+The system SHALL provide a "Diagnostics…" button in the Settings dialog that opens a DiagnosticsDialog showing the status of all system health checks. The dialog SHALL display check results with selectable text and a "Copy Report" button.
 
 #### Scenario: User opens diagnostics from Settings
 - **WHEN** the user opens the Settings dialog and clicks the "Diagnostics…" button

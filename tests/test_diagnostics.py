@@ -367,3 +367,60 @@ def test_dialog_llm_fail_row(qtbot):
     msg = dlg._msg_labels["LLM Connection"].text()
     assert "AuthenticationError" in msg
     assert "Check your API key" in msg
+
+
+# ---------------------------------------------------------------------------
+# DiagnosticsDialog — selectable text, Copy Report button (editable-diagnostics-dialog)
+# ---------------------------------------------------------------------------
+
+
+def test_msg_labels_are_text_selectable(qtbot):
+    from PyQt6.QtCore import Qt
+
+    cfg = LLMConfig(model="gpt-4o")
+    with patch("drawing_coach.diagnostics.build_checks", side_effect=_noop_checks):
+        dlg = DiagnosticsDialog(config=cfg)
+        qtbot.addWidget(dlg)
+        qtbot.waitSignal(dlg._coordinator.all_done, timeout=5000)
+        qtbot.wait(200)
+
+    for name, lbl in dlg._msg_labels.items():
+        flags = lbl.textInteractionFlags()
+        assert flags & Qt.TextInteractionFlag.TextSelectableByMouse, (
+            f"{name} msg_lbl missing TextSelectableByMouse"
+        )
+        assert flags & Qt.TextInteractionFlag.TextSelectableByKeyboard, (
+            f"{name} msg_lbl missing TextSelectableByKeyboard"
+        )
+
+
+def test_copy_report_btn_enabled_after_all_done(qtbot):
+    cfg = LLMConfig(model="gpt-4o")
+    with patch("drawing_coach.diagnostics.build_checks", side_effect=_noop_checks):
+        dlg = DiagnosticsDialog(config=cfg)
+        qtbot.addWidget(dlg)
+        assert not dlg._copy_report_btn.isEnabled()
+        qtbot.waitSignal(dlg._coordinator.all_done, timeout=5000)
+        qtbot.wait(200)
+
+    assert dlg._copy_report_btn.isEnabled()
+
+
+def test_copy_report_text(qtbot):
+    cfg = LLMConfig(model="gpt-4o")
+    with patch("drawing_coach.diagnostics.build_checks", side_effect=_llm_fail_checks):
+        dlg = DiagnosticsDialog(config=cfg)
+        qtbot.addWidget(dlg)
+        qtbot.waitSignal(dlg._coordinator.all_done, timeout=5000)
+        qtbot.wait(200)
+
+    mock_clipboard = MagicMock()
+    with patch("drawing_coach.diagnostics.QApplication") as mock_app:
+        mock_app.clipboard.return_value = mock_clipboard
+        dlg._copy_report()
+
+    copied = mock_clipboard.setText.call_args[0][0]
+    assert "[✓] Screen Capture" in copied
+    assert "[✗] LLM Connection" in copied
+    assert "AuthenticationError" in copied
+    assert "Hint: Check your API key" in copied
