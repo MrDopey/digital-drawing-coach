@@ -22,3 +22,7 @@ Two runtime modes:
 ## OpenSpec Workflow
 
 This repo uses **OpenSpec** — a spec-driven change management system. Changes follow a structured lifecycle: explore → propose → implement → archive.
+
+Use the project-specific skills for this repo:
+- `/dc-propose` — propose a change with full worktree isolation (prevents orphaned `.openspec.yaml` files, names the worktree after the change)
+- `/dc-ship` — implement, archive, sync specs, and merge the worktree into main
