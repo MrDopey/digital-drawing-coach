@@ -1,5 +1,5 @@
 ---
-name: dc-propose
+name: op-custom-propose
 description: Propose a new Drawing Coach change with worktree isolation. Use instead of /opsx:propose for this repo.
 license: MIT
 ---
@@ -10,4 +10,4 @@ license: MIT
    the worktree branch after the change instead of a random slug.
 3. `openspec new change "<name>"` (now inside the worktree).
 4. Invoke `opsx:propose` with the change name to generate all artifacts.
-5. Tell the user: worktree path, change name, and to run `/dc-ship` when ready.
+5. Tell the user: worktree path, change name, and to run `/op-custom-ship` when ready.

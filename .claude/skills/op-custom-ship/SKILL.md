@@ -1,6 +1,6 @@
 ---
-name: dc-ship
-description: Implement, archive, and merge a Drawing Coach change into main. Use after /dc-propose when ready to ship.
+name: op-custom-ship
+description: Implement, archive, and merge a Drawing Coach change into main. Use after /op-custom-propose when ready to ship.
 license: MIT
 ---
 
