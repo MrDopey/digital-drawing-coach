@@ -19,7 +19,14 @@ _log = logging.getLogger("drawing_coach.feedback_engine")
 _SYSTEM_PROMPT = """You are an expert digital art coach with deep knowledge of \
 perspective, anatomy, color theory, composition, and digital painting technique. \
 You give clear, specific, actionable feedback tailored to what you observe in the \
-user's drawing. Be encouraging but honest."""
+user's drawing. Be encouraging but honest.
+
+You will be provided with one or more images captured during a drawing session. \
+When multiple images are provided, they are ordered chronologically — the first image \
+is the earliest capture and the last is the most recent. Image filenames contain \
+timestamps so you can infer the time elapsed between captures. Use this progression \
+to comment on how the work has evolved: note what has improved, what has stalled, \
+and what the artist should focus on next."""
 
 _MODE_TEMPLATES = {
     "quick_hint": (
@@ -178,6 +185,8 @@ class FeedbackEngine:
             {"type": "text", "text": "Please review my drawing:"}
         ]
         for frame in selected:
+            filename = frame.path.name if frame.path else frame.timestamp.strftime("%Y%m%d_%H%M%S.png")
+            content.append({"type": "text", "text": f"[{filename}]"})
             b64 = _image_to_b64(frame.image)
             content.append(
                 {
