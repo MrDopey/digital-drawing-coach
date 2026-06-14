@@ -137,6 +137,24 @@ In the GUI, all settings (capture interval, stuck-detection thresholds, look-bac
 
 ---
 
+## Troubleshooting
+
+Open **Settings → Diagnostics…** to run a built-in health check. It verifies every system requirement in parallel and shows a ✓ / ✗ result with a remediation hint for each:
+
+| Check | What it verifies |
+|-------|-----------------|
+| Screen Capture | macOS: Screen Recording permission granted; Linux/Windows: `mss` can grab the display |
+| Input Monitoring *(macOS only)* | Accessibility permission for global hotkeys — without it the hotkey silently does nothing |
+| xdotool *(Linux only)* | `xdotool` is in PATH — without it the window picker shows no windows |
+| LLM Connection | Model name is set and a test completion call succeeds |
+| Config Access | Config directory is writable and `config.json` (if present) contains valid JSON |
+| Sessions Directory | Session data directory exists (or can be created) and is writable |
+| Pillow PNG | Pillow can encode PNG images — without this, captured frames are silently dropped |
+
+Click **Re-run** after making changes (e.g. granting a permission in System Settings) to recheck without restarting the app.
+
+---
+
 ## Running Locally
 
 ```bash
