@@ -16,6 +16,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from drawing_coach.diagnostics import DiagnosticsDialog
 from drawing_coach.hotkey_manager import HotkeyManager
 from drawing_coach.llm_config import LLMConfig
 
@@ -46,6 +47,9 @@ class SettingsDialog(QDialog):
         layout.addWidget(tabs)
 
         btn_row = QHBoxLayout()
+        diag_btn = QPushButton("Diagnostics…")
+        diag_btn.clicked.connect(self._open_diagnostics)
+        btn_row.addWidget(diag_btn)
         btn_row.addStretch()
         cancel_btn = QPushButton("Cancel")
         cancel_btn.clicked.connect(self.reject)
@@ -201,6 +205,10 @@ class SettingsDialog(QDialog):
             )
         else:
             self._conflict_label.setText("")
+
+    def _open_diagnostics(self) -> None:
+        dlg = DiagnosticsDialog(config=self._config, parent=self.parent())
+        dlg.show()
 
     def _test_connection(self) -> None:
         import litellm

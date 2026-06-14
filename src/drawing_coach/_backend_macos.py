@@ -3,6 +3,28 @@ from __future__ import annotations
 from drawing_coach.window_manager import WindowInfo
 
 
+def has_screen_recording_permission() -> bool:
+    import Quartz  # type: ignore[import-not-found]
+
+    win_list = Quartz.CGWindowListCopyWindowInfo(
+        Quartz.kCGWindowListOptionAll, Quartz.kCGNullWindowID
+    )
+    return bool(win_list)
+
+
+def has_input_monitoring_permission() -> bool:
+    import ctypes
+    import ctypes.util
+
+    path = ctypes.util.find_library("ApplicationServices")
+    if not path:
+        return False
+    lib = ctypes.cdll.LoadLibrary(path)
+    lib.AXIsProcessTrustedWithOptions.restype = ctypes.c_bool
+    lib.AXIsProcessTrustedWithOptions.argtypes = [ctypes.c_void_p]
+    return bool(lib.AXIsProcessTrustedWithOptions(None))
+
+
 class MacOSBackend:
     def list_windows(self) -> list[WindowInfo]:
         import Quartz  # type: ignore[import-not-found]
