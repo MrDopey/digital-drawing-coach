@@ -30,3 +30,15 @@ def model() -> str:
 
 def api_base() -> str:
     return os.environ.get("DRAWING_COACH_API_BASE", "")
+
+
+def log_level() -> str:
+    return os.environ.get("DRAWING_COACH_LOG_LEVEL", "").strip()
+
+
+def log_file() -> str:
+    return os.environ.get("DRAWING_COACH_LOG_FILE", "").strip()
+
+
+def log_max_bytes() -> str:
+    return os.environ.get("DRAWING_COACH_LOG_MAX_BYTES", "").strip()

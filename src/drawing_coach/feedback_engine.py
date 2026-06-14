@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import io
+import logging
 import time
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -12,6 +13,8 @@ from PIL import Image
 
 from drawing_coach.capture_engine import CapturedFrame
 from drawing_coach.llm_config import LLMConfig
+
+_log = logging.getLogger("drawing_coach.feedback_engine")
 
 _SYSTEM_PROMPT = """You are an expert digital art coach with deep knowledge of \
 perspective, anatomy, color theory, composition, and digital painting technique. \
@@ -81,6 +84,7 @@ class FeedbackEngine:
         elapsed = time.monotonic() - self._last_call
         if elapsed < _RATE_LIMIT_SECONDS:
             remaining = int(_RATE_LIMIT_SECONDS - elapsed)
+            _log.warning("Rate limit: %ds remaining before next request", remaining)
             return f"Please wait {remaining}s before requesting feedback again"
 
         system = self._build_system_prompt(mode)
@@ -92,17 +96,28 @@ class FeedbackEngine:
         if self._config.api_base:
             kwargs["api_base"] = self._config.api_base
 
+        _log.info(
+            "LLM request: model=%s mode=%s frames=%d",
+            self._config.model,
+            mode,
+            len(frames),
+        )
         try:
-            self._last_call = time.monotonic()
+            t0 = time.monotonic()
+            self._last_call = t0
             response = litellm.completion(**kwargs)
+            elapsed_ms = int((time.monotonic() - t0) * 1000)
             text = response.choices[0].message.content or ""
 
             # Policy / copyright refusal detection
             if any(phrase in text.lower() for phrase in _POLICY_PHRASES):
+                _log.warning("LLM policy refusal detected")
                 return (
                     "The LLM flagged a content policy issue with this image — "
                     "try a different feedback mode or drawing"
                 )
+
+            _log.info("LLM response received in %dms", elapsed_ms)
 
             annotation_json: str | None = None
             if mode == "overlay":
@@ -118,12 +133,16 @@ class FeedbackEngine:
             return result
 
         except litellm.exceptions.AuthenticationError:
+            _log.error("LLM call failed: authentication error")
             return "API key invalid or missing — check your LLM settings"
         except litellm.exceptions.RateLimitError:
+            _log.error("LLM call failed: rate limit exceeded")
             return "Rate limit reached — wait a moment and try again"
         except litellm.exceptions.NotFoundError:
+            _log.error("LLM call failed: model not found (%s)", self._config.model)
             return "Model not found — check the model name in your LLM settings"
         except Exception as exc:
+            _log.error("LLM call failed: %s", exc)
             msg = str(exc).lower()
             if "quota" in msg or "budget" in msg or "insufficient" in msg:
                 return (
