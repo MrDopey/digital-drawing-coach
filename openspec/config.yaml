@@ -20,6 +20,10 @@ schema: spec-driven
 #       - Break tasks into chunks of max 2 hours
 
 rules:
+  proposal:
+    - For any change that adds or modifies a dialog or panel, explicitly state resize behaviour: which widgets expand, minimum sizes, and whether a scroll area is needed
   tasks:
-    - Always include a final task group "Documentation" with tasks to update README.md and .claude/CLAUDE.md to reflect any changes made (new features, changed tech stack, updated commands, removed modes, etc.)
+    - Always include a final task group "Documentation" with a task to update README.md from a developer's perspective
+    - Always include in the "Documentation" task group a task to update .claude/CLAUDE.md based on any plausible memory.md changes implied by the spec
+    - Always include in the "Documentation" task group a task to review openspec/config.yaml and propose changes only if the spec reveals a clear, recurring gap in the current rules — apply a high threshold since this config governs all future specs
     - Always include a final verification task to run `uv run pytest` and confirm all tests pass

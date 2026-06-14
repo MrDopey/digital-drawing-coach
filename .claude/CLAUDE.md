@@ -7,6 +7,15 @@
 Two runtime modes:
 - **GUI mode** — PyQt6 desktop window with feedback panel, session history, and system tray icon
 
+## UI Conventions (PyQt6)
+
+Dialogs must be resizable: content reflows correctly when the user drags the window edge.
+
+- Expanding widgets need a stretch factor: `layout.addWidget(w, 1)` — without it they don't grow when the dialog is resized
+- Word-wrapped `QLabel`s in grid layouts need `setMinimumWidth(1)` — without it they lock the minimum layout width
+- Scrollable content: `QScrollArea(setWidgetResizable=True, frameShape=NoFrame)`; no hardcoded dialog heights
+- Child dialogs opened from a modal parent must use `exec()` not `show()` — `show()` inside an `exec()` loop cannot receive focus
+
 ## Tech Stack
 
 | Layer | Technology |
