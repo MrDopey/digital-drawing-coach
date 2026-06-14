@@ -49,6 +49,7 @@ The app runs as a **GUI desktop window** — PyQt6 with a live feedback panel, s
 |------|---------|-------|
 | Python | `>=3.13` | |
 | uv | latest stable | [Install uv][uv-install] |
+| macOS | `>=10.15 (Catalina)` | macOS only — required for Input Monitoring permission API (`IOHIDCheckAccess`) |
 | xdotool | any | Linux only — `apt install xdotool` |
 | pyobjc | `>=9.0` | macOS only — installed via `.[macos]` extra |
 | pywin32 | `>=306` | Windows only — installed via `.[windows]` extra |
@@ -71,7 +72,7 @@ Download the latest release for your platform from the [GitHub Releases][release
 
 Unzip and run the `drawing-coach` executable inside.
 
-> **macOS**: On first launch, right-click → Open to bypass Gatekeeper. Then grant **Screen Recording** permission in **System Settings → Privacy & Security → Screen Recording**, and **Accessibility** permission if the global hotkey is needed.
+> **macOS**: On first launch, right-click → Open to bypass Gatekeeper. Then grant **Screen Recording** permission in **System Settings → Privacy & Security → Screen Recording**, **Accessibility** permission for window listing, and **Input Monitoring** permission if the global hotkey is needed.
 
 > **Linux**: Install `xdotool` (`apt install xdotool`) for window detection.
 
@@ -144,7 +145,8 @@ Open **Settings → Diagnostics…** to run a built-in health check. It verifies
 | Check | What it verifies |
 |-------|-----------------|
 | Screen Capture | macOS: Screen Recording permission granted; Linux/Windows: `mss` can grab the display |
-| Input Monitoring *(macOS only)* | Accessibility permission for global hotkeys — without it the hotkey silently does nothing |
+| Accessibility *(macOS only)* | Accessibility permission for window listing and UI automation |
+| Input Monitoring *(macOS only)* | Input Monitoring permission for global hotkeys — without it the hotkey silently does nothing |
 | xdotool *(Linux only)* | `xdotool` is in PATH — without it the window picker shows no windows |
 | LLM Connection | Model name is set and a test completion call succeeds |
 | Config Access | Config directory is writable and `config.json` (if present) contains valid JSON |

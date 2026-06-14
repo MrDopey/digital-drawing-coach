@@ -3,6 +3,19 @@
 ## Purpose
 TBD - created by archiving change drawing-coach-distribution. Update Purpose after archive.
 ## Requirements
+### Requirement: Minimum platform OS versions
+The system SHALL require macOS 10.15 (Catalina) or later on Apple platforms. The macOS binary SHALL NOT be expected to run on earlier macOS versions. This floor exists because the Input Monitoring permission check uses `IOHIDCheckAccess`, which was introduced in macOS 10.15.
+
+#### Scenario: macOS binary runs on Catalina or later
+- **WHEN** the macOS binary is launched on macOS 10.15 or later
+- **THEN** the app starts and all permission checks function correctly
+
+#### Scenario: macOS binary on pre-Catalina is unsupported
+- **WHEN** the macOS binary is launched on macOS 10.14 or earlier
+- **THEN** behaviour is undefined and the version is not supported
+
+---
+
 ### Requirement: Native binaries are built on every release tag
 The system SHALL build platform-native binaries for Windows (`.exe` bundle), macOS (`.app` bundle), and Linux (binary directory) using PyInstaller when a `v*` tag is pushed to the repository. Each platform SHALL be built on its own native CI runner. Builds for all three platforms SHALL complete before a GitHub Release is created.
 
