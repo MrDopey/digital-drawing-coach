@@ -4,8 +4,8 @@ import platform
 import threading
 
 from PIL import Image as PilImage
-from PyQt6.QtCore import QObject, Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import QAction, QCloseEvent
+from PyQt6.QtCore import QObject, QPoint, Qt, QTimer, pyqtSignal
+from PyQt6.QtGui import QAction, QCloseEvent, QColor, QIcon, QPainter, QPen, QPixmap, QPolygon
 from PyQt6.QtWidgets import (
     QApplication,
     QComboBox,
@@ -163,6 +163,7 @@ class MainWindow(QMainWindow):
 
     def _build_tray(self) -> None:
         self._tray = QSystemTrayIcon(self)
+        self._tray.setIcon(self._make_tray_icon())
         self._tray.setToolTip("Drawing Coach")
         menu = QMenu()
         menu.addAction("Get Feedback", self._trigger_feedback)
@@ -176,6 +177,45 @@ class MainWindow(QMainWindow):
         menu.addAction("Quit", QApplication.quit)
         self._tray.setContextMenu(menu)
         self._tray.show()
+
+    @staticmethod
+    def _make_tray_icon() -> QIcon:
+        px = QPixmap(22, 22)
+        px.fill(QColor(0, 0, 0, 0))
+        p = QPainter(px)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        # Pencil pointing bottom-right (like writing), drawn vertically then rotated 45°
+        p.translate(11, 11)
+        p.rotate(45)
+
+        # Eraser (pink)
+        p.setBrush(QColor("#FF9999"))
+        p.setPen(QPen(QColor("#CC6666"), 0.5))
+        p.drawRect(-3, -10, 6, 3)
+
+        # Ferrule (silver band)
+        p.setBrush(QColor("#C8C8C8"))
+        p.setPen(Qt.PenStyle.NoPen)
+        p.drawRect(-3, -7, 6, 2)
+
+        # Body (yellow)
+        p.setBrush(QColor("#FFD700"))
+        p.setPen(QPen(QColor("#B8860B"), 0.5))
+        p.drawRect(-3, -5, 6, 10)
+
+        # Wood taper
+        p.setBrush(QColor("#DEB887"))
+        p.setPen(QPen(QColor("#A0522D"), 0.5))
+        p.drawPolygon(QPolygon([QPoint(-3, 5), QPoint(3, 5), QPoint(2, 8), QPoint(-2, 8)]))
+
+        # Graphite tip
+        p.setBrush(QColor("#444444"))
+        p.setPen(Qt.PenStyle.NoPen)
+        p.drawPolygon(QPolygon([QPoint(-2, 8), QPoint(2, 8), QPoint(0, 10)]))
+
+        p.end()
+        return QIcon(px)
 
     # ------------------------------------------------------------------
     # Style / focus handlers
