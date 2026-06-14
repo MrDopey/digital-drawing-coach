@@ -1,21 +1,13 @@
 from __future__ import annotations
 
-import json
-from dataclasses import asdict, dataclass
-from pathlib import Path
-
-from dotenv import load_dotenv, set_key, unset_key
-
-from drawing_coach import env
-from drawing_coach.paths import config_path, sessions_dir
-
-load_dotenv(dotenv_path=config_path().parent / ".env", override=False)
+from dataclasses import dataclass
 
 
 @dataclass
 class LLMConfig:
     model: str = ""
     api_base: str = ""
+    api_key: str = ""
     custom_instructions: str = ""
     capture_interval: int = 30
     hotkey: str = "<ctrl>+<shift>+f"
@@ -31,31 +23,13 @@ class LLMConfig:
     style_focus: str = ""
     style_focus_is_preset: bool = True
 
-    @property
-    def api_key(self) -> str:
-        return env.api_key()
-
-    @api_key.setter
-    def api_key(self, value: str) -> None:
-        dotenv_path = config_path().parent / ".env"
-        try:
-            if value:
-                set_key(str(dotenv_path), "DRAWING_COACH_API_KEY", value)
-            else:
-                unset_key(str(dotenv_path), "DRAWING_COACH_API_KEY")
-            env.set_api_key(value)
-        except PermissionError as e:
-            raise PermissionError(f"Could not save API key: {e}") from e
-
     def is_configured(self) -> bool:
         return bool(self.model)
 
     def effective_style_label(self) -> str:
-        """Returns the display label to show in 'Coaching for: X'."""
         return self.style_focus.strip() or "General"
 
     def style_prompt_fragment(self) -> str:
-        """Returns the system-prompt injection string, or empty string if none set."""
         s = self.style_focus.strip()
         if not s:
             return ""
@@ -66,38 +40,3 @@ class LLMConfig:
                 " specific to that style."
             )
         return f"The user is currently focusing on: **{s}**."
-
-    def save(self) -> None:
-        p = config_path()
-        p.parent.mkdir(parents=True, exist_ok=True)
-        data = asdict(self)
-        p.write_text(json.dumps(data, indent=2))
-
-    @classmethod
-    def load(cls) -> "LLMConfig":
-        p = config_path()
-        if not p.exists():
-            cfg = cls()
-        else:
-            try:
-                data = json.loads(p.read_text())
-                known = {f for f in cls.__dataclass_fields__}  # type: ignore[attr-defined]
-                cfg = cls(**{k: v for k, v in data.items() if k in known})
-            except Exception:
-                cfg = cls()
-        # Environment variable overrides (used in headless / Docker mode)
-        if env.model():
-            cfg.model = env.model()
-        if env.api_base():
-            cfg.api_base = env.api_base()
-        return cfg
-
-    def export_portable(self, path: str | Path) -> None:
-        data = asdict(self)
-        Path(path).write_text(json.dumps(data, indent=2))
-
-    @classmethod
-    def import_portable(cls, path: str | Path) -> "LLMConfig":
-        data = json.loads(Path(path).read_text())
-        known = {f for f in cls.__dataclass_fields__}  # type: ignore[attr-defined]
-        return cls(**{k: v for k, v in data.items() if k in known})

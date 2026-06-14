@@ -16,6 +16,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from drawing_coach.config_manager import ConfigManager
 from drawing_coach.hotkey_manager import HotkeyManager
 from drawing_coach.llm_config import LLMConfig
 
@@ -29,12 +30,14 @@ class SettingsDialog(QDialog):
         config: LLMConfig,
         hotkey_manager: HotkeyManager,
         parent: QWidget | None = None,
+        config_manager: ConfigManager | None = None,
     ) -> None:
         super().__init__(parent)
         self.setWindowTitle("Settings")
         self.setMinimumWidth(480)
         self._config = config
         self._hotkey_manager = hotkey_manager
+        self._config_manager = config_manager
 
         tabs = QTabWidget()
         tabs.addTab(self._build_llm_tab(), "LLM")
@@ -234,7 +237,8 @@ class SettingsDialog(QDialog):
         )
         if path:
             self._apply_to_config()
-            self._config.export_portable(path)
+            if self._config_manager:
+                self._config_manager.export_portable(path)
             QMessageBox.information(
                 self, "Exported", f"Config saved to {path} (API key excluded)."
             )
@@ -245,7 +249,11 @@ class SettingsDialog(QDialog):
         )
         if not path:
             return
-        imported = LLMConfig.import_portable(path)
+        imported = (
+            self._config_manager.import_portable(path)
+            if self._config_manager
+            else LLMConfig()
+        )
         self._model_edit.setText(imported.model)
         self._base_edit.setText(imported.api_base)
         self._interval_spin.setValue(imported.capture_interval)
@@ -256,7 +264,8 @@ class SettingsDialog(QDialog):
 
     def _save(self) -> None:
         self._apply_to_config()
-        self._config.save()
+        if self._config_manager:
+            self._config_manager.save(self._config)
         new_hotkey = self._hotkey_edit.text().strip()
         if new_hotkey != self._hotkey_manager.hotkey:
             self._hotkey_manager.set_hotkey(new_hotkey)

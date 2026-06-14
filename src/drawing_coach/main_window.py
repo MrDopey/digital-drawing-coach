@@ -28,6 +28,7 @@ from drawing_coach.feedback_engine import FeedbackEngine, FeedbackResponse
 from drawing_coach.feedback_panel import FeedbackPanel
 from drawing_coach.history_panel import HistoryPanel
 from drawing_coach.hotkey_manager import HotkeyManager
+from drawing_coach.config_manager import ConfigManager
 from drawing_coach.llm_config import LLMConfig
 from drawing_coach.overlay_renderer import render as render_overlay
 from drawing_coach.settings_dialog import SettingsDialog
@@ -58,7 +59,8 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Drawing Coach")
         self.setMinimumSize(460, 300)
 
-        self._config = LLMConfig.load()
+        self._config_manager = ConfigManager()
+        self._config = self._config_manager.load()
         self._manager = WindowManager()
         self._capture = CaptureEngine(self._manager, config=self._config)
         self._detector = StuckDetector(
@@ -233,7 +235,7 @@ class MainWindow(QMainWindow):
         self._coaching_label.setText(
             f"Coaching for: {self._config.effective_style_label()}"
         )
-        self._config.save()
+        self._config_manager.save(self._config)
 
     def _on_focus_text_edited(self, text: str) -> None:
         text = text.strip()
@@ -253,7 +255,7 @@ class MainWindow(QMainWindow):
         self._coaching_label.setText(
             f"Coaching for: {self._config.effective_style_label()}"
         )
-        self._config.save()
+        self._config_manager.save(self._config)
 
     # ------------------------------------------------------------------
     # Callbacks / signals
@@ -352,7 +354,7 @@ class MainWindow(QMainWindow):
         dlg.exec()
 
     def _open_settings(self) -> None:
-        dlg = SettingsDialog(self._config, self._hotkeys, self)
+        dlg = SettingsDialog(self._config, self._hotkeys, self, self._config_manager)
         if dlg.exec():
             self._capture.interval = self._config.capture_interval
             self._detector.threshold = self._config.stuck_threshold
