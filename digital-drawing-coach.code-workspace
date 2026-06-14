@@ -5,6 +5,10 @@
 		},
 		{
 			"path": "/home/lovely/.claude"
+		},
+		{
+			"name": "worktrees",
+			"path": ".claude/worktrees"
 		}
 	],
 	"settings": {}
