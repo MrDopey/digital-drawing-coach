@@ -6,8 +6,9 @@ license: MIT
 
 1. Derive a kebab-case change name from the user's description. Ask if unclear.
 2. `EnterWorktree` with `name: "<change-name>"` — **before** anything else.
-   This prevents an orphaned `.openspec.yaml` on the shared checkout and names
-   the worktree branch after the change instead of a random slug.
-3. `openspec new change "<name>"` (now inside the worktree).
-4. Invoke `opsx:propose` with the change name to generate all artifacts.
-5. Tell the user: worktree path, change name, and to run `/op-custom-ship` when ready.
+   This names the worktree branch after the change and ensures all openspec commands
+   run inside the worktree, preventing a stray `.openspec.yaml` on the shared checkout.
+3. Invoke `openspec-propose` with the change name — it runs inline in the current session
+   and inherits the worktree CWD, so `openspec new change` and all artifact generation
+   happen inside the worktree, not on the shared checkout.
+4. Tell the user: worktree path, change name, and to run `/op-custom-ship` when ready.
