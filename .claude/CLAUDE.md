@@ -18,11 +18,3 @@ Two runtime modes:
 | Secrets | python-dotenv (`.env` in XDG config dir) |
 | Tests | pytest, pytest-qt |
 | Build | hatchling, PyInstaller |
-
-## OpenSpec Workflow
-
-This repo uses **OpenSpec** — a spec-driven change management system. Changes follow a structured lifecycle: explore → propose → implement → archive.
-
-### Worktree Naming
-
-When entering a worktree to implement an OpenSpec change, always pass the change directory name as the `name` parameter to `EnterWorktree`. For example, when implementing `openspec/changes/add-configurable-logging`, use `name: "add-configurable-logging"`. This keeps the agent view readable — the worktree branch and directory will reflect the change, not a random slug.
