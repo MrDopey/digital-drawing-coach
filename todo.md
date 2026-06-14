@@ -1,5 +1,14 @@
 # Todo
 
-## Known Issues to Address
+All items have been converted to OpenSpec changes in `openspec/changes/`.
 
-- [ ] **Silent write failure in `CaptureEngine._write_frame`** (`src/drawing_coach/capture_engine.py:248-251`): exceptions during `img.save()` are caught and swallowed; the frame is added to the buffer with `path=None` and no log, warning, or callback is emitted. Verify failure is surfaced (log at minimum, ideally `on_frame_captured` or a dedicated error callback).
+| Change | Description |
+|--------|-------------|
+| `session-management` | Session picker on launch, editable names, in-app switching |
+| `history-frame-management` | Per-frame delete button, LLM lookback indicator |
+| `feedback-history` | Feedback persistence, dedup, redesigned popup |
+| `long-term-memory` | Cross-session observation store, prompt injection, viewer, progress panel |
+| `log-config-on-startup` | DEBUG-level config dump on startup with secret redaction |
+| `fix-pause-resume-initial-state` | Show "Start Capture" before window is selected |
+
+Use `/op-custom-ready <change-name>` to load context, then `/op-custom-ship` to implement.
