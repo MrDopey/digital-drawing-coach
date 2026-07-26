@@ -45,6 +45,7 @@ class SettingsDialog(QDialog):
         tabs.addTab(self._build_capture_tab(), "Capture")
         tabs.addTab(self._build_stuck_tab(), "Stuck Detection")
         tabs.addTab(self._build_history_tab(), "History")
+        tabs.addTab(self._build_memory_tab(), "Memory")
 
         layout = QVBoxLayout(self)
         layout.addWidget(tabs)
@@ -196,6 +197,37 @@ class SettingsDialog(QDialog):
         form.addRow("Look-back Frames:", self._lookback_spin)
         return w
 
+    def _build_memory_tab(self) -> QWidget:
+        w = QWidget()
+        form = QFormLayout(w)
+
+        self._resummarize_spin = QSpinBox()
+        self._resummarize_spin.setRange(0, 1000)
+        self._resummarize_spin.setValue(self._config.memory_resummarize_interval)
+        self._resummarize_spin.setToolTip(
+            "Re-condense coach's notes every N appended observations"
+            " (default: 20; 0 = keep notes raw and never re-summarise)"
+        )
+        form.addRow("Re-summarise Every:", self._resummarize_spin)
+
+        self._memory_max_spin = QSpinBox()
+        self._memory_max_spin.setRange(1, 10000)
+        self._memory_max_spin.setValue(self._config.memory_max_observations)
+        self._memory_max_spin.setToolTip(
+            "Maximum stored observations before the oldest are pruned (default: 200)"
+        )
+        form.addRow("Max Observations:", self._memory_max_spin)
+
+        self._summary_history_max_spin = QSpinBox()
+        self._summary_history_max_spin.setRange(1, 10000)
+        self._summary_history_max_spin.setValue(self._config.memory_summary_history_max)
+        self._summary_history_max_spin.setToolTip(
+            "Maximum retained summary-history entries, independent of the"
+            " observation cap (default: 200)"
+        )
+        form.addRow("Max Summary History:", self._summary_history_max_spin)
+        return w
+
     # ------------------------------------------------------------------
     # Actions
     # ------------------------------------------------------------------
@@ -292,3 +324,6 @@ class SettingsDialog(QDialog):
         self._config.history_retention_sessions = self._retention_spin.value()
         self._config.dedup_threshold = self._dedup_spin.value()
         self._config.lookback_frames = self._lookback_spin.value()
+        self._config.memory_resummarize_interval = self._resummarize_spin.value()
+        self._config.memory_max_observations = self._memory_max_spin.value()
+        self._config.memory_summary_history_max = self._summary_history_max_spin.value()

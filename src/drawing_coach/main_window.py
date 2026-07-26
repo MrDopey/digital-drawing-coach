@@ -33,7 +33,10 @@ from drawing_coach.history_panel import HistoryPanel
 from drawing_coach.hotkey_manager import HotkeyManager
 from drawing_coach.config_manager import ConfigManager
 from drawing_coach.llm_config import LLMConfig
+from drawing_coach.memory_store import MemoryStore
+from drawing_coach.memory_viewer import MemoryViewerDialog
 from drawing_coach.overlay_renderer import render as render_overlay
+from drawing_coach.progress_panel import ProgressPanel
 from drawing_coach.settings_dialog import SettingsDialog
 from drawing_coach.stuck_detector import StuckDetector
 from drawing_coach.window_manager import WindowManager
@@ -171,6 +174,7 @@ class MainWindow(QMainWindow):
         )
         self._hotkeys = HotkeyManager()
         self._feedback_engine = FeedbackEngine(self._config)
+        self._memory_store = MemoryStore(self._config)
         self._feedback_panel = FeedbackPanel()
         self._signals = _Signals()
 
@@ -260,6 +264,14 @@ class MainWindow(QMainWindow):
         history_btn.clicked.connect(self._open_history)
         btn_row.addWidget(history_btn)
 
+        memory_btn = QPushButton("Memory")
+        memory_btn.clicked.connect(self._open_memory_viewer)
+        btn_row.addWidget(memory_btn)
+
+        progress_btn = QPushButton("Progress")
+        progress_btn.clicked.connect(self._open_progress_panel)
+        btn_row.addWidget(progress_btn)
+
         settings_btn = QPushButton("Settings")
         settings_btn.clicked.connect(self._open_settings)
         btn_row.addWidget(settings_btn)
@@ -281,6 +293,8 @@ class MainWindow(QMainWindow):
         self._tray_pause_action.triggered.connect(self._toggle_pause)
         menu.addAction(self._tray_pause_action)
         menu.addAction("Settings", self._open_settings)
+        menu.addAction("Memory", self._open_memory_viewer)
+        menu.addAction("Progress", self._open_progress_panel)
         menu.addSeparator()
         menu.addAction(f"About (v{__version__})", self._show_about)
         menu.addAction("Quit", QApplication.quit)
@@ -447,9 +461,20 @@ class MainWindow(QMainWindow):
         frames = self._capture.get_frames()
         latest_image = frames[-1].image if frames else None
 
+        coach_notes = self._memory_store.summarise()
+
         def _run() -> None:
-            result = self._feedback_engine.request_feedback(frames, mode)
+            result = self._feedback_engine.request_feedback(frames, mode, coach_notes)
             if isinstance(result, FeedbackResponse):
+                stripped_text = self._memory_store.extract_and_append(
+                    result.text, self._capture.session_id
+                )
+                if stripped_text != result.text:
+                    result = FeedbackResponse(
+                        mode=result.mode,
+                        text=stripped_text,
+                        annotation_json=result.annotation_json,
+                    )
                 overlay_image = None
                 if mode == "overlay" and result.annotation_json and latest_image:
                     rendered, err = render_overlay(latest_image, result.annotation_json)
@@ -468,6 +493,14 @@ class MainWindow(QMainWindow):
 
     def _open_history(self) -> None:
         dlg = HistoryPanel(self._capture.get_frames(), self)
+        dlg.exec()
+
+    def _open_memory_viewer(self) -> None:
+        dlg = MemoryViewerDialog(self._memory_store, self)
+        dlg.exec()
+
+    def _open_progress_panel(self) -> None:
+        dlg = ProgressPanel(self._memory_store, self)
         dlg.exec()
 
     def _open_settings(self) -> None:

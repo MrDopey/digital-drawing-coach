@@ -106,6 +106,56 @@ def test_custom_instructions_in_prompt():
     assert "Focus on line confidence" in system_content
 
 
+def test_coach_notes_appended_after_mode_template():
+    engine = _configured_engine()
+    prompt_without = engine._build_system_prompt("quick_hint")
+    prompt_with = engine._build_system_prompt(
+        "quick_hint", "You have worked with this student across 5 sessions."
+    )
+
+    assert prompt_with.startswith(prompt_without)
+    assert prompt_with[len(prompt_without) :].strip() == (
+        "You have worked with this student across 5 sessions."
+    )
+
+
+def test_coach_notes_omitted_when_empty():
+    engine = _configured_engine()
+    assert engine._build_system_prompt("quick_hint", "") == engine._build_system_prompt(
+        "quick_hint"
+    )
+
+
+def test_coach_notes_variation_does_not_change_prefix():
+    engine = _configured_engine()
+    base = engine._build_system_prompt("full_critique")
+    variant_a = engine._build_system_prompt("full_critique", "Notes version A.")
+    variant_b = engine._build_system_prompt(
+        "full_critique", "A much longer notes block, version B, with extra detail."
+    )
+
+    assert variant_a.startswith(base)
+    assert variant_b.startswith(base)
+
+
+def test_coach_notes_sent_to_llm_in_request():
+    cfg = LLMConfig(model="gpt-4o")
+    engine = FeedbackEngine(cfg)
+    engine._last_call = 0
+
+    captured_messages = []
+
+    def _capture(**kwargs):
+        captured_messages.extend(kwargs["messages"])
+        return _mock_response("ok")
+
+    with patch("litellm.completion", side_effect=_capture):
+        engine.request_feedback([_frame()], coach_notes="Recurring theme: perspective.")
+
+    system_content = captured_messages[0]["content"]
+    assert "Recurring theme: perspective." in system_content
+
+
 def test_history_accumulates():
     engine = _configured_engine()
     engine._last_call = 0

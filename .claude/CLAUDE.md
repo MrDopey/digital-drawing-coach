@@ -27,5 +27,6 @@ Dialogs must be resizable: content reflows correctly when the user drags the win
 | Image processing | Pillow, mss, numpy |
 | Config | `ConfigManager` (`config_manager.py`) — single load/save owner; merges `config.json`, `.env`, and env vars with explicit precedence |
 | Secrets | python-dotenv (`.env` in XDG config dir) — API key only; written by `ConfigManager.save()` |
+| Long-term memory | `MemoryStore` (`memory_store.py`) — `memory.json` (raw cross-session drawing observations) and `memory_summaries.json` (their periodic re-summarisation history); this is app data feeding the coaching LLM's prompt, unrelated to and separate from Claude Code's own memory/auto-memory system |
 | Tests | pytest, pytest-qt |
 | Build | hatchling, PyInstaller |

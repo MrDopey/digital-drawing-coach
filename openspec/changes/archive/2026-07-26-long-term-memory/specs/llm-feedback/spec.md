@@ -1,7 +1,7 @@
 ## MODIFIED Requirements
 
 ### Requirement: LLM feedback uses art-coaching persona
-The system SHALL include a system prompt that establishes the LLM as a knowledgeable digital art coach with expertise in perspective, anatomy, color theory, and technique. The persona SHALL remain consistent across all feedback modes. When a non-empty coach's notes block is provided (from the memory store), it SHALL be prepended to the system prompt before the base coaching persona text. The system prompt SHALL also instruct the LLM to optionally append a `<!-- observations: [...] -->` HTML comment containing a JSON array of `{category, note}` objects derived from the current response, to enable future memory accumulation.
+The system SHALL include a system prompt that establishes the LLM as a knowledgeable digital art coach with expertise in perspective, anatomy, color theory, and technique. The persona SHALL remain consistent across all feedback modes. When a non-empty coach's notes block is provided (from the memory store), it SHALL be appended to the *end* of the system prompt, after the base persona, style fragment, custom instructions, and mode template, so that stable prefix is unaffected by per-session note changes and remains eligible for provider-side prompt caching. The system prompt SHALL also instruct the LLM to optionally append a `<!-- observations: [...] -->` HTML comment containing a JSON array of `{category, note}` objects derived from the current response, to enable future memory accumulation.
 
 #### Scenario: System prompt is sent with every request
 - **WHEN** any feedback request is made
@@ -13,7 +13,7 @@ The system SHALL include a system prompt that establishes the LLM as a knowledge
 
 #### Scenario: Coach's notes block injected when memory is non-empty
 - **WHEN** a feedback request is made and the memory store contains observations
-- **THEN** the coach's notes block is prepended to the system prompt before the base persona text
+- **THEN** the coach's notes block is appended to the end of the system prompt, after the base persona, style fragment, custom instructions, and mode template
 
 #### Scenario: Coach's notes block omitted when memory is empty
 - **WHEN** a feedback request is made and the memory store has no observations

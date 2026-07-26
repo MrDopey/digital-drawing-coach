@@ -28,6 +28,9 @@ def test_defaults():
     assert cfg.history_retention_sessions == 10
     assert cfg.style_focus == ""
     assert cfg.style_focus_is_preset is True
+    assert cfg.memory_resummarize_interval == 20
+    assert cfg.memory_max_observations == 200
+    assert cfg.memory_summary_history_max == 200
 
 
 def test_field_assignment():
