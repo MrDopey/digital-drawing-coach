@@ -16,6 +16,7 @@ import numpy as np
 from PIL import Image
 
 from drawing_coach.paths import sessions_dir
+from drawing_coach.session_manager import default_session_name
 from drawing_coach.window_manager import WindowInfo, WindowManager
 
 if TYPE_CHECKING:
@@ -66,6 +67,10 @@ class CaptureEngine:
         return self._target
 
     @property
+    def session_dir(self) -> Path | None:
+        return self._session_dir
+
+    @property
     def paused(self) -> bool:
         return self._paused
 
@@ -89,13 +94,51 @@ class CaptureEngine:
     def start(self) -> None:
         if self._running:
             return
-        self._init_session()
+        if self._session_dir is None:
+            self._init_session()
         self._running = True
         self._thread = threading.Thread(target=self._loop, daemon=True)
         self._thread.start()
 
     def stop(self) -> None:
         self._running = False
+
+    def load_session(self, session_dir: Path) -> None:
+        """Switch to an existing session directory, saving the current one first."""
+        was_running = self._running
+        self._stop_and_join()
+        self._write_end_time()
+        self._session_dir = session_dir
+        self._load_frames_from_disk()
+        self._last_stored_image = self._buffer[-1].image if self._buffer else None
+        if was_running:
+            self._running = True
+            self._thread = threading.Thread(target=self._loop, daemon=True)
+            self._thread.start()
+
+    def new_session(self) -> None:
+        """Start a brand-new session, saving the current one first."""
+        was_running = self._running
+        self._stop_and_join()
+        self._write_end_time()
+        session_id = datetime.now().strftime("%Y-%m-%d_%H%M%S")
+        self._session_dir = sessions_dir() / session_id
+        (self._session_dir / "frames").mkdir(parents=True)
+        with self._lock:
+            self._buffer.clear()
+        self._frame_count = 0
+        self._last_stored_image = None
+        self._write_meta()
+        if was_running:
+            self._running = True
+            self._thread = threading.Thread(target=self._loop, daemon=True)
+            self._thread.start()
+
+    def _stop_and_join(self) -> None:
+        self._running = False
+        if self._thread and self._thread.is_alive():
+            self._thread.join(timeout=2)
+        self._thread = None
 
     def pause(self) -> None:
         self._paused = True
@@ -151,12 +194,38 @@ class CaptureEngine:
     def _write_meta(self) -> None:
         if not self._session_dir:
             return
+        meta_path = self._session_dir / "meta.json"
+        existing = self._read_meta(meta_path)
+        start_time = existing.get("start_time") or datetime.now().isoformat()
+        drawing_app = self._target.app_name if self._target else ""
+        name = existing.get("name") or default_session_name(
+            datetime.fromisoformat(start_time), drawing_app
+        )
         meta = {
-            "start_time": datetime.now().isoformat(),
-            "drawing_app": self._target.app_name if self._target else "",
+            **existing,
+            "start_time": start_time,
+            "drawing_app": drawing_app,
             "style_focus": self._config.style_focus if self._config else "",
+            "name": name,
         }
-        (self._session_dir / "meta.json").write_text(json.dumps(meta, indent=2))
+        meta_path.write_text(json.dumps(meta, indent=2))
+
+    def _write_end_time(self) -> None:
+        if not self._session_dir:
+            return
+        meta_path = self._session_dir / "meta.json"
+        meta = self._read_meta(meta_path)
+        if not meta:
+            return
+        meta["end_time"] = datetime.now().isoformat()
+        meta_path.write_text(json.dumps(meta, indent=2))
+
+    @staticmethod
+    def _read_meta(meta_path: Path) -> dict:
+        try:
+            return json.loads(meta_path.read_text())
+        except (OSError, ValueError):
+            return {}
 
     def _load_frames_from_disk(self) -> None:
         if not self._session_dir:

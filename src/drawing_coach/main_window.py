@@ -20,6 +20,7 @@ from PyQt6.QtWidgets import (
     QPlainTextEdit,
     QPushButton,
     QSystemTrayIcon,
+    QToolButton,
     QVBoxLayout,
     QWidget,
 )
@@ -27,6 +28,7 @@ from PyQt6.QtWidgets import (
 from drawing_coach._version import __version__
 from drawing_coach.app_selection_dialog import AppSelectionDialog
 from drawing_coach.capture_engine import CapturedFrame, CaptureEngine
+from drawing_coach.editable_name_label import EditableNameLabel
 from drawing_coach.feedback_engine import FeedbackEngine, FeedbackResponse
 from drawing_coach.feedback_panel import FeedbackPanel
 from drawing_coach.history_panel import HistoryPanel
@@ -34,6 +36,7 @@ from drawing_coach.hotkey_manager import HotkeyManager
 from drawing_coach.config_manager import ConfigManager
 from drawing_coach.llm_config import LLMConfig
 from drawing_coach.overlay_renderer import render as render_overlay
+from drawing_coach.session_manager import list_sessions, read_session_name, write_session_name
 from drawing_coach.settings_dialog import SettingsDialog
 from drawing_coach.stuck_detector import StuckDetector
 from drawing_coach.window_manager import WindowManager
@@ -155,9 +158,10 @@ class _Signals(QObject):
 
 
 class MainWindow(QMainWindow):
-    def __init__(self) -> None:
+    def __init__(
+        self, session_dir: Path | None = None, start_new: bool = False
+    ) -> None:
         super().__init__()
-        self.setWindowTitle("Drawing Coach")
         self.setMinimumSize(460, 300)
 
         self._config_manager = ConfigManager()
@@ -176,12 +180,18 @@ class MainWindow(QMainWindow):
 
         self._setup_callbacks()
         self._build_ui()
+        self._build_menu()
         self._build_tray()
         self._hotkeys.set_hotkey(self._config.hotkey)
         self._hotkeys.start()
 
+        if start_new:
+            self._capture.new_session()
+        elif session_dir is not None:
+            self._capture.load_session(session_dir)
         self._capture.interval = self._config.capture_interval
         self._capture.start()
+        self._update_window_title()
 
         self._signals.feedback_ready.connect(self._on_feedback_ready)
         self._signals.feedback_error.connect(self._feedback_panel.show_error)
@@ -201,6 +211,18 @@ class MainWindow(QMainWindow):
         central = QWidget()
         self.setCentralWidget(central)
         layout = QVBoxLayout(central)
+
+        session_row = QHBoxLayout()
+        session_row.addWidget(QLabel("Session:"))
+        self._session_name_widget = EditableNameLabel("")
+        self._session_name_widget.renamed.connect(self._on_session_renamed)
+        session_row.addWidget(self._session_name_widget, 1)
+        rename_btn = QToolButton()
+        rename_btn.setText("✎")
+        rename_btn.setToolTip("Rename session")
+        rename_btn.clicked.connect(self._session_name_widget.start_edit)
+        session_row.addWidget(rename_btn)
+        layout.addLayout(session_row)
 
         self._window_label = QLabel("No drawing window selected")
         self._window_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -269,6 +291,10 @@ class MainWindow(QMainWindow):
         self._write_error_label = _WriteErrorLabel()
         self.statusBar().addPermanentWidget(self._write_error_label, 1)
         self.statusBar().setSizeGripEnabled(False)
+
+    def _build_menu(self) -> None:
+        self._sessions_menu = self.menuBar().addMenu("Sessions")
+        self._sessions_menu.aboutToShow.connect(self._populate_sessions_menu)
 
     def _build_tray(self) -> None:
         self._tray = QSystemTrayIcon(self)
@@ -415,6 +441,50 @@ class MainWindow(QMainWindow):
             self._status_label.setText(f"Capture: active  ({frames} frames)")
             self._pause_btn.setText("Pause")
             self._tray_pause_action.setText("Pause Capture")
+
+    def _update_window_title(self) -> None:
+        session_dir = self._capture.session_dir
+        name = read_session_name(session_dir) if session_dir else ""
+        self.setWindowTitle(f"Drawing Coach — {name}" if name else "Drawing Coach")
+        self._session_name_widget.set_name(name)
+
+    # ------------------------------------------------------------------
+    # Sessions
+    # ------------------------------------------------------------------
+
+    def _populate_sessions_menu(self) -> None:
+        self._sessions_menu.clear()
+        current = self._capture.session_dir
+        sessions = list_sessions()
+        for info in sessions:
+            if info.path == current:
+                action = self._sessions_menu.addAction(info.name)
+                action.setEnabled(False)
+        for info in sessions:
+            if info.path != current:
+                action = self._sessions_menu.addAction(info.name)
+                action.triggered.connect(
+                    lambda checked=False, p=info.path: self._switch_session(p)
+                )
+        self._sessions_menu.addSeparator()
+        self._sessions_menu.addAction("New Session", self._new_session)
+
+    def _switch_session(self, session_dir: Path) -> None:
+        self._capture.load_session(session_dir)
+        self._update_window_title()
+        self._update_status()
+
+    def _new_session(self) -> None:
+        self._capture.new_session()
+        self._update_window_title()
+        self._update_status()
+
+    def _on_session_renamed(self, text: str) -> None:
+        session_dir = self._capture.session_dir
+        if session_dir is None:
+            return
+        write_session_name(session_dir, text)
+        self._update_window_title()
 
     # ------------------------------------------------------------------
     # Actions
