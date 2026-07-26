@@ -7,11 +7,11 @@ Users have no way to manage, name, or switch between drawing sessions — every 
 - New session picker dialog shown on app launch, listing all saved sessions with name, date/time, and a thumbnail (last captured frame)
 - Thumbnail expands to a larger preview on hover
 - Options: Resume, New Session, Delete (picker is skipped when no sessions exist)
-- Sessions gain a user-editable name stored in `meta.json`; default is generated from the timestamp (e.g. `Session 14 Jun 2026, 09:41`)
+- Sessions gain a user-editable name stored in `meta.json`; default is generated from the timestamp and tracked application (e.g. `2026-06-14-09-41-00 | Krita`)
 - Name is editable inline in the picker (double-click or pencil icon) and from inside the main window
 - Sessions menu / button in the main window for in-app switching or creating a new session
 - Switching saves the current session state and loads the selected one
-- Active session name shown in the main window title bar (e.g. `Drawing Coach — Session 14 Jun 2026, 09:41`)
+- Active session name shown in the main window title bar (e.g. `Drawing Coach — 2026-06-14-09-41-00 | Krita`)
 - `meta.json` gains a `name` field; thumbnail reuses the most recently written frame PNG from `frames/` — no separate thumbnail file needed
 
 ## Capabilities

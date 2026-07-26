@@ -39,6 +39,7 @@ The app runs as a **GUI desktop window** — PyQt6 with a live feedback panel, s
 - Drawing style and focus selector — choose from presets (Line Drawing, Realistic, Anime/Manga, Chibi, Concept Art, Portrait) or enter free text (e.g. `gothic pokemon`) to tailor every LLM prompt
 - Works with any vision-capable LLM via [LiteLLM][litellm] — OpenAI, Anthropic, Ollama, and more
 - Session history persisted to disk with duplicate-frame dropping and configurable session retention; double-click any thumbnail in the history panel to open it in the system default image viewer
+- Session management: a picker on launch lets you resume, rename, or delete a saved session (skipped when none exist); sessions can also be renamed or switched in-app via the **Sessions** menu, with the active session name shown in the window title bar
 - Surfaces LLM errors explicitly: rate limits, content-policy flags, credit exhaustion
 
 ---

@@ -1,5 +1,6 @@
 """Unit tests for CaptureEngine ring buffer behaviour."""
 
+import json
 import logging
 from unittest.mock import MagicMock, patch
 
@@ -119,3 +120,87 @@ def test_write_frame_no_callback_no_error(tmp_path):
     with patch.object(img, "save", side_effect=OSError("disk full")):
         result = engine._write_frame(img)
     assert result is None
+
+
+# ---------------------------------------------------------------------------
+# meta.json — name field
+# ---------------------------------------------------------------------------
+
+def test_write_meta_default_name_includes_app(tmp_path):
+    manager = MagicMock()
+    engine = CaptureEngine(manager)
+    engine.set_target(WindowInfo(id=1, title="Test", app_name="Krita"))
+    engine._session_dir = tmp_path
+    engine._write_meta()
+
+    meta = json.loads((tmp_path / "meta.json").read_text())
+    assert meta["name"].endswith(" | Krita")
+    assert meta["drawing_app"] == "Krita"
+
+
+def test_write_meta_default_name_omits_app_when_no_target(tmp_path):
+    manager = MagicMock()
+    engine = CaptureEngine(manager)
+    engine._session_dir = tmp_path
+    engine._write_meta()
+
+    meta = json.loads((tmp_path / "meta.json").read_text())
+    assert "|" not in meta["name"]
+
+
+def test_write_meta_preserves_existing_custom_name(tmp_path):
+    (tmp_path / "meta.json").write_text(
+        json.dumps({"start_time": "2026-06-14T09:41:00", "name": "My Study"})
+    )
+    manager = MagicMock()
+    engine = CaptureEngine(manager)
+    engine._session_dir = tmp_path
+    engine._write_meta()
+
+    meta = json.loads((tmp_path / "meta.json").read_text())
+    assert meta["name"] == "My Study"
+
+
+# ---------------------------------------------------------------------------
+# load_session / new_session
+# ---------------------------------------------------------------------------
+
+def test_load_session_writes_end_time_for_previous_session(tmp_path):
+    old_dir = tmp_path / "old"
+    old_dir.mkdir()
+    (old_dir / "frames").mkdir()
+    (old_dir / "meta.json").write_text(json.dumps({"start_time": "2026-06-14T09:00:00"}))
+
+    new_dir = tmp_path / "new"
+    new_dir.mkdir()
+    (new_dir / "frames").mkdir()
+    (new_dir / "meta.json").write_text(json.dumps({"start_time": "2026-06-14T10:00:00"}))
+
+    manager = MagicMock()
+    engine = CaptureEngine(manager)
+    engine._session_dir = old_dir
+
+    engine.load_session(new_dir)
+
+    old_meta = json.loads((old_dir / "meta.json").read_text())
+    assert "end_time" in old_meta
+    assert engine.session_dir == new_dir
+
+
+def test_new_session_creates_fresh_directory_and_clears_buffer(tmp_path):
+    manager = MagicMock()
+    engine = CaptureEngine(manager)
+    win = WindowInfo(id=1, title="Test", app_name="Test")
+    engine.set_target(win)
+    engine._session_dir = tmp_path / "old"
+    (engine._session_dir / "frames").mkdir(parents=True)
+    engine._write_meta()
+    _fake_frame(engine)
+
+    with patch("drawing_coach.capture_engine.sessions_dir", return_value=tmp_path):
+        engine.new_session()
+
+    assert engine.session_dir != tmp_path / "old"
+    assert engine.session_dir.parent == tmp_path
+    assert engine.get_frames() == []
+    assert (engine.session_dir / "meta.json").exists()
