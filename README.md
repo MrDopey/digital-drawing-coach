@@ -165,6 +165,8 @@ DRAWING_COACH_LOG_LEVEL=DEBUG DRAWING_COACH_LOG_FILE=/tmp/drawing_coach.log uv r
 
 Add these to `~/.config/drawing-coach/.env` to make them permanent.
 
+At `DEBUG` level, the active configuration is logged on startup once `ConfigManager.load()` completes — every field name and value, one per line. Fields whose name contains `key`, `token`, `secret`, or `password` are redacted to their first 5 characters followed by `…` (or `(not set)` if empty/short), so it's safe to share these logs when troubleshooting.
+
 ### Frame save failures
 
 If Drawing Coach cannot write a captured frame to disk (disk full, permission denied, etc.) a warning appears in the **status bar** at the bottom of the window:
