@@ -2,6 +2,7 @@
 name: op-custom-ship
 description: Implement, archive, and merge a Drawing Coach change into main. Use after /op-custom-propose when ready to ship.
 license: MIT
+disable-model-invocation: true
 ---
 
 1. Before touching tasks, get the worktree clean: check `git status --porcelain`. If it's dirty (e.g. leftover spec changes from `/op-custom-propose`), commit them now so step 2's per-task commits start from a clean baseline:

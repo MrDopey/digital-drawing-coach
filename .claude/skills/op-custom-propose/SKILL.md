@@ -2,6 +2,7 @@
 name: op-custom-propose
 description: Propose a new Drawing Coach change with worktree isolation. Use instead of /opsx:propose for this repo.
 license: MIT
+disable-model-invocation: true
 ---
 
 1. Derive a kebab-case change name from the user's description. Ask if unclear.

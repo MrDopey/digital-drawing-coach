@@ -2,6 +2,7 @@
 name: op-custom-ready
 description: Enter the worktree for an existing Drawing Coach change and load its context. Use when a change has already been proposed and you need to resume work on it (e.g. before running /op-custom-ship).
 license: MIT
+disable-model-invocation: true
 ---
 
 1. Take the change name from the user's input. If unclear, run `openspec list` and ask the user to select.
