@@ -25,5 +25,11 @@ license: MIT
    git -C <repo-root> stash pop
    ```
 7. Check for orphaned `.openspec.yaml` on the shared checkout. If found, move it to the archive dir and commit the fix immediately.
+8. Verify the merge landed, then remove the worktree:
+   ```
+   git -C <repo-root> merge-base --is-ancestor <worktree-branch> HEAD
+   ```
+   Exit 0 → call `ExitWorktree` with `action: "remove"`, `discard_changes: true` (the commit is preserved in `<repo-root>`'s history; no confirmation needed). Report the check result to the user.
+   Non-zero → stop, `action: "keep"`, tell the user.
 
-**Guardrails:** Always use `--no-ff`. Do not merge before all tasks are complete and archive succeeds.
+**Guardrails:** Always use `--no-ff`. Do not merge before all tasks are complete and archive succeeds. Only pass `discard_changes: true` after step 8's ancestor check passes.
