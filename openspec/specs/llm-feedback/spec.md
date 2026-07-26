@@ -27,7 +27,7 @@ The system SHALL send the most recent screenshot and a configurable number of pr
 - **THEN** the system sends all available frames without error
 
 ### Requirement: LLM feedback uses art-coaching persona
-The system SHALL include a system prompt that establishes the LLM as a knowledgeable digital art coach with expertise in perspective, anatomy, color theory, and technique. The persona SHALL remain consistent across all feedback modes.
+The system SHALL include a system prompt that establishes the LLM as a knowledgeable digital art coach with expertise in perspective, anatomy, color theory, and technique. The persona SHALL remain consistent across all feedback modes. When a non-empty coach's notes block is provided (from the memory store), it SHALL be appended to the *end* of the system prompt, after the base persona, style fragment, custom instructions, and mode template, so that stable prefix is unaffected by per-session note changes and remains eligible for provider-side prompt caching. The system prompt SHALL also instruct the LLM to optionally append a `<!-- observations: [...] -->` HTML comment containing a JSON array of `{category, note}` objects derived from the current response, to enable future memory accumulation.
 
 #### Scenario: System prompt is sent with every request
 - **WHEN** any feedback request is made
@@ -36,6 +36,18 @@ The system SHALL include a system prompt that establishes the LLM as a knowledge
 #### Scenario: User's custom instructions are respected
 - **WHEN** the user has added custom coaching instructions in settings
 - **THEN** those instructions SHALL be appended to the system prompt for every request
+
+#### Scenario: Coach's notes block injected when memory is non-empty
+- **WHEN** a feedback request is made and the memory store contains observations
+- **THEN** the coach's notes block is appended to the end of the system prompt, after the base persona, style fragment, custom instructions, and mode template
+
+#### Scenario: Coach's notes block omitted when memory is empty
+- **WHEN** a feedback request is made and the memory store has no observations
+- **THEN** the system prompt is assembled without a coach's notes block
+
+#### Scenario: LLM instructed to emit observations comment
+- **WHEN** any feedback request is made
+- **THEN** the system prompt includes an instruction asking the LLM to append a `<!-- observations: [...] -->` comment with structured observations from its response
 
 ### Requirement: Feedback requests are rate-limited
 The system SHALL reject or queue feedback requests that arrive within 10 seconds of the previous request to prevent duplicate LLM calls.

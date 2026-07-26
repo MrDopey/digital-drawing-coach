@@ -26,7 +26,15 @@ When multiple images are provided, they are ordered chronologically — the firs
 is the earliest capture and the last is the most recent. Image filenames contain \
 timestamps so you can infer the time elapsed between captures. Use this progression \
 to comment on how the work has evolved: note what has improved, what has stalled, \
-and what the artist should focus on next."""
+and what the artist should focus on next.
+
+After your visible feedback, append an HTML comment capturing structured observations \
+for future reference, in this exact format: \
+<!-- observations: [{"category": "perspective", \
+"note": "Struggles with vanishing points"}] --> \
+Use short lowercase categories (e.g. anatomy, perspective, color_theory, composition, \
+line_quality) and concise notes. Include the comment even if the array is empty. Never \
+mention this comment in your visible feedback."""
 
 _MODE_TEMPLATES = {
     "quick_hint": (
@@ -79,7 +87,10 @@ class FeedbackEngine:
         return list(self._history)
 
     def request_feedback(
-        self, frames: list[CapturedFrame], mode: str = "full_critique"
+        self,
+        frames: list[CapturedFrame],
+        mode: str = "full_critique",
+        coach_notes: str = "",
     ) -> FeedbackResponse | str:
         """Returns FeedbackResponse on success, or an error string."""
         if not self._config.is_configured():
@@ -94,7 +105,7 @@ class FeedbackEngine:
             _log.warning("Rate limit: %ds remaining before next request", remaining)
             return f"Please wait {remaining}s before requesting feedback again"
 
-        system = self._build_system_prompt(mode)
+        system = self._build_system_prompt(mode, coach_notes)
         messages = self._build_messages(system, frames, mode)
 
         kwargs: dict[str, Any] = {"model": self._config.model, "messages": messages}
@@ -161,7 +172,7 @@ class FeedbackEngine:
 
     # ------------------------------------------------------------------
 
-    def _build_system_prompt(self, mode: str) -> str:
+    def _build_system_prompt(self, mode: str, coach_notes: str = "") -> str:
         parts = [_SYSTEM_PROMPT]
         style_fragment = self._config.style_prompt_fragment()
         if style_fragment:
@@ -169,6 +180,8 @@ class FeedbackEngine:
         if self._config.custom_instructions:
             parts.append(self._config.custom_instructions)
         parts.append(_MODE_TEMPLATES.get(mode, _MODE_TEMPLATES["full_critique"]))
+        if coach_notes:
+            parts.append(coach_notes)
         return "\n\n".join(parts)
 
     def _build_messages(
@@ -185,7 +198,11 @@ class FeedbackEngine:
             {"type": "text", "text": "Please review my drawing:"}
         ]
         for frame in selected:
-            filename = frame.path.name if frame.path else frame.timestamp.strftime("%Y%m%d_%H%M%S.png")
+            filename = (
+                frame.path.name
+                if frame.path
+                else frame.timestamp.strftime("%Y%m%d_%H%M%S.png")
+            )
             content.append({"type": "text", "text": f"[{filename}]"})
             b64 = _image_to_b64(frame.image)
             content.append(

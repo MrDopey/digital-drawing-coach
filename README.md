@@ -40,6 +40,7 @@ The app runs as a **GUI desktop window** — PyQt6 with a live feedback panel, s
 - Works with any vision-capable LLM via [LiteLLM][litellm] — OpenAI, Anthropic, Ollama, and more
 - Session history persisted to disk with duplicate-frame dropping and configurable session retention; double-click any thumbnail in the history panel to open it in the system default image viewer
 - Session management: a picker on launch lets you resume, rename, or delete a saved session (skipped when none exist); sessions can also be renamed or switched in-app via the **Sessions** menu, with the active session name shown in the window title bar
+- Long-term memory: the coach remembers recurring observations across sessions (e.g. "struggles with vanishing points") and works them into every subsequent prompt, so feedback improves with use instead of repeating the same generic advice — viewable, deletable, and exportable from the **Memory** and **Progress** windows
 - Surfaces LLM errors explicitly: rate limits, content-policy flags, credit exhaustion
 
 ---
@@ -105,8 +106,18 @@ The app follows the [XDG Base Directory Specification](https://specifications.fr
 |------|-------------|
 | Config | `$XDG_CONFIG_HOME/drawing-coach/config.json` → `~/.config/drawing-coach/config.json` |
 | Sessions | `$XDG_DATA_HOME/drawing-coach/sessions/` → `~/.local/share/drawing-coach/sessions/` |
+| Memory (observations) | `$XDG_DATA_HOME/drawing-coach/memory.json` → `~/.local/share/drawing-coach/memory.json` |
+| Memory (summary history) | `$XDG_DATA_HOME/drawing-coach/memory_summaries.json` → `~/.local/share/drawing-coach/memory_summaries.json` |
 
-On **Windows** the legacy paths are used instead (`~/.drawing-coach/config.json` and `~/.drawing-coach/sessions/`).
+On **Windows** the legacy paths are used instead (`~/.drawing-coach/config.json`, `~/.drawing-coach/sessions/`, `~/.drawing-coach/memory.json`, `~/.drawing-coach/memory_summaries.json`).
+
+### Long-term memory
+
+After each feedback response, the coach may record short structured observations (e.g. `perspective: struggles with vanishing points`) to `memory.json`, capped at `memory_max_observations` entries (default 200; oldest pruned first). Before every subsequent request, recent observations are folded into a "coach's notes" block appended to the end of the system prompt — so the LLM can reference recurring patterns across sessions instead of repeating the same generic advice on every capture.
+
+To keep that notes block compact as the store grows, it's periodically condensed by an LLM call every `memory_resummarize_interval` observations (default 20; set to `0` to keep notes raw forever). Each condensation is appended — not overwritten — to a running history in `memory_summaries.json`, capped independently at `memory_summary_history_max` entries (default 200), so you keep a record of how the coach's understanding evolved even though only the most recent summary is ever sent to the LLM.
+
+Both caps and the re-summarisation interval are editable from **Settings → Memory**. Use the **Memory** window (from the main window or tray menu) to review observations grouped by category, delete individual entries, clear everything, or export both memory files to a folder of your choice. The **Progress** window shows recurring themes and a timeline of past sessions.
 
 ### .env file
 
@@ -135,7 +146,7 @@ Real shell environment variables always take precedence over the `.env` file. Th
 
 > **Migration from keyring**: If you previously stored your API key in the system keyring it will no longer be read. Re-enter your key once via **Settings → API Key** or add it to `~/.config/drawing-coach/.env` manually.
 
-In the GUI, all settings (capture interval, stuck-detection thresholds, look-back frames, session retention, style focus) are accessible via **Settings**.
+In the GUI, all settings (capture interval, stuck-detection thresholds, look-back frames, session retention, style focus, long-term memory caps and re-summarisation interval) are accessible via **Settings**.
 
 ---
 

@@ -75,6 +75,10 @@ class CaptureEngine:
         return self._paused
 
     @property
+    def session_id(self) -> str:
+        return self._session_dir.name if self._session_dir else ""
+
+    @property
     def interval(self) -> int:
         return self._interval
 
@@ -305,7 +309,9 @@ class CaptureEngine:
         if self._last_stored_image is not None:
             mae = _compute_mae(self._last_stored_image, img)
             if mae < dedup_threshold:
-                _log.debug("Frame skipped: MAE=%.2f < threshold=%.2f", mae, dedup_threshold)
+                _log.debug(
+                    "Frame skipped: MAE=%.2f < threshold=%.2f", mae, dedup_threshold
+                )
                 return None  # duplicate — discard
 
         # Write to disk

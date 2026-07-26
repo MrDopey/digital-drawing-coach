@@ -22,6 +22,10 @@ class LLMConfig:
     # Style / focus
     style_focus: str = ""
     style_focus_is_preset: bool = True
+    # Long-term memory
+    memory_resummarize_interval: int = 20
+    memory_max_observations: int = 200
+    memory_summary_history_max: int = 200
 
     def is_configured(self) -> bool:
         return bool(self.model)
