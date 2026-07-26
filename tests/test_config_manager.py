@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from drawing_coach.config_manager import ConfigManager
+from drawing_coach.config_manager import ConfigManager, _redact
 from drawing_coach.llm_config import LLMConfig
 
 
@@ -241,3 +241,61 @@ def test_export_import_round_trip(tmp_path):
     assert imported.model == "gpt-4o"
     assert imported.capture_interval == 90
     assert imported.api_key == ""  # api_key never exported
+
+
+# ---------------------------------------------------------------------------
+# _redact
+# ---------------------------------------------------------------------------
+
+def test_redact_non_secret_field_returned_as_is():
+    assert _redact("model", "gpt-4o") == "gpt-4o"
+
+
+def test_redact_secret_field_with_long_value_shows_prefix():
+    assert _redact("api_key", "sk-proj-abcdef") == "sk-pr…"
+
+
+def test_redact_secret_field_matches_token_secret_password():
+    assert _redact("auth_token", "abcdefgh") == "abcde…"
+    assert _redact("client_secret", "abcdefgh") == "abcde…"
+    assert _redact("password", "abcdefgh") == "abcde…"
+
+
+def test_redact_secret_field_empty_shows_not_set():
+    assert _redact("api_key", "") == "(not set)"
+
+
+def test_redact_secret_field_short_shows_not_set():
+    assert _redact("api_key", "abcd") == "(not set)"
+
+
+# ---------------------------------------------------------------------------
+# log_config
+# ---------------------------------------------------------------------------
+
+def test_log_config_logs_all_fields_at_debug(tmp_path, caplog):
+    mgr = make_manager(tmp_path)
+    cfg = LLMConfig(model="gpt-4o", api_key="sk-secretvalue")
+    with caplog.at_level("DEBUG", logger="drawing_coach.config_manager"):
+        mgr.log_config(cfg)
+    messages = [r.getMessage() for r in caplog.records]
+    assert any("model" in m and "gpt-4o" in m for m in messages)
+
+
+def test_log_config_redacts_api_key(tmp_path, caplog):
+    mgr = make_manager(tmp_path)
+    cfg = LLMConfig(model="gpt-4o", api_key="sk-secretvalue")
+    with caplog.at_level("DEBUG", logger="drawing_coach.config_manager"):
+        mgr.log_config(cfg)
+    messages = [r.getMessage() for r in caplog.records]
+    assert not any("sk-secretvalue" in m for m in messages)
+    assert any("sk-se…" in m for m in messages)
+
+
+def test_log_config_does_not_redact_non_secret_fields(tmp_path, caplog):
+    mgr = make_manager(tmp_path)
+    cfg = LLMConfig(model="gpt-4o", capture_interval=60)
+    with caplog.at_level("DEBUG", logger="drawing_coach.config_manager"):
+        mgr.log_config(cfg)
+    messages = [r.getMessage() for r in caplog.records]
+    assert any("capture_interval" in m and "60" in m for m in messages)

@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 from dataclasses import asdict
 from pathlib import Path
 
@@ -14,6 +15,16 @@ from drawing_coach.paths import config_path as _default_config_path
 _log = logging.getLogger("drawing_coach.config_manager")
 
 _NOT_LOADED = object()
+
+_SECRET_FIELDS = re.compile(r"key|token|secret|password", re.IGNORECASE)
+
+
+def _redact(field_name: str, value: str) -> str:
+    if _SECRET_FIELDS.search(field_name):
+        if len(value) >= 5:
+            return value[:5] + "…"
+        return "(not set)"
+    return str(value)
 
 
 class ConfigManager:
@@ -37,6 +48,10 @@ class ConfigManager:
     def _paths(self) -> tuple[Path, Path]:
         cp = self._config_path or _default_config_path()
         return cp, self._dotenv_path or (cp.parent / ".env")
+
+    def log_config(self, config: LLMConfig) -> None:
+        for k, v in asdict(config).items():
+            _log.debug("config: %s = %s", k, _redact(k, v))
 
     def load(self) -> LLMConfig:
         cp, dp = self._paths()
@@ -70,6 +85,7 @@ class ConfigManager:
             )
 
         self._config = cfg
+        self.log_config(cfg)
         return cfg
 
     def save(self, config: LLMConfig) -> None:
