@@ -3,7 +3,6 @@
 from datetime import datetime
 from unittest.mock import MagicMock
 
-import pytest
 from PIL import Image
 from PyQt6.QtWidgets import QRadioButton
 
@@ -55,30 +54,30 @@ def test_current_mode_reflects_selected_radio_button(qtbot):
 # In-panel trigger button
 # ---------------------------------------------------------------------------
 
-def test_trigger_button_invokes_callback(qtbot):
+def test_request_button_emits_feedback_requested(qtbot):
     panel = FeedbackPanel()
     qtbot.addWidget(panel)
 
     callback = MagicMock()
-    panel.on_trigger_requested = callback
+    panel.feedback_requested.connect(callback)
 
-    panel._trigger_btn.click()
+    panel._request_btn.click()
 
-    callback.assert_called_once()
+    callback.assert_called_once_with(panel.current_mode())
 
 
-def test_trigger_button_without_callback_does_not_raise(qtbot):
+def test_request_button_without_listener_does_not_raise(qtbot):
     panel = FeedbackPanel()
     qtbot.addWidget(panel)
 
-    panel._trigger_btn.click()  # on_trigger_requested is None by default
+    panel._request_btn.click()  # no listener connected
 
 
 # ---------------------------------------------------------------------------
-# Overlay resizing
+# Overlay resizing and zoom
 # ---------------------------------------------------------------------------
 
-def test_overlay_image_rescales_on_panel_resize(qtbot):
+def test_overlay_image_keeps_zoom_level_on_panel_resize(qtbot):
     panel = FeedbackPanel()
     qtbot.addWidget(panel)
     panel.show()
@@ -97,10 +96,50 @@ def test_overlay_image_rescales_on_panel_resize(qtbot):
     assert resized_pixmap is not None
     resized_size = resized_pixmap.size()
 
-    assert (resized_size.width(), resized_size.height()) != (
+    assert (resized_size.width(), resized_size.height()) == (
         original_size.width(),
         original_size.height(),
     )
-    original_ratio = original_size.width() / original_size.height()
-    resized_ratio = resized_size.width() / resized_size.height()
-    assert original_ratio == pytest.approx(resized_ratio, rel=0.05)
+
+
+def test_zoom_in_and_out_change_pixmap_size(qtbot):
+    panel = FeedbackPanel()
+    qtbot.addWidget(panel)
+
+    overlay_img = Image.new("RGB", (400, 300), (10, 20, 30))
+    panel.show_feedback(_overlay_response(), overlay_image=overlay_img)
+    original_size = panel._image_label.pixmap().size()
+
+    panel._zoom_in()
+    zoomed_in_size = panel._image_label.pixmap().size()
+    assert zoomed_in_size.width() > original_size.width()
+
+    panel._zoom_reset()
+    reset_size = panel._image_label.pixmap().size()
+    assert (reset_size.width(), reset_size.height()) == (
+        original_size.width(),
+        original_size.height(),
+    )
+
+    panel._zoom_out()
+    zoomed_out_size = panel._image_label.pixmap().size()
+    assert zoomed_out_size.width() < original_size.width()
+
+
+def test_zoom_resets_on_history_navigation(qtbot):
+    panel = FeedbackPanel()
+    qtbot.addWidget(panel)
+
+    overlay_img = Image.new("RGB", (400, 300), (10, 20, 30))
+    panel.show_feedback(_overlay_response(), overlay_image=overlay_img)
+    panel._zoom_in()
+    assert panel._zoom_factor != 1.0
+
+    panel.show_feedback(
+        FeedbackResponse(
+            mode="quick_hint", text="ok", timestamp=datetime(2024, 1, 1, 10, 1, 0)
+        )
+    )
+    panel._show_prev()
+
+    assert panel._zoom_factor == 1.0

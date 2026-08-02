@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-from typing import Callable
-
 from PIL import Image as PilImage
-from PyQt6.QtCore import QPoint, Qt
-from PyQt6.QtGui import QImage, QKeyEvent, QMouseEvent, QPixmap, QResizeEvent
+from PyQt6.QtCore import QPoint, Qt, pyqtSignal
+from PyQt6.QtGui import QImage, QKeyEvent, QMouseEvent, QPixmap, QWheelEvent
 from PyQt6.QtWidgets import (
     QButtonGroup,
     QFileDialog,
@@ -12,7 +10,8 @@ from PyQt6.QtWidgets import (
     QLabel,
     QPushButton,
     QRadioButton,
-    QStackedWidget,
+    QScrollArea,
+    QSplitter,
     QTextEdit,
     QVBoxLayout,
     QWidget,
@@ -27,6 +26,10 @@ MODE_LABELS = {
     "overlay": "Overlay",
 }
 
+MIN_ZOOM = 0.25
+MAX_ZOOM = 4.0
+ZOOM_STEP = 1.25
+
 
 def _pil_to_pixmap(img: PilImage.Image) -> QPixmap:
 
@@ -38,12 +41,33 @@ def _pil_to_pixmap(img: PilImage.Image) -> QPixmap:
     return QPixmap.fromImage(qimg)
 
 
+class _ZoomScrollArea(QScrollArea):
+    """QScrollArea that treats Ctrl+Wheel as a zoom gesture instead of scrolling."""
+
+    def __init__(self, on_zoom_in, on_zoom_out, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._on_zoom_in = on_zoom_in
+        self._on_zoom_out = on_zoom_out
+
+    def wheelEvent(self, event: QWheelEvent) -> None:
+        if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+            if event.angleDelta().y() > 0:
+                self._on_zoom_in()
+            else:
+                self._on_zoom_out()
+            event.accept()
+        else:
+            super().wheelEvent(event)
+
+
 class FeedbackPanel(QWidget):
     """Floating, draggable panel that shows LLM feedback."""
 
+    feedback_requested = pyqtSignal(str)
+
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent, Qt.WindowType.Tool | Qt.WindowType.FramelessWindowHint)
-        self.setWindowTitle("Drawing Coach — Feedback")
+        self.setWindowTitle("Feedback Management")
         self.setMinimumSize(380, 300)
         self.resize(720, 560)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
@@ -58,14 +82,14 @@ class FeedbackPanel(QWidget):
         self._history: list[FeedbackResponse] = []
         self._history_idx: int = -1
         self._overlay_images: dict[int, PilImage.Image] = {}
-        self.on_trigger_requested: Callable[[], None] | None = None
+        self._zoom_factor: float = 1.0
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(8, 8, 8, 8)
 
         # Title bar
         title_row = QHBoxLayout()
-        title_label = QLabel("Drawing Coach")
+        title_label = QLabel("Feedback Management")
         title_label.setStyleSheet("font-weight: bold;")
         title_row.addWidget(title_label)
         title_row.addStretch()
@@ -75,7 +99,7 @@ class FeedbackPanel(QWidget):
         title_row.addWidget(dismiss_btn)
         layout.addLayout(title_row)
 
-        # Mode selector
+        # Mode selector + request trigger
         mode_row = QHBoxLayout()
         mode_row.addWidget(QLabel("Mode:"))
         self._mode_group = QButtonGroup(self)
@@ -87,9 +111,11 @@ class FeedbackPanel(QWidget):
             self._mode_group.addButton(radio)
             mode_row.addWidget(radio)
         mode_row.addStretch()
-        self._trigger_btn = QPushButton("Get Feedback")
-        self._trigger_btn.clicked.connect(self._on_trigger_clicked)
-        mode_row.addWidget(self._trigger_btn)
+        self._request_btn = QPushButton("Request Feedback")
+        self._request_btn.clicked.connect(
+            lambda: self.feedback_requested.emit(self.current_mode())
+        )
+        mode_row.addWidget(self._request_btn)
         layout.addLayout(mode_row)
 
         # Loading indicator
@@ -98,23 +124,48 @@ class FeedbackPanel(QWidget):
         self._loading_label.hide()
         layout.addWidget(self._loading_label)
 
-        # Content stack: text vs image
-        self._stack = QStackedWidget()
-        self._text_edit = QTextEdit()
-        self._text_edit.setReadOnly(True)
-        self._stack.addWidget(self._text_edit)  # index 0
+        # Overlay (top) / feedback text (bottom) split
+        self._splitter = QSplitter(Qt.Orientation.Vertical)
+
+        zoom_row = QHBoxLayout()
+        zoom_out_btn = QPushButton("−")
+        zoom_out_btn.setFixedWidth(28)
+        zoom_out_btn.clicked.connect(self._zoom_out)
+        zoom_row.addWidget(zoom_out_btn)
+        zoom_reset_btn = QPushButton("Reset")
+        zoom_reset_btn.clicked.connect(self._zoom_reset)
+        zoom_row.addWidget(zoom_reset_btn)
+        zoom_in_btn = QPushButton("+")
+        zoom_in_btn.setFixedWidth(28)
+        zoom_in_btn.clicked.connect(self._zoom_in)
+        zoom_row.addWidget(zoom_in_btn)
+        self._zoom_label = QLabel("100%")
+        self._zoom_label.setStyleSheet("color: #aaa; font-size: 11px;")
+        zoom_row.addWidget(self._zoom_label)
+        zoom_row.addStretch()
 
         self._image_label = QLabel()
         self._image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._image_label.setScaledContents(False)
-        self._stack.addWidget(self._image_label)  # index 1
-        layout.addWidget(self._stack, 1)
+        self._image_scroll = _ZoomScrollArea(self._zoom_in, self._zoom_out)
+        self._image_scroll.setWidgetResizable(True)
+        self._image_scroll.setWidget(self._image_label)
 
-        # Overlay save row (shown only in overlay mode)
+        self._image_pane = QWidget()
+        image_pane_layout = QVBoxLayout(self._image_pane)
+        image_pane_layout.setContentsMargins(0, 0, 0, 0)
+        image_pane_layout.addLayout(zoom_row)
+        image_pane_layout.addWidget(self._image_scroll)
+        self._splitter.addWidget(self._image_pane)
+
+        self._text_edit = QTextEdit()
+        self._text_edit.setReadOnly(True)
+        self._splitter.addWidget(self._text_edit)
+
+        layout.addWidget(self._splitter, 1)
+
+        # Overlay save row
         self._save_row = QHBoxLayout()
-        self._overlay_notice = QLabel("")
-        self._overlay_notice.setStyleSheet("color: #aaa; font-size: 11px;")
-        self._save_row.addWidget(self._overlay_notice)
         self._save_row.addStretch()
         self._save_btn = QPushButton("Save Overlay…")
         self._save_btn.clicked.connect(self._save_overlay)
@@ -144,13 +195,9 @@ class FeedbackPanel(QWidget):
         checked = self._mode_group.checkedButton()
         return checked.property("mode_key") if checked else None
 
-    def _on_trigger_clicked(self) -> None:
-        if self.on_trigger_requested is not None:
-            self.on_trigger_requested()
-
     def show_loading(self) -> None:
         self._loading_label.show()
-        self._stack.hide()
+        self._splitter.hide()
         self.show()
         self.raise_()
 
@@ -163,17 +210,17 @@ class FeedbackPanel(QWidget):
         if overlay_image is not None:
             self._overlay_images[idx] = overlay_image
         self._loading_label.hide()
-        self._stack.show()
+        self._splitter.show()
         self._render_current()
         self.show()
         self.raise_()
 
     def show_error(self, message: str) -> None:
         self._loading_label.hide()
-        self._stack.show()
-        self._stack.setCurrentIndex(0)
-        self._text_edit.setMarkdown(f"**Error:** {message}")
+        self._splitter.show()
+        self._image_pane.hide()
         self._save_btn.hide()
+        self._text_edit.setMarkdown(f"**Error:** {message}")
         self.show()
         self.raise_()
 
@@ -203,36 +250,18 @@ class FeedbackPanel(QWidget):
         self._prev_btn.setEnabled(self._history_idx > 0)
         self._next_btn.setEnabled(self._history_idx < total - 1)
 
+        self._text_edit.setMarkdown(resp.text)
+        self._set_zoom(1.0)
+
         overlay_img = self._overlay_images.get(self._history_idx)
         if overlay_img is not None:
-            self._rescale_overlay()
-            self._stack.setCurrentIndex(1)
+            self._image_pane.show()
+            self._render_overlay_image()
             self._save_btn.show()
-            if resp.text:
-                self._overlay_notice.setText(
-                    resp.text[:120] + ("…" if len(resp.text) > 120 else "")
-                )
-            else:
-                self._overlay_notice.setText("")
+            self._splitter.setSizes([3, 2])
         else:
-            self._stack.setCurrentIndex(0)
-            self._text_edit.setMarkdown(resp.text)
+            self._image_pane.hide()
             self._save_btn.hide()
-            self._overlay_notice.setText("")
-
-    def _rescale_overlay(self) -> None:
-        overlay_img = self._overlay_images.get(self._history_idx)
-        if overlay_img is None:
-            return
-        pixmap = _pil_to_pixmap(overlay_img)
-        self._image_label.setPixmap(
-            pixmap.scaled(
-                self._stack.width() - 8,
-                self._stack.height() - 8,
-                Qt.AspectRatioMode.KeepAspectRatio,
-                Qt.TransformationMode.SmoothTransformation,
-            )
-        )
 
     def _save_overlay(self) -> None:
         overlay_img = self._overlay_images.get(self._history_idx)
@@ -243,6 +272,40 @@ class FeedbackPanel(QWidget):
         )
         if path:
             overlay_img.save(path, format="PNG")
+
+    # ------------------------------------------------------------------
+    # Zoom
+    # ------------------------------------------------------------------
+
+    def _zoom_in(self) -> None:
+        self._set_zoom(self._zoom_factor * ZOOM_STEP)
+
+    def _zoom_out(self) -> None:
+        self._set_zoom(self._zoom_factor / ZOOM_STEP)
+
+    def _zoom_reset(self) -> None:
+        self._set_zoom(1.0)
+
+    def _set_zoom(self, factor: float) -> None:
+        self._zoom_factor = max(MIN_ZOOM, min(MAX_ZOOM, factor))
+        self._zoom_label.setText(f"{round(self._zoom_factor * 100)}%")
+        self._render_overlay_image()
+
+    def _render_overlay_image(self) -> None:
+        overlay_img = self._overlay_images.get(self._history_idx)
+        if overlay_img is None:
+            return
+        pixmap = _pil_to_pixmap(overlay_img)
+        target_w = max(1, round(pixmap.width() * self._zoom_factor))
+        target_h = max(1, round(pixmap.height() * self._zoom_factor))
+        self._image_label.setPixmap(
+            pixmap.scaled(
+                target_w,
+                target_h,
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation,
+            )
+        )
 
     # ------------------------------------------------------------------
     # Dragging
@@ -265,7 +328,3 @@ class FeedbackPanel(QWidget):
         if event.key() == Qt.Key.Key_Escape:
             self.hide()
         super().keyPressEvent(event)
-
-    def resizeEvent(self, event: QResizeEvent) -> None:
-        super().resizeEvent(event)
-        self._rescale_overlay()

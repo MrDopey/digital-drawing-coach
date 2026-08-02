@@ -180,7 +180,6 @@ class MainWindow(QMainWindow):
         self._feedback_engine = FeedbackEngine(self._config)
         self._memory_store = MemoryStore(self._config)
         self._feedback_panel = FeedbackPanel()
-        self._feedback_panel.on_trigger_requested = self._trigger_feedback
         self._signals = _Signals()
 
         self._setup_callbacks()
@@ -201,6 +200,7 @@ class MainWindow(QMainWindow):
 
         self._signals.feedback_ready.connect(self._on_feedback_ready)
         self._signals.feedback_error.connect(self._feedback_panel.show_error)
+        self._feedback_panel.feedback_requested.connect(self._request_feedback)
         self._signals.window_lost.connect(self._on_window_lost)
         self._signals.frame_captured.connect(self._update_status)
         self._signals.write_error.connect(self._on_write_error_main)
@@ -280,8 +280,8 @@ class MainWindow(QMainWindow):
         self._pause_btn.clicked.connect(self._toggle_pause)
         btn_row.addWidget(self._pause_btn)
 
-        feedback_btn = QPushButton("Get Feedback")
-        feedback_btn.clicked.connect(self._trigger_feedback)
+        feedback_btn = QPushButton("Feedback Management")
+        feedback_btn.clicked.connect(self._open_feedback_panel)
         btn_row.addWidget(feedback_btn)
 
         history_btn = QPushButton("History")
@@ -315,7 +315,7 @@ class MainWindow(QMainWindow):
         self._tray.setIcon(self._make_tray_icon())
         self._tray.setToolTip("Drawing Coach")
         menu = QMenu()
-        menu.addAction("Get Feedback", self._trigger_feedback)
+        menu.addAction("Feedback Management", self._open_feedback_panel)
         menu.addSeparator()
         self._tray_pause_action = QAction("Pause Capture", self)
         self._tray_pause_action.triggered.connect(self._toggle_pause)
@@ -414,7 +414,7 @@ class MainWindow(QMainWindow):
         self._capture.on_frame_captured = self._on_frame_captured
         self._capture.on_window_lost = lambda: self._signals.window_lost.emit()
         self._capture.on_write_error = self._on_write_error
-        self._detector.on_stuck = self._trigger_feedback
+        self._detector.on_stuck = self._request_feedback
         self._hotkeys.on_trigger = lambda: self._detector.manual_trigger()
 
     def _on_frame_captured(self, frame: CapturedFrame) -> None:
@@ -528,7 +528,11 @@ class MainWindow(QMainWindow):
             self._capture.pause()
         self._update_status()
 
-    def _trigger_feedback(self) -> None:
+    def _open_feedback_panel(self) -> None:
+        self._feedback_panel.show()
+        self._feedback_panel.raise_()
+
+    def _request_feedback(self, mode: str | None = None) -> None:
         if not self._config.is_configured():
             QMessageBox.information(
                 self,
@@ -537,7 +541,8 @@ class MainWindow(QMainWindow):
             )
             return
         self._feedback_panel.show_loading()
-        mode = self._feedback_panel.current_mode()
+        if mode is None:
+            mode = self._feedback_panel.current_mode()
         frames = self._capture.get_frames()
         latest_image = frames[-1].image if frames else None
 
