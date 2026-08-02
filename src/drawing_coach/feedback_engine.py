@@ -196,6 +196,7 @@ class FeedbackResponse:
     annotation_json: str | None = None  # raw JSON string for overlay mode
     observations: list[dict] = field(default_factory=list)
     used_structured_output: bool = False
+    frame_hashes: list[str] = field(default_factory=list)
 
 
 class FeedbackEngine:
