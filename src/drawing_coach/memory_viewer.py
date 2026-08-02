@@ -69,7 +69,7 @@ class MemoryViewerDialog(QDialog):
 
     def _refresh(self) -> None:
         self._notes_view.setPlainText(
-            self._store.summarise() or "No coach's notes yet."
+            self._store.current_notes() or "No coach's notes yet."
         )
         self._tree.clear()
 

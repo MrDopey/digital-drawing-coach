@@ -193,6 +193,34 @@ def test_summarise_more_than_20_observations(paths):
 
 
 # ------------------------------------------------------------------
+# current_notes (read-only preview, no resummarisation side effect)
+# ------------------------------------------------------------------
+
+
+def test_current_notes_never_triggers_llm_or_writes_summaries(paths):
+    _, summ, _ = paths
+    store = MemoryStore(LLMConfig(model="gpt-4o", memory_resummarize_interval=1))
+    with patch("litellm.completion") as mock_completion:
+        store.append(_obs(note="a"))  # crosses the threshold (interval=1)
+        result = store.current_notes()
+
+    mock_completion.assert_not_called()
+    assert not summ.exists()
+    assert "a" in result
+
+
+def test_current_notes_matches_summarise_with_no_new_activity(paths):
+    store = MemoryStore(LLMConfig(memory_resummarize_interval=0))
+    store.append(_obs(note="struggles with hands"))
+    assert store.current_notes() == store.summarise()
+
+
+def test_current_notes_empty(paths):
+    store = MemoryStore(LLMConfig())
+    assert store.current_notes() == ""
+
+
+# ------------------------------------------------------------------
 # 5.5 re-summarisation
 # ------------------------------------------------------------------
 
