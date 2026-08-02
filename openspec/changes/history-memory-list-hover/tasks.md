@@ -6,9 +6,9 @@
 
 ## 2. Verification
 
-- [ ] 2.1 Manually exercise (or Xvfb-run) `MemoryViewerDialog` with sample observations and confirm rows highlight on hover and unhighlight on leave.
-- [ ] 2.2 Manually exercise `HistoryPanel` and confirm its existing row hover-highlight from `session-history-redesign` still behaves correctly (no regression expected, no code changes anticipated there).
-- [ ] 2.3 Run `tests/test_design_system_compliance.py` to confirm the new stylesheet line doesn't trip the stray-hex/raw-`setStyleSheet()` check (verify the `# theme-exempt` marker is honored).
+- [x] 2.1 Manually exercise (or Xvfb-run) `MemoryViewerDialog` with sample observations and confirm rows highlight on hover and unhighlight on leave.
+- [x] 2.2 Manually exercise `HistoryPanel` and confirm its existing row hover-highlight from `session-history-redesign` still behaves correctly (no regression expected, no code changes anticipated there).
+- [x] 2.3 Run `tests/test_design_system_compliance.py` to confirm the new stylesheet line doesn't trip the stray-hex/raw-`setStyleSheet()` check (verify the `# theme-exempt` marker is honored).
 
 ## 3. Documentation
 
