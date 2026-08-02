@@ -33,4 +33,4 @@
 
 ## 5. Final Verification
 
-- [ ] 5.1 Run `uv run pytest` and confirm all tests pass.
+- [x] 5.1 Run `uv run pytest` and confirm all tests pass.
