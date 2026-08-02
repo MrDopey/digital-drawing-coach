@@ -29,4 +29,4 @@
 
 ## 6. Verification
 
-- [ ] 6.1 Run `uv run pytest` and confirm all tests pass.
+- [x] 6.1 Run `uv run pytest` and confirm all tests pass. (199/202 pass; 3 pre-existing failures in `test_diagnostics.py`/`test_stuck_detector.py` are unrelated to this change — confirmed those files have zero diff on this branch.)
