@@ -157,6 +157,7 @@ class _Signals(QObject):
     window_lost = pyqtSignal()
     frame_captured = pyqtSignal()
     write_error = pyqtSignal(str, str)  # path_str, exc_str
+    structured_output_unavailable = pyqtSignal(str)
     write_error_clear = pyqtSignal()
 
 
@@ -182,6 +183,9 @@ class MainWindow(QMainWindow):
         self._feedback_panel = FeedbackPanel()
         self._feedback_panel.on_trigger_requested = self._trigger_feedback
         self._signals = _Signals()
+        self._feedback_engine.on_structured_output_unavailable = (
+            self._signals.structured_output_unavailable.emit
+        )
 
         self._setup_callbacks()
         self._build_ui()
@@ -205,6 +209,9 @@ class MainWindow(QMainWindow):
         self._signals.frame_captured.connect(self._update_status)
         self._signals.write_error.connect(self._on_write_error_main)
         self._signals.write_error_clear.connect(self._write_error_label.clear_error)
+        self._signals.structured_output_unavailable.connect(
+            self._on_structured_output_unavailable
+        )
 
         if not self._config.is_configured():
             QTimer.singleShot(200, self._run_onboarding)
@@ -450,6 +457,9 @@ class MainWindow(QMainWindow):
         )
         self._open_app_selection()
 
+    def _on_structured_output_unavailable(self, message: str) -> None:
+        QMessageBox.warning(self, "Structured Output Unavailable", message)
+
     def _update_status(self) -> None:
         has_target = self._capture.target is not None
         if has_target:
@@ -546,15 +556,20 @@ class MainWindow(QMainWindow):
         def _run() -> None:
             result = self._feedback_engine.request_feedback(frames, mode, coach_notes)
             if isinstance(result, FeedbackResponse):
-                stripped_text = self._memory_store.extract_and_append(
-                    result.text, self._capture.session_id
-                )
-                if stripped_text != result.text:
-                    result = FeedbackResponse(
-                        mode=result.mode,
-                        text=stripped_text,
-                        annotation_json=result.annotation_json,
+                if result.used_structured_output:
+                    self._memory_store.append_observations(
+                        result.observations, self._capture.session_id
                     )
+                else:
+                    stripped_text = self._memory_store.extract_and_append(
+                        result.text, self._capture.session_id
+                    )
+                    if stripped_text != result.text:
+                        result = FeedbackResponse(
+                            mode=result.mode,
+                            text=stripped_text,
+                            annotation_json=result.annotation_json,
+                        )
                 overlay_image = None
                 if mode == "overlay" and result.annotation_json and latest_image:
                     rendered, err = render_overlay(latest_image, result.annotation_json)

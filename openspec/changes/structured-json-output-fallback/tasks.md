@@ -16,16 +16,16 @@
 
 ## 3. `memory_store.py` structured observation path
 
-- [ ] 3.1 Add `MemoryStore.append_observations(items: list[dict], session_id: str) -> None` that appends already-parsed `{category, note}` records directly (current-date stamped), reusing the existing cap/prune logic in `append()`
-- [ ] 3.2 Update the call site in `main_window.py` (currently calling `extract_and_append`) to call `append_observations` when the response came from the structured path, and `extract_and_append` only for the prose-fallback path
-- [ ] 3.3 Leave `extract_and_append`'s regex-based parsing and stripping behavior unchanged for the fallback path
-- [ ] 3.4 In `main_window.py`, wire `FeedbackEngine.on_structured_output_unavailable` to `QMessageBox.warning(self, "Structured Output Unavailable", message)`, matching the existing warning style (e.g. the "Window Closed" notice); the message text SHALL state that structured output is unavailable for this session, that memory notes and overlay annotations fall back to less-reliable text parsing, and that restarting the app will retry structured output
+- [x] 3.1 Add `MemoryStore.append_observations(items: list[dict], session_id: str) -> None` that appends already-parsed `{category, note}` records directly (current-date stamped), reusing the existing cap/prune logic in `append()`
+- [x] 3.2 Update the call site in `main_window.py` (currently calling `extract_and_append`) to call `append_observations` when the response came from the structured path, and `extract_and_append` only for the prose-fallback path
+- [x] 3.3 Leave `extract_and_append`'s regex-based parsing and stripping behavior unchanged for the fallback path
+- [x] 3.4 In `main_window.py`, wire `FeedbackEngine.on_structured_output_unavailable` to `QMessageBox.warning(self, "Structured Output Unavailable", message)`, matching the existing warning style (e.g. the "Window Closed" notice); the message text SHALL state that structured output is unavailable for this session, that memory notes and overlay annotations fall back to less-reliable text parsing, and that restarting the app will retry structured output
 
 ## 4. Overlay annotation path
 
-- [ ] 4.1 When overlay mode used the structured path, take `annotations` directly from the structured response (already validated in 2.2) instead of regex-extracting a fenced JSON block
-- [ ] 4.2 When overlay mode fell back to the prose path, keep the existing `_extract_json_block`/`_strip_json_block` fenced-block parsing and the "Visual overlay unavailable" fallback notice on parse failure, unchanged
-- [ ] 4.3 Confirm annotation rendering (`arrow`/`line`/`circle` compositing in `main_window.py`) requires no changes since both paths produce the same annotation list shape
+- [x] 4.1 When overlay mode used the structured path, take `annotations` directly from the structured response (already validated in 2.2) instead of regex-extracting a fenced JSON block
+- [x] 4.2 When overlay mode fell back to the prose path, keep the existing `_extract_json_block`/`_strip_json_block` fenced-block parsing and the "Visual overlay unavailable" fallback notice on parse failure, unchanged
+- [x] 4.3 Confirm annotation rendering (`arrow`/`line`/`circle` compositing in `main_window.py`) requires no changes since both paths produce the same annotation list shape
 
 ## 5. Tests
 

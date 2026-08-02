@@ -114,6 +114,22 @@ class MemoryStore:
         self._last_resummarized_count += 1
         self._save_observations()
 
+    def append_observations(self, items: list[dict], session_id: str) -> None:
+        """Append already-parsed `{category, note}` records (the structured-output
+        path), reusing the same cap/prune logic as `append()`."""
+        now = datetime.now().isoformat()
+        for item in items:
+            try:
+                category = str(item["category"])
+                note = str(item["note"])
+            except (KeyError, TypeError):
+                continue
+            self.append(
+                Observation(
+                    date=now, session_id=session_id, category=category, note=note
+                )
+            )
+
     def delete(self, idx: int) -> None:
         del self._observations[idx]
         self._save_observations()
