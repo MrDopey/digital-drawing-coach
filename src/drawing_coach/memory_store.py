@@ -248,6 +248,7 @@ class MemoryStore:
                     {"role": "system", "content": _RESUMMARIZE_SYSTEM_PROMPT},
                     {"role": "user", "content": user_content},
                 ],
+                "metadata": {"debug_label": "memory_resummarize"},
             }
             if self._config.api_key:
                 kwargs["api_key"] = self._config.api_key

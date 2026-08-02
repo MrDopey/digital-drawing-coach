@@ -258,6 +258,15 @@ def test_check_llm_failure():
     assert result.hint
 
 
+def test_check_llm_sends_debug_label():
+    cfg = LLMConfig(model="gpt-4o")
+    with patch("litellm.completion", return_value=MagicMock()) as mock_completion:
+        check_llm(cfg)
+    assert mock_completion.call_args.kwargs["metadata"] == {
+        "debug_label": "diagnostics_check_llm"
+    }
+
+
 # ---------------------------------------------------------------------------
 # check_config_path
 # ---------------------------------------------------------------------------

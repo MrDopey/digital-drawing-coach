@@ -208,6 +208,9 @@ def test_resummarize_default_triggers_at_threshold(paths):
     mock_completion.assert_called_once()
     assert len(store.summaries()) == 1
     assert store.summaries()[0].text == "Condensed summary."
+    assert mock_completion.call_args.kwargs["metadata"] == {
+        "debug_label": "memory_resummarize"
+    }
 
 
 def test_resummarize_zero_never_triggers(paths):

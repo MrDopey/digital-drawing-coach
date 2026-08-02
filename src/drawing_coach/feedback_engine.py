@@ -299,7 +299,7 @@ class FeedbackEngine:
         system = self._build_system_prompt(mode, coach_notes, structured=True)
         messages = self._build_messages(system, frames, mode)
 
-        kwargs = self._base_kwargs()
+        kwargs = self._base_kwargs(f"feedback_{mode}_structured")
         kwargs["messages"] = messages
         kwargs["response_format"] = _STRUCTURED_RESPONSE_SCHEMA
 
@@ -339,7 +339,7 @@ class FeedbackEngine:
         system = self._build_system_prompt(mode, coach_notes, structured=False)
         messages = self._build_messages(system, frames, mode)
 
-        kwargs = self._base_kwargs()
+        kwargs = self._base_kwargs(f"feedback_{mode}_prose")
         kwargs["messages"] = messages
 
         t0 = time.monotonic()
@@ -365,8 +365,11 @@ class FeedbackEngine:
 
     # ------------------------------------------------------------------
 
-    def _base_kwargs(self) -> dict[str, Any]:
-        kwargs: dict[str, Any] = {"model": self._config.model}
+    def _base_kwargs(self, label: str) -> dict[str, Any]:
+        kwargs: dict[str, Any] = {
+            "model": self._config.model,
+            "metadata": {"debug_label": label},
+        }
         if self._config.api_key:
             kwargs["api_key"] = self._config.api_key
         if self._config.api_base:

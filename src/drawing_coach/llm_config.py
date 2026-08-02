@@ -26,6 +26,8 @@ class LLMConfig:
     memory_resummarize_interval: int = 20
     memory_max_observations: int = 200
     memory_summary_history_max: int = 200
+    # Debugging
+    debug_log_llm_io: bool = False
 
     def is_configured(self) -> bool:
         return bool(self.model)

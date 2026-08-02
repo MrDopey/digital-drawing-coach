@@ -28,3 +28,7 @@ def memory_path() -> Path:
 
 def memory_summaries_path() -> Path:
     return sessions_dir().parent / "memory_summaries.json"
+
+
+def debug_log_dir() -> Path:
+    return sessions_dir().parent / "debug_logs"

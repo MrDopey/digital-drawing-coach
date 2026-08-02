@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from PyQt6.QtWidgets import (
+    QCheckBox,
     QDialog,
     QDoubleSpinBox,
     QFileDialog,
@@ -93,6 +94,16 @@ class SettingsDialog(QDialog):
         form.addRow("Custom Instructions:", self._custom_edit)
 
         layout.addLayout(form)
+
+        self._debug_log_checkbox = QCheckBox("Debug logging of LLM input/output")
+        self._debug_log_checkbox.setChecked(self._config.debug_log_llm_io)
+        self._debug_log_checkbox.setToolTip(
+            "Persists every LLM request and response to disk for offline"
+            " debugging — including drawing screenshots. Off by default;"
+            " enable only when you need to inspect what was actually sent"
+            " to the LLM."
+        )
+        layout.addWidget(self._debug_log_checkbox)
 
         test_row = QHBoxLayout()
         self._test_label = PillBadge("")
@@ -258,6 +269,7 @@ class SettingsDialog(QDialog):
             kwargs: dict = {
                 "model": model,
                 "messages": [{"role": "user", "content": "hi"}],
+                "metadata": {"debug_label": "settings_test_connection"},
             }
             if key:
                 kwargs["api_key"] = key
@@ -315,6 +327,7 @@ class SettingsDialog(QDialog):
         self._config.api_key = self._key_edit.text().strip()
         self._config.api_base = self._base_edit.text().strip()
         self._config.custom_instructions = self._custom_edit.text().strip()
+        self._config.debug_log_llm_io = self._debug_log_checkbox.isChecked()
         self._config.capture_interval = self._interval_spin.value()
         self._config.hotkey = self._hotkey_edit.text().strip()
         self._config.stuck_threshold = self._threshold_spin.value()
