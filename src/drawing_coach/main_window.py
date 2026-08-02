@@ -33,6 +33,7 @@ from drawing_coach.design_system import Card, MutedLabel, PillBadge
 from drawing_coach.editable_name_label import EditableNameLabel
 from drawing_coach.feedback_engine import FeedbackEngine, FeedbackResponse
 from drawing_coach.feedback_panel import FeedbackPanel
+from drawing_coach.feedback_store import FeedbackStore
 from drawing_coach.history_panel import HistoryPanel
 from drawing_coach.hotkey_manager import HotkeyManager
 from drawing_coach.config_manager import ConfigManager
@@ -205,6 +206,8 @@ class MainWindow(QMainWindow):
             self._capture.load_session(session_dir)
         self._capture.interval = self._config.capture_interval
         self._capture.start()
+        if self._capture.session_dir is not None:
+            self._feedback_panel.set_store(FeedbackStore(self._capture.session_dir))
         self._update_window_title()
 
         self._signals.feedback_ready.connect(self._on_feedback_ready)
@@ -522,11 +525,13 @@ class MainWindow(QMainWindow):
 
     def _switch_session(self, session_dir: Path) -> None:
         self._capture.load_session(session_dir)
+        self._feedback_panel.set_store(FeedbackStore(self._capture.session_dir))
         self._update_window_title()
         self._update_status()
 
     def _new_session(self) -> None:
         self._capture.new_session()
+        self._feedback_panel.set_store(FeedbackStore(self._capture.session_dir))
         self._update_window_title()
         self._update_status()
 
