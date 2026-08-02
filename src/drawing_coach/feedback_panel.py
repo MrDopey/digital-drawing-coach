@@ -385,6 +385,11 @@ class FeedbackPanel(QWidget):
     def _render_current(self) -> None:
         if not self._history or self._history_idx < 0:
             return
+        sidebar_row = len(self._history) - 1 - self._history_idx
+        self._sidebar.blockSignals(True)
+        self._sidebar.setCurrentRow(sidebar_row)
+        self._sidebar.blockSignals(False)
+
         resp = self._history[self._history_idx]
         ts = resp.timestamp.strftime("%H:%M:%S")
         mode_label = MODE_LABELS.get(resp.mode, resp.mode)
