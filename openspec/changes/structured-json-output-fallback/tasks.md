@@ -29,12 +29,12 @@
 
 ## 5. Tests
 
-- [ ] 5.1 Add a `feedback_engine` test (with the module-level flag reset beforehand) where the mocked LiteLLM call returns a valid structured response — assert no regex extraction occurs, `observations`/`annotations` are read directly from the structured fields, and the disable flag remains unset
-- [ ] 5.2 Add a test where the structured call raises (simulating an unsupported provider) — assert the flag becomes set, the code falls back to the prose prompt and regex extraction for that request, the user still gets a `FeedbackResponse`, and `on_structured_output_unavailable` fires exactly once with a message
-- [ ] 5.3 Add a test where the structured call returns invalid/incomplete JSON — assert the same disable-and-fallback behavior triggers and a debug log entry is written
-- [ ] 5.4 Add a test that, with the flag already set, calls `request_feedback` twice — assert the structured call is never attempted (mock not called with `response_format`) on either call, and `on_structured_output_unavailable` does not fire again
-- [ ] 5.5 Add a `memory_store` test for `append_observations` covering: normal append, cap/prune behavior matching `append()`, and empty-list no-op
-- [ ] 5.6 Add an overlay-mode test covering both the structured-annotations path and the prose-fallback fenced-JSON path, asserting identical rendered-annotation output for equivalent input data
+- [x] 5.1 Add a `feedback_engine` test (with the module-level flag reset beforehand) where the mocked LiteLLM call returns a valid structured response — assert no regex extraction occurs, `observations`/`annotations` are read directly from the structured fields, and the disable flag remains unset
+- [x] 5.2 Add a test where the structured call raises (simulating an unsupported provider) — assert the flag becomes set, the code falls back to the prose prompt and regex extraction for that request, the user still gets a `FeedbackResponse`, and `on_structured_output_unavailable` fires exactly once with a message
+- [x] 5.3 Add a test where the structured call returns invalid/incomplete JSON — assert the same disable-and-fallback behavior triggers and a debug log entry is written
+- [x] 5.4 Add a test that, with the flag already set, calls `request_feedback` twice — assert the structured call is never attempted (mock not called with `response_format`) on either call, and `on_structured_output_unavailable` does not fire again
+- [x] 5.5 Add a `memory_store` test for `append_observations` covering: normal append, cap/prune behavior matching `append()`, and empty-list no-op
+- [x] 5.6 Add an overlay-mode test covering both the structured-annotations path and the prose-fallback fenced-JSON path, asserting identical rendered-annotation output for equivalent input data
 
 ## 6. Documentation
 
