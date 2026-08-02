@@ -7,9 +7,9 @@
 
 ## 2. Tests
 
-- [ ] 2.1 Add/extend a `pytest-qt` test in `tests/` asserting the pause button and tray action are disabled and show "Resume" immediately after `MainWindow` construction, before any window is selected.
-- [ ] 2.2 Add a test asserting the pause button becomes enabled after a window is selected (simulate `_capture.set_target(...)` + the selection flow, or call `_update_status()` directly with a target set).
-- [ ] 2.3 Add a test asserting the pause button returns to disabled after `_on_window_lost()` fires.
+- [x] 2.1 Add/extend a `pytest-qt` test in `tests/` asserting the pause button and tray action are disabled and show "Resume" immediately after `MainWindow` construction, before any window is selected.
+- [x] 2.2 Add a test asserting the pause button becomes enabled after a window is selected (simulate `_capture.set_target(...)` + the selection flow, or call `_update_status()` directly with a target set).
+- [x] 2.3 Add a test asserting the pause button returns to disabled after `_on_window_lost()` fires.
 
 ## 3. Documentation
 

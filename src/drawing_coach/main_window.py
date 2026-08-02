@@ -450,9 +450,10 @@ class MainWindow(QMainWindow):
         self._open_app_selection()
 
     def _update_status(self) -> None:
-        if self._capture.target:
+        has_target = self._capture.target is not None
+        if has_target:
             self._window_label.setText(f"Monitoring: {self._capture.target.title}")
-        if self._capture.paused:
+        if not has_target or self._capture.paused:
             self._status_label.setText("Capture: paused")
             self._pause_btn.setText("Resume")
             self._tray_pause_action.setText("Resume Capture")
@@ -461,7 +462,6 @@ class MainWindow(QMainWindow):
             self._status_label.setText(f"Capture: active  ({frames} frames)")
             self._pause_btn.setText("Pause")
             self._tray_pause_action.setText("Pause Capture")
-        has_target = self._capture.target is not None
         self._pause_btn.setEnabled(has_target)
         self._tray_pause_action.setEnabled(has_target)
 
