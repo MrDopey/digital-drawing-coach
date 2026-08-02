@@ -7,14 +7,14 @@
 ## 2. Remove duplicated tray shortcuts
 
 - [x] 2.1 In `_build_tray()`, remove the "Memory" (`_open_memory_viewer`) and "Progress" (`_open_progress_panel`) menu actions.
-- [ ] 2.2 Confirm the resulting menu order is: Show Drawing Coach, separator, Pause/Resume Capture, Settings, separator, About, Quit.
-- [ ] 2.3 Leave the main window's button row (Get Feedback, History, Memory, Progress, Settings buttons) untouched — `_open_memory_viewer` and `_open_progress_panel` stay as-is since the buttons still call them.
+- [x] 2.2 Confirm the resulting menu order is: Show Drawing Coach, separator, Pause/Resume Capture, Settings, separator, About, Quit.
+- [x] 2.3 Leave the main window's button row (Get Feedback, History, Memory, Progress, Settings buttons) untouched — `_open_memory_viewer` and `_open_progress_panel` stay as-is since the buttons still call them.
 
 ## 3. Tests
 
-- [ ] 3.1 Add/update a test asserting the tray context menu no longer exposes Get Feedback, Memory, or Progress actions.
-- [ ] 3.2 Add a test that invoking the restore action shows, raises, and activates the main window (covering both a hidden and an already-visible window).
-- [ ] 3.3 Add a test that emitting `self._tray.activated` with `DoubleClick` restores the window, and that `Trigger`/`MiddleClick` reasons do not.
+- [x] 3.1 Add/update a test asserting the tray context menu no longer exposes Get Feedback, Memory, or Progress actions.
+- [x] 3.2 Add a test that invoking the restore action shows, raises, and activates the main window (covering both a hidden and an already-visible window).
+- [x] 3.3 Add a test that emitting `self._tray.activated` with `DoubleClick` restores the window, and that `Trigger`/`MiddleClick` reasons do not.
 
 ## 4. Documentation
 
