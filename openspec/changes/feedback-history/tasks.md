@@ -14,7 +14,7 @@
 ## 3. FeedbackPanel / MainWindow — load history and (re)wire persistence
 
 - [x] 3.1 Update `FeedbackPanel.__init__` to build the new sidebar and thumbnail widgets described in section 5, with no store required at construction time (the panel starts idle/empty — no session directory is resolved yet when `MainWindow.__init__` constructs it)
-- [ ] 3.2 Add `FeedbackPanel.set_store(store: FeedbackStore) -> None`: clears any previously-loaded sidebar entries and `_overlay_images`, calls `store.load()`, and repopulates the sidebar and `_overlay_images` (via `store.overlay_image_for(...)` for overlay entries), selecting the most recent entry if any exist
+- [x] 3.2 Add `FeedbackPanel.set_store(store: FeedbackStore) -> None`: clears any previously-loaded sidebar entries and `_overlay_images`, calls `store.load()`, and repopulates the sidebar and `_overlay_images` (via `store.overlay_image_for(...)` for overlay entries), selecting the most recent entry if any exist
 - [ ] 3.3 In `show_feedback` (or wherever a new response is appended to `_history`), call `store.save(response, last_frame, overlay_image)` after appending, guarding for the case no store has been bound yet
 - [ ] 3.4 In `MainWindow`, call `self._feedback_panel.set_store(FeedbackStore(self._capture.session_dir))` once the session directory is resolved at startup (after `new_session()`/`load_session()` runs), and again inside both `_switch_session()` and `_new_session()`, so the panel never keeps showing a previous session's history after a switch
 

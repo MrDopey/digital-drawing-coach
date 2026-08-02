@@ -132,6 +132,7 @@ class FeedbackPanel(QWidget):
         # Left sidebar: reverse-chronological history list
         self._sidebar = QListWidget()
         self._sidebar.setFixedWidth(SIDEBAR_WIDTH)
+        self._sidebar.currentRowChanged.connect(self._on_sidebar_row_changed)
 
         # Right-hand container: everything the panel already had, unchanged
         right_container = QWidget()
@@ -284,6 +285,60 @@ class FeedbackPanel(QWidget):
         self._text_edit.setMarkdown(f"**Error:** {message}")
         self.show()
         self.raise_()
+
+    def set_store(self, store: FeedbackStore) -> None:
+        """(Re)bind the panel to `store`, replacing any previously-loaded history."""
+        self._store = store
+        self._history = store.load()
+        self._overlay_images = {}
+        self._thumb_paths = {}
+        for idx, response in enumerate(self._history):
+            overlay_img = store.overlay_image_for(response)
+            if overlay_img is not None:
+                self._overlay_images[idx] = overlay_img
+            thumb_path = store.thumbnail_path_for(response)
+            if thumb_path is not None:
+                self._thumb_paths[idx] = thumb_path
+        self._rebuild_sidebar()
+        if self._history:
+            self._sidebar.setCurrentRow(0)
+        else:
+            self._history_idx = -1
+            self._clear_display()
+
+    # ------------------------------------------------------------------
+    # Sidebar
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _sidebar_label(response: FeedbackResponse) -> str:
+        mode_label = MODE_LABELS.get(response.mode, response.mode)
+        return f"{response.timestamp.strftime('%d %b  %H:%M')}: {mode_label}"
+
+    def _rebuild_sidebar(self) -> None:
+        self._sidebar.blockSignals(True)
+        self._sidebar.clear()
+        for response in reversed(self._history):
+            self._sidebar.addItem(QListWidgetItem(self._sidebar_label(response)))
+        self._sidebar.blockSignals(False)
+
+    def _on_sidebar_row_changed(self, row: int) -> None:
+        if row < 0 or not self._history:
+            return
+        idx = len(self._history) - 1 - row
+        if idx == self._history_idx:
+            return
+        self._history_idx = idx
+        self._render_current()
+
+    def _clear_display(self) -> None:
+        self._hist_label.setText("")
+        self._prev_btn.setEnabled(False)
+        self._next_btn.setEnabled(False)
+        self._text_edit.clear()
+        self._image_pane.hide()
+        self._thumb_pane.hide()
+        self._save_btn.hide()
 
     # ------------------------------------------------------------------
     # History navigation
