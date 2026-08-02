@@ -9,7 +9,7 @@
 
 - [x] 2.1 Replace `self._mode_combo` (`QComboBox`) with a `QButtonGroup` of `QRadioButton`s, one per `MODE_LABELS` entry, laid out horizontally in the existing mode row; store each mode's key via `setProperty("mode_key", key)`.
 - [x] 2.2 Check the first radio button (`quick_hint`) by default to preserve the combo box's prior default selection.
-- [ ] 2.3 Reimplement `current_mode()` to return the checked radio button's `mode_key` property instead of `QComboBox.currentData()`.
+- [x] 2.3 Reimplement `current_mode()` to return the checked radio button's `mode_key` property instead of `QComboBox.currentData()`.
 
 ## 3. In-panel feedback trigger
 

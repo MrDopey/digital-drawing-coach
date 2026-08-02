@@ -135,7 +135,8 @@ class FeedbackPanel(QWidget):
     # ------------------------------------------------------------------
 
     def current_mode(self) -> str:
-        return self._mode_combo.currentData()
+        checked = self._mode_group.checkedButton()
+        return checked.property("mode_key") if checked else None
 
     def show_loading(self) -> None:
         self._loading_label.show()
