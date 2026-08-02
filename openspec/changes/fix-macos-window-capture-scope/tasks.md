@@ -21,10 +21,10 @@
 
 ## 5. Tests
 
-- [ ] 5.1 Add unit tests for `MacOSBackend.capture_image` mocking `Quartz.CGWindowListCreateImage` and the CoreGraphics data-provider chain, verifying it's called with `kCGWindowListOptionIncludingWindow` and the target window ID (not a screen rect)
-- [ ] 5.2 Add a test asserting `MacOSBackend.capture_image` returns `None` when `CGWindowListCreateImage` yields no image
-- [ ] 5.3 Update `tests/test_capture_engine.py` to mock `manager.capture_image` instead of relying on a real `mss.mss()` call in `_do_capture` tests
-- [ ] 5.4 Add a regression test asserting `_do_capture` calls `manager.capture_image(target.id)` rather than instantiating `mss.mss()` directly
+- [x] 5.1 Add unit tests for `MacOSBackend.capture_image` mocking `Quartz.CGWindowListCreateImage` and the CoreGraphics data-provider chain, verifying it's called with `kCGWindowListOptionIncludingWindow` and the target window ID (not a screen rect)
+- [x] 5.2 Add a test asserting `MacOSBackend.capture_image` returns `None` when `CGWindowListCreateImage` yields no image
+- [x] 5.3 Update `tests/test_capture_engine.py` to mock `manager.capture_image` instead of relying on a real `mss.mss()` call in `_do_capture` tests
+- [x] 5.4 Add a regression test asserting `_do_capture` calls `manager.capture_image(target.id)` rather than instantiating `mss.mss()` directly
 
 ## 6. Documentation
 
