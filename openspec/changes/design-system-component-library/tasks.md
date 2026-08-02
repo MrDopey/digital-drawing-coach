@@ -50,6 +50,6 @@
 ## 8. Documentation
 
 - [x] 8.1 Update `README.md` from a developer's perspective to document the `theme.py` module, shared component classes, the compliance test, and the one-time `scripts/install_git_hooks.sh` setup step (including that `git commit --no-verify` skips the local hook, and that CI enforces regardless)
-- [ ] 8.2 Update `.claude/CLAUDE.md`'s "UI Conventions (PyQt6)" section to reference the design-system module and shared components as the preferred way to style new widgets
+- [x] 8.2 Update `.claude/CLAUDE.md`'s "UI Conventions (PyQt6)" section to reference the design-system module and shared components as the preferred way to style new widgets
 - [ ] 8.3 Review `openspec/config.yaml` for a clear, recurring gap this change reveals in current rules; propose changes only if one is evident (high bar — skip if none)
 - [ ] 8.4 Run `uv run pytest` and confirm all tests pass

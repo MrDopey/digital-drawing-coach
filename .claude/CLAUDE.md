@@ -11,6 +11,7 @@ Two runtime modes:
 
 Dialogs must be resizable: content reflows correctly when the user drags the window edge.
 
+- Style new widgets via the design system, not a one-off `setStyleSheet()` call: colors/spacing/font-size tokens live in `theme.py` (`Theme.overlay` for the dark feedback-panel surface, `Theme.dialog` for every other native dialog, plus shared semantic tokens like `Theme.success`/`Theme.danger`/`Theme.warning`/`Theme.muted_text`), and `design_system.py` provides `Card`, `PillBadge`, `MutedLabel`, `SectionHeader`, `PrimaryButton`, `IconButton` built on those tokens. `tests/test_design_system_compliance.py` fails the build on a stray hex literal or raw `setStyleSheet()` call outside those two files (escape hatch: a trailing `# theme-exempt` comment, for a value that must vary at runtime or isn't a UI theme color at all).
 - Expanding widgets need a stretch factor: `layout.addWidget(w, 1)` — without it they don't grow when the dialog is resized
 - Word-wrapped `QLabel`s in grid layouts need `setMinimumWidth(1)` — without it they lock the minimum layout width
 - Selectable `QLabel`s need `setTextInteractionFlags(TextSelectableByMouse | TextSelectableByKeyboard)` — without it users cannot copy displayed text
