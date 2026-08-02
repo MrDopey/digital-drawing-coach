@@ -310,6 +310,11 @@ class MainWindow(QMainWindow):
         self._sessions_menu = self.menuBar().addMenu("Sessions")
         self._sessions_menu.aboutToShow.connect(self._populate_sessions_menu)
 
+    def _restore_main_window(self) -> None:
+        self.show()
+        self.raise_()
+        self.activateWindow()
+
     def _build_tray(self) -> None:
         self._tray = QSystemTrayIcon(self)
         self._tray.setIcon(self._make_tray_icon())
