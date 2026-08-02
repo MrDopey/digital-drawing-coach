@@ -1,18 +1,18 @@
 ## 1. Shared schema definition
 
-- [ ] 1.1 In `feedback_engine.py`, define a shared JSON schema constant (`_STRUCTURED_RESPONSE_SCHEMA` or similar) with `feedback_text` (string, required), `observations` (array of `{category, note}`, required), and `annotations` (array, required only in overlay mode) — reusing the existing category examples and `arrow`/`line`/`circle` annotation shape definitions from `_SYSTEM_PROMPT`/`_MODE_TEMPLATES["overlay"]` rather than duplicating the free text
-- [ ] 1.2 Add a schema-description variant of the system prompt (persona + style + custom instructions + mode template + coach notes, same as today) that omits the `<!-- observations: -->` comment instruction, since structured mode carries observations as a field
+- [x] 1.1 In `feedback_engine.py`, define a shared JSON schema constant (`_STRUCTURED_RESPONSE_SCHEMA` or similar) with `feedback_text` (string, required), `observations` (array of `{category, note}`, required), and `annotations` (array, required only in overlay mode) — reusing the existing category examples and `arrow`/`line`/`circle` annotation shape definitions from `_SYSTEM_PROMPT`/`_MODE_TEMPLATES["overlay"]` rather than duplicating the free text
+- [x] 1.2 Add a schema-description variant of the system prompt (persona + style + custom instructions + mode template + coach notes, same as today) that omits the `<!-- observations: -->` comment instruction, since structured mode carries observations as a field
 
 ## 2. Structured-output request path in `feedback_engine.py`
 
-- [ ] 2.1 Add a module-level flag (e.g. `_structured_output_disabled: bool = False`) that persists for the process lifetime, plus a small internal reset helper for test use only
-- [ ] 2.2 In `request_feedback`, only when the flag is unset, attempt the LiteLLM call with `response_format={"type": "json_schema", "json_schema": {...}, "strict": True}` using the schema from 1.1
-- [ ] 2.3 Parse and validate the structured response: required fields present and correctly typed; treat missing/invalid `feedback_text` or `observations` as a validation failure
-- [ ] 2.4 On structured-call exception (unsupported `response_format`, provider error) or validation failure: set the module-level flag to `True`, log at debug level, and fall back to today's exact prose prompt (with the observations-comment instruction) and existing regex extraction (`_extract_json_block`/`_strip_json_block`, `_OBSERVATIONS_RE`-based parsing) for that request
-- [ ] 2.5 When the flag is already set at the start of `request_feedback`, skip the structured attempt entirely and go straight to the prose path
-- [ ] 2.6 Add `FeedbackEngine.on_structured_output_unavailable: Callable[[str], None] | None`, invoked exactly once — at the moment the flag transitions `False` → `True` — with a user-facing warning message; ensure it does not fire again on later requests even though the flag stays set
-- [ ] 2.7 Ensure existing error handling (auth/rate-limit/network/quota/policy-refusal detection in `request_feedback`) applies uniformly regardless of which path (structured or prose fallback) raised the error
-- [ ] 2.8 Thread the parsed `observations` list and (overlay mode) `annotations` list out of `request_feedback` to the caller alongside the existing `FeedbackResponse` (text, annotation_json) so `MemoryStore` and the overlay renderer can consume them without re-parsing
+- [x] 2.1 Add a module-level flag (e.g. `_structured_output_disabled: bool = False`) that persists for the process lifetime, plus a small internal reset helper for test use only
+- [x] 2.2 In `request_feedback`, only when the flag is unset, attempt the LiteLLM call with `response_format={"type": "json_schema", "json_schema": {...}, "strict": True}` using the schema from 1.1
+- [x] 2.3 Parse and validate the structured response: required fields present and correctly typed; treat missing/invalid `feedback_text` or `observations` as a validation failure
+- [x] 2.4 On structured-call exception (unsupported `response_format`, provider error) or validation failure: set the module-level flag to `True`, log at debug level, and fall back to today's exact prose prompt (with the observations-comment instruction) and existing regex extraction (`_extract_json_block`/`_strip_json_block`, `_OBSERVATIONS_RE`-based parsing) for that request
+- [x] 2.5 When the flag is already set at the start of `request_feedback`, skip the structured attempt entirely and go straight to the prose path
+- [x] 2.6 Add `FeedbackEngine.on_structured_output_unavailable: Callable[[str], None] | None`, invoked exactly once — at the moment the flag transitions `False` → `True` — with a user-facing warning message; ensure it does not fire again on later requests even though the flag stays set
+- [x] 2.7 Ensure existing error handling (auth/rate-limit/network/quota/policy-refusal detection in `request_feedback`) applies uniformly regardless of which path (structured or prose fallback) raised the error
+- [x] 2.8 Thread the parsed `observations` list and (overlay mode) `annotations` list out of `request_feedback` to the caller alongside the existing `FeedbackResponse` (text, annotation_json) so `MemoryStore` and the overlay renderer can consume them without re-parsing
 
 ## 3. `memory_store.py` structured observation path
 
