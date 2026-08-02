@@ -1,6 +1,6 @@
 ## 1. Panel sizing and responsiveness
 
-- [ ] 1.1 In `FeedbackPanel.__init__`, call `self.resize(...)` with a default size large enough to show a Full Critique response and a full overlay image comfortably, leaving `setMinimumSize(380, 300)` as the floor.
+- [x] 1.1 In `FeedbackPanel.__init__`, call `self.resize(...)` with a default size large enough to show a Full Critique response and a full overlay image comfortably, leaving `setMinimumSize(380, 300)` as the floor.
 - [ ] 1.2 Add a stretch factor to the content stack: `layout.addWidget(self._stack, 1)`.
 - [ ] 1.3 Extract the overlay pixmap scale-and-set logic currently inline in `_render_current` into a `_rescale_overlay()` helper that re-scales the currently displayed overlay image (if any) to the stack's current size, preserving aspect ratio.
 - [ ] 1.4 Override `resizeEvent` on `FeedbackPanel` to call `_rescale_overlay()` after the base implementation, so the overlay image tracks live panel resizes.

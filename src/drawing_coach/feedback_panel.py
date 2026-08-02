@@ -42,6 +42,7 @@ class FeedbackPanel(QWidget):
         super().__init__(parent, Qt.WindowType.Tool | Qt.WindowType.FramelessWindowHint)
         self.setWindowTitle("Drawing Coach — Feedback")
         self.setMinimumSize(380, 300)
+        self.resize(720, 560)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
         self.setStyleSheet(
             "QWidget { background: #1e1e1e; color: #e0e0e0; }"
