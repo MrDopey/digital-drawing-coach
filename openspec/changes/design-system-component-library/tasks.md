@@ -6,7 +6,7 @@
 
 ## 2. Shared Components
 
-- [ ] 2.1 Implement `Card(QFrame)` sourcing border/background from `theme.py`, replacing the hand-styled `QFrame` pattern in `session_picker_dialog.py`'s `_SessionRow` and `main_window.py`'s `_WriteErrorPopup`
+- [x] 2.1 Implement `Card(QFrame)` sourcing border/background from `theme.py`, replacing the hand-styled `QFrame` pattern in `session_picker_dialog.py`'s `_SessionRow` and `main_window.py`'s `_WriteErrorPopup`
 - [ ] 2.2 Implement `PillBadge(QLabel)` sourcing color from `theme.py`'s semantic status tokens, replacing the ad-hoc green/red/orange label coloring in `diagnostics.py` and `settings_dialog.py`
 - [ ] 2.3 Implement `SectionHeader(QLabel)` sourcing font weight/size from `theme.py`, replacing the bold title-label pattern in `feedback_panel.py`
 - [ ] 2.4 Implement `PrimaryButton(QPushButton)` sourcing background/hover/radius from `theme.py`'s overlay tokens, replacing `feedback_panel.py`'s inline `QPushButton` stylesheet block
