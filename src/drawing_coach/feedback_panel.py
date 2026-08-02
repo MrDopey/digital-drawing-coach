@@ -189,15 +189,7 @@ class FeedbackPanel(QWidget):
 
         overlay_img = self._overlay_images.get(self._history_idx)
         if overlay_img is not None:
-            pixmap = _pil_to_pixmap(overlay_img)
-            self._image_label.setPixmap(
-                pixmap.scaled(
-                    self._stack.width() - 8,
-                    self._stack.height() - 8,
-                    Qt.AspectRatioMode.KeepAspectRatio,
-                    Qt.TransformationMode.SmoothTransformation,
-                )
-            )
+            self._rescale_overlay()
             self._stack.setCurrentIndex(1)
             self._save_btn.show()
             if resp.text:
@@ -211,6 +203,20 @@ class FeedbackPanel(QWidget):
             self._text_edit.setMarkdown(resp.text)
             self._save_btn.hide()
             self._overlay_notice.setText("")
+
+    def _rescale_overlay(self) -> None:
+        overlay_img = self._overlay_images.get(self._history_idx)
+        if overlay_img is None:
+            return
+        pixmap = _pil_to_pixmap(overlay_img)
+        self._image_label.setPixmap(
+            pixmap.scaled(
+                self._stack.width() - 8,
+                self._stack.height() - 8,
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation,
+            )
+        )
 
     def _save_overlay(self) -> None:
         overlay_img = self._overlay_images.get(self._history_idx)
