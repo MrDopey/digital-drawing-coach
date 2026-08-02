@@ -34,6 +34,7 @@ The app runs as a **GUI desktop window** — PyQt6 with a live feedback panel, s
 ## Features
 
 - Captures screenshots of any drawing application at a configurable interval (default: 30 s)
+- Pause/Resume control for capture; disabled until a drawing window has been selected via **Select Window**, since capture has nothing to monitor before that
 - Detects when you are stuck via pixel-change (MAE) analysis, or responds to a manual hotkey
 - Four feedback modes: Quick Hint, Full Critique, Practice Exercise, and Overlay (correction lines and annotations drawn directly onto the canvas screenshot)
 - Drawing style and focus selector — choose from presets (Line Drawing, Realistic, Anime/Manga, Chibi, Concept Art, Portrait) or enter free text (e.g. `gothic pokemon`) to tailor every LLM prompt
