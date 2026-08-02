@@ -287,3 +287,37 @@ def test_thumbnail_caption_is_muted_label(qtbot):
     qtbot.addWidget(panel)
 
     assert isinstance(panel._thumb_caption, MutedLabel)
+
+
+# ---------------------------------------------------------------------------
+# set_store
+# ---------------------------------------------------------------------------
+
+
+def test_set_store_loads_existing_session_history(tmp_path, qtbot):
+    panel = FeedbackPanel()
+    qtbot.addWidget(panel)
+    store = _store_with_entry(tmp_path, mode="quick_hint", frame_hashes=("abc",))
+
+    panel.set_store(store)
+
+    assert panel._sidebar.count() == 1
+    assert len(panel._history) == 1
+    assert panel._history_idx == 0
+
+
+def test_set_store_clears_previously_bound_session_entries(tmp_path, qtbot):
+    panel = FeedbackPanel()
+    qtbot.addWidget(panel)
+    store_a = _store_with_entry(tmp_path / "a", mode="quick_hint")
+    store_b = FeedbackStore(tmp_path / "b")  # empty session, nothing saved
+
+    panel.set_store(store_a)
+    assert panel._sidebar.count() == 1
+
+    panel.set_store(store_b)
+
+    assert panel._sidebar.count() == 0
+    assert panel._history == []
+    assert panel._overlay_images == {}
+    assert panel._history_idx == -1
