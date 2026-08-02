@@ -10,11 +10,11 @@
 
 ## 3. CustomLogger callback
 
-- [ ] 3.1 Create `src/drawing_coach/llm_debug_log.py` with `DebugIOLogger(litellm.integrations.custom_logger.CustomLogger)`, holding a reference to the shared `LLMConfig`
-- [ ] 3.2 Implement `log_success_event`/`log_failure_event`: no-op unless `config.debug_log_llm_io` is `True`, otherwise delegate to a shared `_write(kwargs, result)` (`result` = response text on success, the exception on failure)
-- [ ] 3.3 Implement `_write`: extract `debug_label` from `kwargs["litellm_params"]["metadata"]["debug_label"]`; walk `kwargs["messages"]` extracting `image_url` parts to `frame_NN.png` and text parts (role-prefixed) into `request.txt`; write `result` to `response.txt` (string) or `error.txt` (`Exception`); target directory `paths.debug_log_dir() / f"<ISO8601-timestamp>_<label>"`
-- [ ] 3.4 Wrap `_write`'s body in `try/except Exception`, logging a WARNING via a module logger, never raising
-- [ ] 3.5 Register one `DebugIOLogger(config)` instance into `litellm.callbacks` once at app startup, using the app's shared `LLMConfig` instance
+- [x] 3.1 Create `src/drawing_coach/llm_debug_log.py` with `DebugIOLogger(litellm.integrations.custom_logger.CustomLogger)`, holding a reference to the shared `LLMConfig`
+- [x] 3.2 Implement `log_success_event`/`log_failure_event`: no-op unless `config.debug_log_llm_io` is `True`, otherwise delegate to a shared `_write(kwargs, result)` (`result` = response text on success, the exception on failure)
+- [x] 3.3 Implement `_write`: extract `debug_label` from `kwargs["litellm_params"]["metadata"]["debug_label"]`; walk `kwargs["messages"]` extracting `image_url` parts to `frame_NN.png` and text parts (role-prefixed) into `request.txt`; write `result` to `response.txt` (string) or `error.txt` (`Exception`); target directory `paths.debug_log_dir() / f"<ISO8601-timestamp>_<label>"`
+- [x] 3.4 Wrap `_write`'s body in `try/except Exception`, logging a WARNING via a module logger, never raising
+- [x] 3.5 Register one `DebugIOLogger(config)` instance into `litellm.callbacks` once at app startup, using the app's shared `LLMConfig` instance
 
 ## 4. Attach debug labels at each call site
 

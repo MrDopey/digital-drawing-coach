@@ -4,6 +4,7 @@ import platform
 import threading
 from pathlib import Path
 
+import litellm
 from PIL import Image as PilImage
 from PyQt6.QtCore import QObject, QPoint, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QAction, QCloseEvent, QColor, QIcon, QPainter, QPen, QPixmap, QPolygon
@@ -36,6 +37,7 @@ from drawing_coach.history_panel import HistoryPanel
 from drawing_coach.hotkey_manager import HotkeyManager
 from drawing_coach.config_manager import ConfigManager
 from drawing_coach.llm_config import LLMConfig
+from drawing_coach.llm_debug_log import DebugIOLogger
 from drawing_coach.memory_store import MemoryStore
 from drawing_coach.memory_viewer import MemoryViewerDialog
 from drawing_coach.overlay_renderer import render as render_overlay
@@ -170,6 +172,7 @@ class MainWindow(QMainWindow):
 
         self._config_manager = ConfigManager()
         self._config = self._config_manager.load()
+        litellm.callbacks.append(DebugIOLogger(self._config))
         self._manager = WindowManager()
         self._capture = CaptureEngine(self._manager, config=self._config)
         self._detector = StuckDetector(
