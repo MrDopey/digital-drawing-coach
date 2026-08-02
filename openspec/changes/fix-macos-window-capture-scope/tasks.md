@@ -15,9 +15,9 @@
 
 ## 4. Capture engine integration
 
-- [ ] 4.1 In `capture_engine.py`, replace the direct `mss.mss().grab({...})` call in `_do_capture` with `self._manager.capture_image(self._target.id)`
-- [ ] 4.2 Keep the existing `get_window_rect` call for the "window lost" (`rect is None`) and zero-size checks before attempting capture
-- [ ] 4.3 Treat a `None` return from `capture_image` the same as a lost window (`on_window_lost` callback), same as the existing `rect is None` path
+- [x] 4.1 In `capture_engine.py`, replace the direct `mss.mss().grab({...})` call in `_do_capture` with `self._manager.capture_image(self._target.id)`
+- [x] 4.2 Keep the existing `get_window_rect` call for the "window lost" (`rect is None`) and zero-size checks before attempting capture
+- [x] 4.3 Treat a `None` return from `capture_image` the same as a lost window (`on_window_lost` callback), same as the existing `rect is None` path
 
 ## 5. Tests
 
