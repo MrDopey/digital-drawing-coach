@@ -15,7 +15,7 @@
 
 - [x] 3.1 Add a right-aligned "Get Feedback" `QPushButton` to the mode row.
 - [x] 3.2 Add an `on_trigger_requested: Callable[[], None] | None = None` attribute to `FeedbackPanel`; connect the new button's `clicked` signal to invoke it if set.
-- [ ] 3.3 In `main_window.py`, set `self._feedback_panel.on_trigger_requested = self._trigger_feedback` alongside the panel's construction, so the in-panel button triggers feedback identically to the existing button/tray/hotkey paths.
+- [x] 3.3 In `main_window.py`, set `self._feedback_panel.on_trigger_requested = self._trigger_feedback` alongside the panel's construction, so the in-panel button triggers feedback identically to the existing button/tray/hotkey paths.
 
 ## 4. Tests
 
