@@ -209,3 +209,44 @@ def test_lookback_indicator_updates_after_delete(qtbot):
     new_latest_widget = panel._list_widget.itemWidget(panel._list_widget.item(0))
     assert new_latest_widget._frame is frames[1]
     assert new_latest_widget.styleSheet() != ""
+
+
+# ---------------------------------------------------------------------------
+# Row hover-highlight
+# ---------------------------------------------------------------------------
+
+def test_row_background_highlighted_on_hover_and_cleared_on_leave(qtbot):
+    engine = _make_engine(_frame("2024-01-01T10:00:00"))
+    panel = HistoryPanel(engine, LLMConfig())
+    qtbot.addWidget(panel)
+    panel.show()
+
+    row_widget = panel._list_widget.itemWidget(panel._list_widget.item(0))
+    assert "background" not in row_widget.styleSheet()
+
+    row_widget.eventFilter(row_widget, QEvent(QEvent.Type.Enter))
+    assert "background" in row_widget.styleSheet()
+
+    row_widget.eventFilter(row_widget, QEvent(QEvent.Type.Leave))
+    assert "background" not in row_widget.styleSheet()
+
+
+def test_lookback_border_survives_hover_enter_and_leave(qtbot):
+    frames = [_frame(f"2024-01-01T10:0{i}:00") for i in range(2)]
+    engine = _make_engine(*frames)
+    config = LLMConfig(lookback_frames=0)
+    panel = HistoryPanel(engine, config)
+    qtbot.addWidget(panel)
+    panel.show()
+
+    # row 0 is the latest frame, which the zero-lookback window highlights.
+    row_widget = panel._list_widget.itemWidget(panel._list_widget.item(0))
+    assert "border-left" in row_widget.styleSheet()
+
+    row_widget.eventFilter(row_widget, QEvent(QEvent.Type.Enter))
+    assert "border-left" in row_widget.styleSheet()
+    assert "background" in row_widget.styleSheet()
+
+    row_widget.eventFilter(row_widget, QEvent(QEvent.Type.Leave))
+    assert "border-left" in row_widget.styleSheet()
+    assert "background" not in row_widget.styleSheet()

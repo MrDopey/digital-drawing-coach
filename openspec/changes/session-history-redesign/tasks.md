@@ -8,8 +8,8 @@
 
 ## 2. Tests
 
-- [ ] 2.1 Add/update a `pytest-qt` test asserting a lookback-window row keeps its border indicator style present after a hover enter/leave cycle (regression guard for the combined-stylesheet logic)
-- [ ] 2.2 Add a `pytest-qt` test asserting `_FrameRowWidget`'s stylesheet changes on `Enter`/`Leave` events (hover highlight applied and cleared)
+- [x] 2.1 Add/update a `pytest-qt` test asserting a lookback-window row keeps its border indicator style present after a hover enter/leave cycle (regression guard for the combined-stylesheet logic)
+- [x] 2.2 Add a `pytest-qt` test asserting `_FrameRowWidget`'s stylesheet changes on `Enter`/`Leave` events (hover highlight applied and cleared)
 
 ## 3. Documentation
 
