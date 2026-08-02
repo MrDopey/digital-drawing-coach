@@ -51,3 +51,13 @@ class Theme:
 
     overlay = _Overlay()
     dialog = _Dialog()
+
+    # Semantic status colors, shared across both surfaces (diagnostics checks,
+    # settings connection tests, hotkey-conflict warnings).
+    success = "green"
+    danger = "red"
+    warning = "orange"
+
+    # Muted secondary-text color; identical on both surfaces today, so kept
+    # as one shared token rather than duplicated in `_Overlay`/`_Dialog`.
+    muted_text = "#888"
