@@ -35,7 +35,7 @@
 
 ## 6. Automated Enforcement
 
-- [ ] 6.1 Write `tests/test_design_system_compliance.py`: scans `src/drawing_coach/*.py` (excluding `theme.py` and the component module) for hex color literals (`#[0-9a-fA-F]{3,6}`) and raw `setStyleSheet(` calls, failing with the offending file/line unless the line carries a `# theme-exempt` escape-hatch comment
+- [x] 6.1 Write `tests/test_design_system_compliance.py`: scans `src/drawing_coach/*.py` (excluding `theme.py` and the component module) for hex color literals (`#[0-9a-fA-F]{3,6}`) and raw `setStyleSheet(` calls, failing with the offending file/line unless the line carries a `# theme-exempt` escape-hatch comment
 - [ ] 6.2 Add `.github/workflows/test.yml` running `uv sync` + `uv run pytest` on push and pull request — the repo currently has no CI test gate (only `.github/workflows/release.yml`, which builds tagged binaries), so this is the layer that actually blocks a violating merge
 - [ ] 6.3 Add a tracked `hooks/pre-commit` Python script (`#!/usr/bin/env python3`) that shells out to `uv run pytest tests/test_design_system_compliance.py -q`, exits non-zero (blocking the commit) and prints file/line offenders on failure, and prints a "uv not found — CI will still enforce this" message and exits 0 if `uv` isn't on `PATH` — reuses the project's existing pytest/uv toolchain rather than a separate hook framework
 - [ ] 6.4 Add `scripts/install_git_hooks.sh` that runs `git config core.hooksPath hooks` so `hooks/pre-commit` is picked up without manual copying into `.git/hooks/`; make the script chmod the hook executable
