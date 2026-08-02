@@ -298,6 +298,13 @@ class FeedbackPanel(QWidget):
             self._overlay_images[idx] = overlay_image
         if self._store is not None:
             self._store.save(response, last_frame, overlay_image)
+            thumb_path = self._store.thumbnail_path_for(response)
+            if thumb_path is not None:
+                self._thumb_paths[idx] = thumb_path
+        self._sidebar.blockSignals(True)
+        self._sidebar.insertItem(0, QListWidgetItem(self._sidebar_label(response)))
+        self._sidebar.setCurrentRow(0)
+        self._sidebar.blockSignals(False)
         self._loading_label.hide()
         self._splitter.show()
         self._render_current()

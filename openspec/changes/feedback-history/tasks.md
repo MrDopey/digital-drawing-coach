@@ -29,7 +29,7 @@
 - [x] 5.2 Populate the sidebar in reverse-chron order; each row labelled `DD Mon  HH:MM: <mode label>`; style rows via `design_system.py`/`theme.py` (no raw `setStyleSheet()`/hex literals); `currentRowChanged` sets `_history_idx` and calls `_render_current()` (built in 3.2)
 - [x] 5.3 Add a new thumbnail `QLabel` (~160×160, clickable — `mousePressEvent` calls `QDesktopServices.openUrl(QUrl.fromLocalFile(thumb_path))`), styled via `design_system.py`. `_render_current()` shows exactly one of {existing `_image_pane`, new thumbnail label} depending on whether the current entry has a composited overlay image
 - [x] 5.4 Extend `_render_current()` (not a new `_show_entry` — it already plays that role) so it also calls `setCurrentRow` on the sidebar with signals blocked, keeping sidebar selection, Prev/Next, and the displayed entry always in sync
-- [ ] 5.5 After a new generation: insert the entry at the top of the sidebar, select it, and let the existing `show_feedback` → `_render_current()` flow display it
+- [x] 5.5 After a new generation: insert the entry at the top of the sidebar, select it, and let the existing `show_feedback` → `_render_current()` flow display it
 
 ## 6. Tests
 
