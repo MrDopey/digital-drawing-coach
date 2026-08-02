@@ -19,9 +19,9 @@
 
 ## 4. Documentation
 
-- [ ] 4.1 Update README.md (developer-facing) if it documents `MemoryStore.summarise()` usage, noting the new `current_notes()` read-only accessor and when to use each
-- [ ] 4.2 Review `.claude/CLAUDE.md` for any memory-related guidance implied by this change (none expected — this is an internal refactor of `MemoryStore`, not a change to the app's memory data model or UI conventions) and update only if a genuine gap is found
-- [ ] 4.3 Review `openspec/config.yaml` and propose changes only if this spec reveals a clear, recurring gap in the current rules (high threshold — likely no change needed for this narrow fix)
+- [x] 4.1 Update README.md (developer-facing) if it documents `MemoryStore.summarise()` usage, noting the new `current_notes()` read-only accessor and when to use each
+- [x] 4.2 Review `.claude/CLAUDE.md` for any memory-related guidance implied by this change (none expected — this is an internal refactor of `MemoryStore`, not a change to the app's memory data model or UI conventions) and update only if a genuine gap is found — no update needed
+- [x] 4.3 Review `openspec/config.yaml` and propose changes only if this spec reveals a clear, recurring gap in the current rules (high threshold — likely no change needed for this narrow fix) — no recurring gap found, no change made
 
 ## 5. Verification
 
