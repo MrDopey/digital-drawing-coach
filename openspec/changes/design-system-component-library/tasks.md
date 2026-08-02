@@ -18,7 +18,7 @@
 
 - [x] 3.1 Replace `feedback_panel.py`'s inline `setStyleSheet()` block with `theme.py` overlay tokens and the new `SectionHeader`/`PrimaryButton` components
 - [x] 3.2 Replace remaining inline hex/color literals (`#aaa`, `#888`, font-size strings) with theme tokens
-- [ ] 3.3 Update or add tests for `feedback_panel.py` to assert on component state rather than raw QSS strings
+- [x] 3.3 Update or add tests for `feedback_panel.py` to assert on component state rather than raw QSS strings
 
 ## 4. Migrate history_panel.py
 
