@@ -1,14 +1,17 @@
 from __future__ import annotations
 
+from typing import Callable
+
 from PIL import Image as PilImage
 from PyQt6.QtCore import QPoint, Qt
-from PyQt6.QtGui import QImage, QKeyEvent, QMouseEvent, QPixmap
+from PyQt6.QtGui import QImage, QKeyEvent, QMouseEvent, QPixmap, QResizeEvent
 from PyQt6.QtWidgets import (
-    QComboBox,
+    QButtonGroup,
     QFileDialog,
     QHBoxLayout,
     QLabel,
     QPushButton,
+    QRadioButton,
     QStackedWidget,
     QTextEdit,
     QVBoxLayout,
@@ -42,6 +45,7 @@ class FeedbackPanel(QWidget):
         super().__init__(parent, Qt.WindowType.Tool | Qt.WindowType.FramelessWindowHint)
         self.setWindowTitle("Drawing Coach — Feedback")
         self.setMinimumSize(380, 300)
+        self.resize(720, 560)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
         self.setStyleSheet(
             "QWidget { background: #1e1e1e; color: #e0e0e0; }"
@@ -54,6 +58,7 @@ class FeedbackPanel(QWidget):
         self._history: list[FeedbackResponse] = []
         self._history_idx: int = -1
         self._overlay_images: dict[int, PilImage.Image] = {}
+        self.on_trigger_requested: Callable[[], None] | None = None
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(8, 8, 8, 8)
@@ -73,11 +78,18 @@ class FeedbackPanel(QWidget):
         # Mode selector
         mode_row = QHBoxLayout()
         mode_row.addWidget(QLabel("Mode:"))
-        self._mode_combo = QComboBox()
-        for key, label in MODE_LABELS.items():
-            self._mode_combo.addItem(label, key)
-        mode_row.addWidget(self._mode_combo)
+        self._mode_group = QButtonGroup(self)
+        for i, (key, label) in enumerate(MODE_LABELS.items()):
+            radio = QRadioButton(label)
+            radio.setProperty("mode_key", key)
+            if i == 0:
+                radio.setChecked(True)
+            self._mode_group.addButton(radio)
+            mode_row.addWidget(radio)
         mode_row.addStretch()
+        self._trigger_btn = QPushButton("Get Feedback")
+        self._trigger_btn.clicked.connect(self._on_trigger_clicked)
+        mode_row.addWidget(self._trigger_btn)
         layout.addLayout(mode_row)
 
         # Loading indicator
@@ -96,7 +108,7 @@ class FeedbackPanel(QWidget):
         self._image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._image_label.setScaledContents(False)
         self._stack.addWidget(self._image_label)  # index 1
-        layout.addWidget(self._stack)
+        layout.addWidget(self._stack, 1)
 
         # Overlay save row (shown only in overlay mode)
         self._save_row = QHBoxLayout()
@@ -129,7 +141,12 @@ class FeedbackPanel(QWidget):
     # ------------------------------------------------------------------
 
     def current_mode(self) -> str:
-        return self._mode_combo.currentData()
+        checked = self._mode_group.checkedButton()
+        return checked.property("mode_key") if checked else None
+
+    def _on_trigger_clicked(self) -> None:
+        if self.on_trigger_requested is not None:
+            self.on_trigger_requested()
 
     def show_loading(self) -> None:
         self._loading_label.show()
@@ -188,15 +205,7 @@ class FeedbackPanel(QWidget):
 
         overlay_img = self._overlay_images.get(self._history_idx)
         if overlay_img is not None:
-            pixmap = _pil_to_pixmap(overlay_img)
-            self._image_label.setPixmap(
-                pixmap.scaled(
-                    self._stack.width() - 8,
-                    self._stack.height() - 8,
-                    Qt.AspectRatioMode.KeepAspectRatio,
-                    Qt.TransformationMode.SmoothTransformation,
-                )
-            )
+            self._rescale_overlay()
             self._stack.setCurrentIndex(1)
             self._save_btn.show()
             if resp.text:
@@ -210,6 +219,20 @@ class FeedbackPanel(QWidget):
             self._text_edit.setMarkdown(resp.text)
             self._save_btn.hide()
             self._overlay_notice.setText("")
+
+    def _rescale_overlay(self) -> None:
+        overlay_img = self._overlay_images.get(self._history_idx)
+        if overlay_img is None:
+            return
+        pixmap = _pil_to_pixmap(overlay_img)
+        self._image_label.setPixmap(
+            pixmap.scaled(
+                self._stack.width() - 8,
+                self._stack.height() - 8,
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation,
+            )
+        )
 
     def _save_overlay(self) -> None:
         overlay_img = self._overlay_images.get(self._history_idx)
@@ -242,3 +265,7 @@ class FeedbackPanel(QWidget):
         if event.key() == Qt.Key.Key_Escape:
             self.hide()
         super().keyPressEvent(event)
+
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        super().resizeEvent(event)
+        self._rescale_overlay()

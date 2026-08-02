@@ -23,7 +23,7 @@ class StuckDetector:
         self.cooldown_seconds = cooldown_seconds
 
         self._consecutive: int = 0
-        self._last_trigger: float = 0.0
+        self._last_trigger: float = float("-inf")
         self._last_frame: Image.Image | None = None
         self.on_stuck: Callable[[], None] | None = None
 

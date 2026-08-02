@@ -14,6 +14,7 @@ from drawing_coach.window_manager import WindowInfo
 def _make_engine() -> CaptureEngine:
     manager = MagicMock()
     manager.get_window_rect.return_value = (0, 0, 100, 100)
+    manager.capture_image.return_value = Image.new("RGB", (100, 100), (128, 128, 128))
     engine = CaptureEngine(manager)
     win = WindowInfo(id=1, title="Test", app_name="Test")
     engine.set_target(win)
@@ -74,6 +75,86 @@ def test_get_frames_returns_copy():
     b = engine.get_frames()
     assert len(a) == 1
     assert len(b) == 2
+
+
+# ---------------------------------------------------------------------------
+# _do_capture delegates image capture to the backend (not mss directly)
+# ---------------------------------------------------------------------------
+
+def test_do_capture_calls_manager_capture_image(tmp_path):
+    engine = _make_engine()
+    engine._session_dir = tmp_path
+    (tmp_path / "frames").mkdir()
+
+    frame = engine._do_capture()
+
+    engine._manager.capture_image.assert_called_once_with(engine.target.id)
+    assert frame is not None
+    assert frame.image is engine._manager.capture_image.return_value
+
+
+def test_do_capture_never_instantiates_mss_directly(tmp_path):
+    engine = _make_engine()
+    engine._session_dir = tmp_path
+    (tmp_path / "frames").mkdir()
+
+    with patch("mss.mss") as mock_mss_ctor:
+        engine._do_capture()
+
+    mock_mss_ctor.assert_not_called()
+
+
+def test_do_capture_treats_none_image_as_window_lost(tmp_path):
+    engine = _make_engine()
+    engine._session_dir = tmp_path
+    (tmp_path / "frames").mkdir()
+    engine._manager.capture_image.return_value = None
+
+    lost: list[bool] = []
+    engine.on_window_lost = lambda: lost.append(True)
+
+    frame = engine._do_capture()
+
+    assert frame is None
+    assert lost == [True]
+
+
+# ---------------------------------------------------------------------------
+# remove_frame
+# ---------------------------------------------------------------------------
+
+def test_remove_frame_removes_from_buffer_without_deleting_file(tmp_path):
+    engine = _make_engine()
+    frame_to_keep = _fake_frame(engine)
+    png = tmp_path / "frame.png"
+    Image.new("RGB", (10, 10)).save(png)
+    frame_to_delete = CapturedFrame(image=Image.new("RGB", (10, 10)), path=png)
+    with engine._lock:
+        engine._buffer.append(frame_to_delete)
+
+    received = MagicMock()
+    engine.frames_changed.connect(received)
+
+    engine.remove_frame(frame_to_delete)
+
+    frames = engine.get_frames()
+    assert frames == [frame_to_keep]
+    assert png.exists()
+    received.assert_called_once()
+
+
+def test_remove_frame_unknown_frame_is_noop():
+    engine = _make_engine()
+    kept = _fake_frame(engine)
+    unknown = CapturedFrame(image=Image.new("RGB", (10, 10)))
+
+    received = MagicMock()
+    engine.frames_changed.connect(received)
+
+    engine.remove_frame(unknown)
+
+    assert engine.get_frames() == [kept]
+    received.assert_not_called()
 
 
 # ---------------------------------------------------------------------------

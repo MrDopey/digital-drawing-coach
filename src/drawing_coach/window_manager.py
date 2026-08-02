@@ -1,14 +1,18 @@
 """Cross-platform window enumeration and bounding-rect lookup.
 
-Each backend implements list_windows() -> list[WindowInfo] and
-get_window_rect(window_id) -> tuple[int,int,int,int] | None.
+Each backend implements list_windows() -> list[WindowInfo],
+get_window_rect(window_id) -> tuple[int,int,int,int] | None, and
+capture_image(window_id) -> PIL.Image.Image | None.
 """
 
 from __future__ import annotations
 
 import platform
 from dataclasses import dataclass
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
+
+if TYPE_CHECKING:
+    from PIL import Image
 
 
 @dataclass
@@ -23,6 +27,7 @@ class WindowBackend(Protocol):
     def get_window_rect(
         self, window_id: int | str
     ) -> tuple[int, int, int, int] | None: ...
+    def capture_image(self, window_id: int | str) -> Image.Image | None: ...
 
 
 def _make_backend() -> WindowBackend:
@@ -53,3 +58,7 @@ class WindowManager:
     def get_window_rect(self, window_id: int | str) -> tuple[int, int, int, int] | None:
         """Return (left, top, width, height) or None if the window is gone."""
         return self._backend.get_window_rect(window_id)
+
+    def capture_image(self, window_id: int | str) -> Image.Image | None:
+        """Return a screenshot of just the given window, or None if unavailable."""
+        return self._backend.capture_image(window_id)

@@ -4,11 +4,15 @@
 TBD - created by archiving change digital-drawing-coach. Update Purpose after archive.
 ## Requirements
 ### Requirement: Periodic screenshot capture
-The system SHALL capture a screenshot of the selected drawing window at a user-configurable interval (default: 30 seconds, range: 5–300 seconds). Captures SHALL be stored to disk under a per-session directory (`~/.drawing-coach/sessions/<session-id>/frames/`). Near-duplicate frames SHALL be dropped before writing using a configurable MAE deduplication threshold (default: 2.0, independently configurable from the stuck-detection threshold).
+The system SHALL capture a screenshot of the selected drawing window at a user-configurable interval (default: 30 seconds, range: 5–300 seconds). A captured frame SHALL contain only the selected window's own content — not other on-screen windows, overlays, or desktop area — even when other windows visually overlap or obscure it on screen. Captures SHALL be stored to disk under a per-session directory (`~/.drawing-coach/sessions/<session-id>/frames/`). Near-duplicate frames SHALL be dropped before writing using a configurable MAE deduplication threshold (default: 2.0, independently configurable from the stuck-detection threshold).
 
 #### Scenario: Capture runs on schedule
 - **WHEN** a drawing window is selected and capture is active
 - **THEN** the system captures a screenshot of that window at each interval tick
+
+#### Scenario: Another window overlaps the selected window
+- **WHEN** another application's window is positioned on top of part of the selected drawing window on screen
+- **THEN** the captured frame shows only the selected window's own content in that area, not the overlapping window's content
 
 #### Scenario: Duplicate frame is detected and dropped
 - **WHEN** a newly captured frame has MAE below the deduplication threshold compared to the last stored frame
@@ -23,7 +27,7 @@ The system SHALL capture a screenshot of the selected drawing window at a user-c
 - **THEN** the system applies the new interval on the next tick without restarting the session
 
 ### Requirement: Session history is persisted to disk
-The system SHALL write each accepted frame immediately to disk so that session history survives application restarts. On startup, when no session has been explicitly selected via the session picker, the system SHALL load the most recent session's frames back into the history view if the session was started within the last 24 hours. `meta.json` SHALL include a `name` field (string); if absent the system derives a display label from `start_time`.
+The system SHALL write each accepted frame immediately to disk so that session history survives application restarts. On startup, when no session has been explicitly selected via the session picker, the system SHALL load the most recent session's frames back into the history view if the session was started within the last 24 hours. `meta.json` SHALL include a `name` field (string); if absent the system derives a display label from `start_time`. The engine SHALL expose a `remove_frame(frame: CapturedFrame)` method that removes a frame from the in-memory buffer without deleting its file from disk. After any buffer mutation the engine SHALL emit a `frames_changed` signal so subscribers (e.g. the history panel) can update.
 
 #### Scenario: Application is restarted mid-session
 - **WHEN** the application is closed and reopened within 24 hours of the last session start
@@ -36,6 +40,14 @@ The system SHALL write each accepted frame immediately to disk so that session h
 #### Scenario: meta.json written with name on session create
 - **WHEN** a new session directory is created
 - **THEN** `meta.json` is written with `start_time` and `name` fields; `name` is the timestamp-derived default label
+
+#### Scenario: Frame removed from buffer via remove_frame
+- **WHEN** `CaptureEngine.remove_frame(frame)` is called with a frame that is in the buffer
+- **THEN** the frame is removed from `_buffer`, its PNG file on disk is NOT deleted, and `frames_changed` is emitted
+
+#### Scenario: frames_changed emitted on new capture
+- **WHEN** a new frame is appended to `_buffer`
+- **THEN** the `frames_changed` signal is emitted
 
 ### Requirement: Session history auto-cleans to retain last N sessions
 The system SHALL delete the oldest session directories on startup until only the configured number of sessions remain (default: 10, range: 1–100). Deletion is permanent with no recycle bin.
@@ -53,14 +65,26 @@ The system SHALL delete the oldest session directories on startup until only the
 - **THEN** the system immediately applies cleanup, deleting excess sessions beyond the new limit
 
 ### Requirement: Capture can be paused and resumed
-The system SHALL allow the user to pause and resume screenshot capture without losing the existing session history.
+The system SHALL allow the user to pause and resume screenshot capture without losing the existing session history. The pause/resume control (main window button and system tray menu action) SHALL be disabled and SHALL display the paused-state label whenever no drawing window is currently targeted for capture — including at application startup before any window has been selected, and after the previously targeted window is lost or closed. The control SHALL become enabled only once a drawing window has been successfully selected as the capture target.
+
+#### Scenario: No window selected at startup
+- **WHEN** the application starts and no drawing window has been selected yet
+- **THEN** the pause/resume control displays the paused-state label ("Resume") and is disabled
+
+#### Scenario: Window is selected
+- **WHEN** the user selects a drawing window via "Select Window"
+- **THEN** the pause/resume control becomes enabled and reflects the active capture state ("Pause")
+
+#### Scenario: Target window is lost
+- **WHEN** the monitored drawing window is closed or becomes unavailable
+- **THEN** the system pauses capture and the pause/resume control returns to the disabled, paused-state label ("Resume") until a new window is selected
 
 #### Scenario: User pauses capture
-- **WHEN** the user clicks "Pause" in the main UI
+- **WHEN** the user clicks "Pause" in the main UI while a window is targeted
 - **THEN** the system stops scheduling new captures and shows a "Paused" status indicator
 
 #### Scenario: User resumes capture
-- **WHEN** the user clicks "Resume" after pausing
+- **WHEN** the user clicks "Resume" after pausing while a window is targeted
 - **THEN** the system restarts the capture schedule and continues appending to the existing buffer
 
 ### Requirement: Session history is viewable

@@ -29,16 +29,24 @@ flowchart LR
 
 The app runs as a **GUI desktop window** — PyQt6 with a live feedback panel, session history thumbnails, and a system tray icon.
 
+### Platform-specific window capture
+
+Each platform's `WindowBackend` (`window_manager.py`) implements `capture_image(window_id)` to grab the selected window's content:
+
+- **Windows/Linux**: `mss.grab()` with the window's rect (`get_window_rect`).
+- **macOS**: a direct CoreGraphics call, `CGWindowListCreateImage(CGRectNull, kCGWindowListOptionIncludingWindow, windowID, imageOption)`, scoped to the window's own ID rather than a screen rectangle. `mss`'s macOS backend captures a screen *region* (compositing whatever is on-screen there), which bleeds in other windows when they overlap the target — passing `windowID` directly instead avoids that entirely.
+
 ---
 
 ## Features
 
 - Captures screenshots of any drawing application at a configurable interval (default: 30 s)
+- Pause/Resume control for capture; disabled until a drawing window has been selected via **Select Window**, since capture has nothing to monitor before that
 - Detects when you are stuck via pixel-change (MAE) analysis, or responds to a manual hotkey
-- Four feedback modes: Quick Hint, Full Critique, Practice Exercise, and Overlay (correction lines and annotations drawn directly onto the canvas screenshot)
+- Four feedback modes — Quick Hint, Full Critique, Practice Exercise, and Overlay (correction lines and annotations drawn directly onto the canvas screenshot) — selected via a horizontal radio-button strip in the feedback panel, with a "Get Feedback" button right beside it to fire a request in the currently selected mode. The panel opens at a larger default size and its overlay image rescales live as the panel is resized.
 - Drawing style and focus selector — choose from presets (Line Drawing, Realistic, Anime/Manga, Chibi, Concept Art, Portrait) or enter free text (e.g. `gothic pokemon`) to tailor every LLM prompt
 - Works with any vision-capable LLM via [LiteLLM][litellm] — OpenAI, Anthropic, Ollama, and more
-- Session history persisted to disk with duplicate-frame dropping and configurable session retention; double-click any thumbnail in the history panel to open it in the system default image viewer
+- Session history persisted to disk with duplicate-frame dropping and configurable session retention; double-click any thumbnail in the history panel to open it in the system default image viewer, or hover over one to reveal a delete button that removes it from the buffer (without deleting the file) so it's excluded from the next LLM request — a blue border highlights the frames the next request will actually use, based on `lookback_frames`
 - Session management: a picker on launch lets you resume, rename, or delete a saved session (skipped when none exist); sessions can also be renamed or switched in-app via the **Sessions** menu, with the active session name shown in the window title bar
 - Long-term memory: the coach remembers recurring observations across sessions (e.g. "struggles with vanishing points") and works them into every subsequent prompt, so feedback improves with use instead of repeating the same generic advice — viewable, deletable, and exportable from the **Memory** and **Progress** windows
 - Surfaces LLM errors explicitly: rate limits, content-policy flags, credit exhaustion
