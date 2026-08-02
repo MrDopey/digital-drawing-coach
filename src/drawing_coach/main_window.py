@@ -326,8 +326,6 @@ class MainWindow(QMainWindow):
         self._tray_pause_action.triggered.connect(self._toggle_pause)
         menu.addAction(self._tray_pause_action)
         menu.addAction("Settings", self._open_settings)
-        menu.addAction("Memory", self._open_memory_viewer)
-        menu.addAction("Progress", self._open_progress_panel)
         menu.addSeparator()
         menu.addAction(f"About (v{__version__})", self._show_about)
         menu.addAction("Quit", QApplication.quit)

@@ -6,7 +6,7 @@
 
 ## 2. Remove duplicated tray shortcuts
 
-- [ ] 2.1 In `_build_tray()`, remove the "Memory" (`_open_memory_viewer`) and "Progress" (`_open_progress_panel`) menu actions.
+- [x] 2.1 In `_build_tray()`, remove the "Memory" (`_open_memory_viewer`) and "Progress" (`_open_progress_panel`) menu actions.
 - [ ] 2.2 Confirm the resulting menu order is: Show Drawing Coach, separator, Pause/Resume Capture, Settings, separator, About, Quit.
 - [ ] 2.3 Leave the main window's button row (Get Feedback, History, Memory, Progress, Settings buttons) untouched — `_open_memory_viewer` and `_open_progress_panel` stay as-is since the buttons still call them.
 
