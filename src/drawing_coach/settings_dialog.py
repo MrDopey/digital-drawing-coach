@@ -93,7 +93,7 @@ class SettingsDialog(QDialog):
         )
         form.addRow("Custom Instructions:", self._custom_edit)
 
-        self._debug_log_checkbox = QCheckBox("Debug logging of LLM input/output")
+        self._debug_log_checkbox = QCheckBox()
         self._debug_log_checkbox.setChecked(self._config.debug_log_llm_io)
         self._debug_log_checkbox.setToolTip(
             "Persists every LLM request and response to disk for offline"
@@ -101,7 +101,7 @@ class SettingsDialog(QDialog):
             " enable only when you need to inspect what was actually sent"
             " to the LLM."
         )
-        form.addRow("", self._debug_log_checkbox)
+        form.addRow("Debug logging of LLM input/output:", self._debug_log_checkbox)
 
         layout.addLayout(form)
 
