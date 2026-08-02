@@ -1,9 +1,9 @@
 ## 1. Decouple opening the panel from requesting feedback
 
-- [ ] 1.1 In `main_window.py`, split `_trigger_feedback` into `_open_feedback_panel()` (shows/raises `self._feedback_panel`, no LLM call) and `_request_feedback(mode)` (existing show-loading + background-thread `FeedbackEngine.request_feedback` logic)
-- [ ] 1.2 Wire the main toolbar button (`main_window.py:281-282`) and tray menu action (`main_window.py:316`) to `_open_feedback_panel`
-- [ ] 1.3 Keep `StuckDetector.on_stuck` (`main_window.py:415`) and the hotkey path (`main_window.py:416`, `manual_trigger`) wired to `_request_feedback` so automatic stuck-detection and the hotkey are unaffected
-- [ ] 1.4 Rename the toolbar button and tray menu label from "Get Feedback" to "Feedback Management"
+- [x] 1.1 In `main_window.py`, split `_trigger_feedback` into `_open_feedback_panel()` (shows/raises `self._feedback_panel`, no LLM call) and `_request_feedback(mode)` (existing show-loading + background-thread `FeedbackEngine.request_feedback` logic)
+- [x] 1.2 Wire the main toolbar button (`main_window.py:281-282`) and tray menu action (`main_window.py:316`) to `_open_feedback_panel`
+- [x] 1.3 Keep `StuckDetector.on_stuck` (`main_window.py:415`) and the hotkey path (`main_window.py:416`, `manual_trigger`) wired to `_request_feedback` so automatic stuck-detection and the hotkey are unaffected
+- [x] 1.4 Rename the toolbar button and tray menu label from "Get Feedback" to "Feedback Management"
 
 ## 2. In-panel request trigger
 
