@@ -1,34 +1,4 @@
-# llm-feedback Specification
-
-## Purpose
-TBD - created by archiving change digital-drawing-coach. Update Purpose after archive.
-## Requirements
-### Requirement: Send drawing screenshot to LLM for feedback
-The system SHALL send the most recent screenshot and a configurable number of prior history frames (default: 2, range: 0–10, set in LLM settings) to the configured vision LLM and return structured drawing feedback. Images SHALL be encoded as base64 and sent via the LiteLLM `completion()` API. When the feedback mode is `overlay`, the system SHALL send only the single most recent screenshot, ignoring the configured look-back count, so that annotation coordinates returned by the LLM are unambiguously relative to the one image the app will render them onto.
-
-#### Scenario: Feedback is triggered with a captured screenshot
-- **WHEN** a feedback request is triggered (automatic or manual) and at least one screenshot is in the buffer
-- **THEN** the system sends the screenshot(s) to the LLM and displays a loading indicator
-
-#### Scenario: LLM returns a response
-- **WHEN** the LLM responds successfully
-- **THEN** the system renders the feedback in the feedback panel and dismisses the loading indicator
-
-#### Scenario: No screenshots available when triggered
-- **WHEN** a feedback request is triggered but the buffer is empty
-- **THEN** the system SHALL display an error message "No drawing captured yet — please wait for the first screenshot"
-
-#### Scenario: Look-back count is set to zero
-- **WHEN** the look-back frame count is configured to 0
-- **THEN** the system sends only the most recent screenshot with no history frames
-
-#### Scenario: Look-back count exceeds available history
-- **WHEN** the look-back count is greater than the number of stored frames
-- **THEN** the system sends all available frames without error
-
-#### Scenario: Overlay mode ignores the configured look-back count
-- **WHEN** a feedback request is triggered with mode `overlay` and the configured look-back count is greater than 0
-- **THEN** the system sends only the single most recent screenshot to the LLM, not any prior history frames
+## MODIFIED Requirements
 
 ### Requirement: LLM feedback uses art-coaching persona
 The system SHALL include a system prompt that establishes the LLM as a knowledgeable digital art coach with expertise in perspective, anatomy, color theory, and technique. The persona SHALL remain consistent across all feedback modes. When a non-empty coach's notes block is provided (from the memory store), it SHALL be appended to the *end* of the system prompt, after the base persona, style fragment, custom instructions, and mode template, so that stable prefix is unaffected by per-session note changes and remains eligible for provider-side prompt caching. When the request uses the structured-output path, the observations schema field carries this data instead; when the request falls back to the prose path, the system prompt SHALL instruct the LLM to append a `<!-- observations: [...] -->` HTML comment containing a JSON array of `{category, note}` objects derived from the current response, to enable future memory accumulation.
@@ -57,39 +27,7 @@ The system SHALL include a system prompt that establishes the LLM as a knowledge
 - **WHEN** a feedback request uses the structured-output path
 - **THEN** the system prompt does NOT instruct the LLM to append an observations comment, since observations are carried as a schema field instead
 
-### Requirement: Feedback requests are rate-limited
-The system SHALL reject or queue feedback requests that arrive within 10 seconds of the previous request to prevent duplicate LLM calls.
-
-#### Scenario: Rapid successive triggers
-- **WHEN** a feedback request is triggered within 10 seconds of the previous one completing
-- **THEN** the system SHALL ignore the new trigger and display a "Please wait" message
-
-### Requirement: LLM errors are surfaced to the user
-The system SHALL display a clear, actionable error message when the LLM call fails or returns a policy refusal, covering all known error categories.
-
-#### Scenario: API authentication fails
-- **WHEN** the LLM returns an authentication error
-- **THEN** the system displays "API key invalid or missing — check your LLM settings"
-
-#### Scenario: Network is unavailable
-- **WHEN** the LLM call fails due to a network error
-- **THEN** the system displays "Network error — check your connection and try again"
-
-#### Scenario: Rate limit is reached
-- **WHEN** the LLM returns a rate-limit error
-- **THEN** the system displays "Rate limit reached — wait a moment and try again" and does NOT auto-retry
-
-#### Scenario: API credits are exhausted
-- **WHEN** the LLM returns an insufficient-quota or budget-exceeded error
-- **THEN** the system displays "Your API credits are exhausted — top up your account to continue"
-
-#### Scenario: Model is not found
-- **WHEN** the LLM returns a model-not-found error
-- **THEN** the system displays "Model not found — check the model name in your LLM settings"
-
-#### Scenario: LLM returns a content policy refusal
-- **WHEN** the LLM response body contains a known policy-refusal phrase (e.g. "I'm unable to", "I cannot assist", "content policy")
-- **THEN** the system displays "The LLM flagged a content policy issue with this image — try a different feedback mode or drawing" and does NOT treat it as a successful feedback response
+## ADDED Requirements
 
 ### Requirement: Feedback requests attempt structured JSON output once per application launch, then fall back for the rest of the session
 The system SHALL maintain a process-lifetime flag (unset/`False` at application launch) tracking whether structured output has been found unavailable this run. While the flag is unset, the system SHALL attempt each feedback request via LiteLLM's structured-output mode, passing a JSON schema requiring a `feedback_text` string, an `observations` array of `{category, note}` objects, and (in `overlay` mode only) an `annotations` array matching the existing overlay annotation shape. If that attempt raises an error (e.g. the provider/model does not support `response_format` json-schema enforcement) or the returned content fails to parse or validate against the required fields, the system SHALL set the flag, fall back to the existing prose-plus-embedded-block prompt and regex-based extraction for that request so the user still receives a feedback response, and show the user a one-time warning (see the following requirement). Once the flag is set, every subsequent feedback request for the remainder of the application's run SHALL go directly to the prose path without attempting structured output again. The flag SHALL only be reset by restarting the application.
@@ -124,4 +62,3 @@ The first time the structured-output disable flag transitions from unset to set 
 #### Scenario: Warning not repeated on later requests
 - **WHEN** additional feedback requests are made after the disable flag was already set and the warning already shown
 - **THEN** no further warning dialog is shown for the remainder of the application's run
-

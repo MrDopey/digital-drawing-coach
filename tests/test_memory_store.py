@@ -87,6 +87,47 @@ def test_append_save_round_trip(paths):
 
 
 # ------------------------------------------------------------------
+# append_observations (structured-output path)
+# ------------------------------------------------------------------
+
+
+def test_append_observations_normal(paths):
+    store = MemoryStore(LLMConfig())
+    store.append_observations(
+        [{"category": "perspective", "note": "vanishing points"}], "session-1"
+    )
+    obs = store.observations()
+    assert len(obs) == 1
+    assert obs[0].category == "perspective"
+    assert obs[0].note == "vanishing points"
+    assert obs[0].session_id == "session-1"
+
+
+def test_append_observations_cap_matches_append(paths):
+    store = MemoryStore(LLMConfig(memory_max_observations=3))
+    store.append_observations(
+        [{"category": "c", "note": f"n{i}"} for i in range(5)], "session-1"
+    )
+    obs = store.observations()
+    assert len(obs) == 3
+    assert obs[-1].note == "n4"
+
+
+def test_append_observations_empty_list_no_op(paths):
+    store = MemoryStore(LLMConfig())
+    store.append_observations([], "session-1")
+    assert store.observations() == []
+
+
+def test_append_observations_skips_malformed_items(paths):
+    store = MemoryStore(LLMConfig())
+    store.append_observations(
+        [{"category": "perspective"}, {"note": "missing category"}, {}], "session-1"
+    )
+    assert store.observations() == []
+
+
+# ------------------------------------------------------------------
 # 5.2 extract_and_append
 # ------------------------------------------------------------------
 
@@ -167,6 +208,9 @@ def test_resummarize_default_triggers_at_threshold(paths):
     mock_completion.assert_called_once()
     assert len(store.summaries()) == 1
     assert store.summaries()[0].text == "Condensed summary."
+    assert mock_completion.call_args.kwargs["metadata"] == {
+        "debug_label": "memory_resummarize"
+    }
 
 
 def test_resummarize_zero_never_triggers(paths):

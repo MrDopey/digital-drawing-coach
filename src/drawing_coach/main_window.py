@@ -4,6 +4,7 @@ import platform
 import threading
 from pathlib import Path
 
+import litellm
 from PIL import Image as PilImage
 from PyQt6.QtCore import QObject, QPoint, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QAction, QCloseEvent, QColor, QIcon, QPainter, QPen, QPixmap, QPolygon
@@ -28,6 +29,7 @@ from PyQt6.QtWidgets import (
 from drawing_coach._version import __version__
 from drawing_coach.app_selection_dialog import AppSelectionDialog
 from drawing_coach.capture_engine import CapturedFrame, CaptureEngine
+from drawing_coach.design_system import Card, MutedLabel, PillBadge
 from drawing_coach.editable_name_label import EditableNameLabel
 from drawing_coach.feedback_engine import FeedbackEngine, FeedbackResponse
 from drawing_coach.feedback_panel import FeedbackPanel
@@ -35,6 +37,7 @@ from drawing_coach.history_panel import HistoryPanel
 from drawing_coach.hotkey_manager import HotkeyManager
 from drawing_coach.config_manager import ConfigManager
 from drawing_coach.llm_config import LLMConfig
+from drawing_coach.llm_debug_log import DebugIOLogger
 from drawing_coach.memory_store import MemoryStore
 from drawing_coach.memory_viewer import MemoryViewerDialog
 from drawing_coach.overlay_renderer import render as render_overlay
@@ -42,6 +45,7 @@ from drawing_coach.progress_panel import ProgressPanel
 from drawing_coach.session_manager import list_sessions, read_session_name, write_session_name
 from drawing_coach.settings_dialog import SettingsDialog
 from drawing_coach.stuck_detector import StuckDetector
+from drawing_coach.theme import Theme
 from drawing_coach.window_manager import WindowManager
 
 _STYLE_PRESETS = [
@@ -55,7 +59,7 @@ _STYLE_PRESETS = [
 ]
 
 
-class _WriteErrorPopup(QFrame):
+class _WriteErrorPopup(Card):
     """Borderless floating popup that shows the full write-error detail."""
 
     def __init__(self, label: "_WriteErrorLabel") -> None:
@@ -64,6 +68,8 @@ class _WriteErrorPopup(QFrame):
             Qt.WindowType.Tool
             | Qt.WindowType.FramelessWindowHint
             | Qt.WindowType.WindowStaysOnTopHint,
+            background=Theme.dialog.card_background,
+            border=Theme.dialog.card_border,
         )
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
         self._label = label
@@ -78,9 +84,6 @@ class _WriteErrorPopup(QFrame):
         self._text.setFrameShape(QFrame.Shape.NoFrame)
         self._text.setFixedWidth(480)
         layout.addWidget(self._text)
-        self.setStyleSheet(
-            "_WriteErrorPopup { background: #fffde7; border: 1px solid #f9a825; }"
-        )
 
     def set_body(self, text: str) -> None:
         self._text.setPlainText(text)
@@ -98,16 +101,15 @@ class _WriteErrorPopup(QFrame):
         super().leaveEvent(event)
 
 
-class _WriteErrorLabel(QLabel):
+class _WriteErrorLabel(PillBadge):
     """Status-bar label for write failures — selectable text, hover popup."""
 
     def __init__(self) -> None:
-        super().__init__()
+        super().__init__(color=Theme.dialog.warning_text)
         self.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextSelectableByMouse
             | Qt.TextInteractionFlag.TextSelectableByKeyboard
         )
-        self.setStyleSheet("color: #d97706;")
         self._popup = _WriteErrorPopup(self)
         self._hide_timer = QTimer(self)
         self._hide_timer.setSingleShot(True)
@@ -157,6 +159,7 @@ class _Signals(QObject):
     window_lost = pyqtSignal()
     frame_captured = pyqtSignal()
     write_error = pyqtSignal(str, str)  # path_str, exc_str
+    structured_output_unavailable = pyqtSignal(str)
     write_error_clear = pyqtSignal()
 
 
@@ -169,6 +172,7 @@ class MainWindow(QMainWindow):
 
         self._config_manager = ConfigManager()
         self._config = self._config_manager.load()
+        litellm.callbacks.append(DebugIOLogger(self._config))
         self._manager = WindowManager()
         self._capture = CaptureEngine(self._manager, config=self._config)
         self._detector = StuckDetector(
@@ -181,6 +185,9 @@ class MainWindow(QMainWindow):
         self._memory_store = MemoryStore(self._config)
         self._feedback_panel = FeedbackPanel()
         self._signals = _Signals()
+        self._feedback_engine.on_structured_output_unavailable = (
+            self._signals.structured_output_unavailable.emit
+        )
 
         self._setup_callbacks()
         self._build_ui()
@@ -205,6 +212,9 @@ class MainWindow(QMainWindow):
         self._signals.frame_captured.connect(self._update_status)
         self._signals.write_error.connect(self._on_write_error_main)
         self._signals.write_error_clear.connect(self._write_error_label.clear_error)
+        self._signals.structured_output_unavailable.connect(
+            self._on_structured_output_unavailable
+        )
 
         if not self._config.is_configured():
             QTimer.singleShot(200, self._run_onboarding)
@@ -264,11 +274,10 @@ class MainWindow(QMainWindow):
         style_row.addWidget(self._focus_edit, 1)
         layout.addLayout(style_row)
 
-        self._coaching_label = QLabel(
-            f"Coaching for: {self._config.effective_style_label()}"
+        self._coaching_label = MutedLabel(
+            f"Coaching for: {self._config.effective_style_label()}", small=True
         )
         self._coaching_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._coaching_label.setStyleSheet("color: #888; font-size: 11px;")
         layout.addWidget(self._coaching_label)
 
         btn_row = QHBoxLayout()
@@ -350,28 +359,28 @@ class MainWindow(QMainWindow):
         p.translate(11, 11)
         p.rotate(45)
 
-        # Eraser (pink)
-        p.setBrush(QColor("#FF9999"))
-        p.setPen(QPen(QColor("#CC6666"), 0.5))
+        # Eraser (pink) — decorative icon-drawing color, not a UI theme value
+        p.setBrush(QColor("#FF9999"))  # theme-exempt
+        p.setPen(QPen(QColor("#CC6666"), 0.5))  # theme-exempt
         p.drawRect(-3, -10, 6, 3)
 
-        # Ferrule (silver band)
-        p.setBrush(QColor("#C8C8C8"))
+        # Ferrule (silver band) — decorative icon-drawing color, not a UI theme value
+        p.setBrush(QColor("#C8C8C8"))  # theme-exempt
         p.setPen(Qt.PenStyle.NoPen)
         p.drawRect(-3, -7, 6, 2)
 
-        # Body (yellow)
-        p.setBrush(QColor("#FFD700"))
-        p.setPen(QPen(QColor("#B8860B"), 0.5))
+        # Body (yellow) — decorative icon-drawing color, not a UI theme value
+        p.setBrush(QColor("#FFD700"))  # theme-exempt
+        p.setPen(QPen(QColor("#B8860B"), 0.5))  # theme-exempt
         p.drawRect(-3, -5, 6, 10)
 
-        # Wood taper
-        p.setBrush(QColor("#DEB887"))
-        p.setPen(QPen(QColor("#A0522D"), 0.5))
+        # Wood taper — decorative icon-drawing color, not a UI theme value
+        p.setBrush(QColor("#DEB887"))  # theme-exempt
+        p.setPen(QPen(QColor("#A0522D"), 0.5))  # theme-exempt
         p.drawPolygon(QPolygon([QPoint(-3, 5), QPoint(3, 5), QPoint(2, 8), QPoint(-2, 8)]))
 
-        # Graphite tip
-        p.setBrush(QColor("#444444"))
+        # Graphite tip — decorative icon-drawing color, not a UI theme value
+        p.setBrush(QColor("#444444"))  # theme-exempt
         p.setPen(Qt.PenStyle.NoPen)
         p.drawPolygon(QPolygon([QPoint(-2, 8), QPoint(2, 8), QPoint(0, 10)]))
 
@@ -459,6 +468,9 @@ class MainWindow(QMainWindow):
             "The drawing window was closed. Select a new window to resume capture.",
         )
         self._open_app_selection()
+
+    def _on_structured_output_unavailable(self, message: str) -> None:
+        QMessageBox.warning(self, "Structured Output Unavailable", message)
 
     def _update_status(self) -> None:
         has_target = self._capture.target is not None
@@ -561,15 +573,20 @@ class MainWindow(QMainWindow):
         def _run() -> None:
             result = self._feedback_engine.request_feedback(frames, mode, coach_notes)
             if isinstance(result, FeedbackResponse):
-                stripped_text = self._memory_store.extract_and_append(
-                    result.text, self._capture.session_id
-                )
-                if stripped_text != result.text:
-                    result = FeedbackResponse(
-                        mode=result.mode,
-                        text=stripped_text,
-                        annotation_json=result.annotation_json,
+                if result.used_structured_output:
+                    self._memory_store.append_observations(
+                        result.observations, self._capture.session_id
                     )
+                else:
+                    stripped_text = self._memory_store.extract_and_append(
+                        result.text, self._capture.session_id
+                    )
+                    if stripped_text != result.text:
+                        result = FeedbackResponse(
+                            mode=result.mode,
+                            text=stripped_text,
+                            annotation_json=result.annotation_json,
+                        )
                 overlay_image = None
                 if mode == "overlay" and result.annotation_json and latest_image:
                     rendered, err = render_overlay(latest_image, result.annotation_json)

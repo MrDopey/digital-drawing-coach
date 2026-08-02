@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from PyQt6.QtWidgets import (
+    QCheckBox,
     QDialog,
     QDoubleSpinBox,
     QFileDialog,
     QFormLayout,
     QHBoxLayout,
-    QLabel,
     QLineEdit,
     QMessageBox,
     QPushButton,
@@ -17,6 +17,7 @@ from PyQt6.QtWidgets import (
 )
 
 from drawing_coach.config_manager import ConfigManager
+from drawing_coach.design_system import PillBadge
 from drawing_coach.diagnostics import DiagnosticsDialog
 from drawing_coach.hotkey_manager import HotkeyManager
 from drawing_coach.llm_config import LLMConfig
@@ -94,8 +95,18 @@ class SettingsDialog(QDialog):
 
         layout.addLayout(form)
 
+        self._debug_log_checkbox = QCheckBox("Debug logging of LLM input/output")
+        self._debug_log_checkbox.setChecked(self._config.debug_log_llm_io)
+        self._debug_log_checkbox.setToolTip(
+            "Persists every LLM request and response to disk for offline"
+            " debugging — including drawing screenshots. Off by default;"
+            " enable only when you need to inspect what was actually sent"
+            " to the LLM."
+        )
+        layout.addWidget(self._debug_log_checkbox)
+
         test_row = QHBoxLayout()
-        self._test_label = QLabel("")
+        self._test_label = PillBadge("")
         test_row.addWidget(self._test_label)
         test_row.addStretch()
         test_btn = QPushButton("Test Connection")
@@ -130,8 +141,7 @@ class SettingsDialog(QDialog):
         self._hotkey_edit.textChanged.connect(self._check_hotkey_conflict)
         form.addRow("Feedback Hotkey:", self._hotkey_edit)
 
-        self._conflict_label = QLabel("")
-        self._conflict_label.setStyleSheet("color: orange;")
+        self._conflict_label = PillBadge("", variant="warning")
         form.addRow("", self._conflict_label)
         self._check_hotkey_conflict(self._config.hotkey)
         return w
@@ -259,6 +269,7 @@ class SettingsDialog(QDialog):
             kwargs: dict = {
                 "model": model,
                 "messages": [{"role": "user", "content": "hi"}],
+                "metadata": {"debug_label": "settings_test_connection"},
             }
             if key:
                 kwargs["api_key"] = key
@@ -266,10 +277,10 @@ class SettingsDialog(QDialog):
                 kwargs["api_base"] = base
             litellm.completion(**kwargs)
             self._test_label.setText("✓ Connection successful")
-            self._test_label.setStyleSheet("color: green;")
+            self._test_label.set_variant("success")
         except Exception as exc:
             self._test_label.setText(f"✗ {exc}")
-            self._test_label.setStyleSheet("color: red;")
+            self._test_label.set_variant("danger")
 
     def _export(self) -> None:
         path, _ = QFileDialog.getSaveFileName(
@@ -316,6 +327,7 @@ class SettingsDialog(QDialog):
         self._config.api_key = self._key_edit.text().strip()
         self._config.api_base = self._base_edit.text().strip()
         self._config.custom_instructions = self._custom_edit.text().strip()
+        self._config.debug_log_llm_io = self._debug_log_checkbox.isChecked()
         self._config.capture_interval = self._interval_spin.value()
         self._config.hotkey = self._hotkey_edit.text().strip()
         self._config.stuck_threshold = self._threshold_spin.value()

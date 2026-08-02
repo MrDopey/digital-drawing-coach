@@ -11,6 +11,7 @@ Two runtime modes:
 
 Dialogs must be resizable: content reflows correctly when the user drags the window edge.
 
+- Style new widgets via the design system, not a one-off `setStyleSheet()` call: colors/spacing/font-size tokens live in `theme.py` (`Theme.overlay` for the dark feedback-panel surface, `Theme.dialog` for every other native dialog, plus shared semantic tokens like `Theme.success`/`Theme.danger`/`Theme.warning`/`Theme.muted_text`), and `design_system.py` provides `Card`, `PillBadge`, `MutedLabel`, `SectionHeader`, `PrimaryButton`, `IconButton` built on those tokens. `tests/test_design_system_compliance.py` fails the build on a stray hex literal or raw `setStyleSheet()` call outside those two files (escape hatch: a trailing `# theme-exempt` comment, for a value that must vary at runtime or isn't a UI theme color at all).
 - Expanding widgets need a stretch factor: `layout.addWidget(w, 1)` — without it they don't grow when the dialog is resized
 - Word-wrapped `QLabel`s in grid layouts need `setMinimumWidth(1)` — without it they lock the minimum layout width
 - Selectable `QLabel`s need `setTextInteractionFlags(TextSelectableByMouse | TextSelectableByKeyboard)` — without it users cannot copy displayed text
@@ -27,11 +28,11 @@ Dialogs must be resizable: content reflows correctly when the user drags the win
 |-------|-----------|
 | Language | Python 3.11+ |
 | GUI | PyQt6, pynput |
-| LLM | LiteLLM (supports OpenAI, Anthropic, Ollama, etc.) |
+| LLM | LiteLLM (supports OpenAI, Anthropic, Ollama, etc.) — feedback requests prefer LiteLLM structured JSON output (`response_format` json-schema) and try it once per app launch; on failure, a process-lifetime flag in `feedback_engine.py` disables it for the rest of the run and the app falls back to prose-plus-regex parsing (with a one-time user warning) |
 | Image processing | Pillow, mss (Windows/Linux window capture), numpy |
 | Window capture | `WindowBackend.capture_image()` (`window_manager.py`) — Windows/Linux use `mss.grab()` on the window rect; **macOS uses direct CoreGraphics** (`_backend_macos.py`, `CGWindowListCreateImage` scoped to the window ID) instead of `mss`, because `mss`'s macOS backend captures a screen *region* (compositing whatever else is on-screen there) rather than one window's content |
 | Config | `ConfigManager` (`config_manager.py`) — single load/save owner; merges `config.json`, `.env`, and env vars with explicit precedence |
 | Secrets | python-dotenv (`.env` in XDG config dir) — API key only; written by `ConfigManager.save()` |
 | Long-term memory | `MemoryStore` (`memory_store.py`) — `memory.json` (raw cross-session drawing observations) and `memory_summaries.json` (their periodic re-summarisation history); this is app data feeding the coaching LLM's prompt, unrelated to and separate from Claude Code's own memory/auto-memory system |
-| Tests | pytest, pytest-qt |
+| Tests | pytest, pytest-qt — on Linux/headless, `pynput` (imported by `hotkey_manager.py`) probes for a real X connection at import time even under `QT_QPA_PLATFORM=offscreen`, so any test importing it (directly or via `main_window.py`) needs a real or virtual display: `xvfb-run -a uv run pytest`. PyQt6 itself is an optional extra (`uv sync --extra gui`), not installed by a bare `uv sync` |
 | Build | hatchling, PyInstaller |

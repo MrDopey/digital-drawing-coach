@@ -17,6 +17,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from drawing_coach.design_system import Card, MutedLabel
 from drawing_coach.editable_name_label import EditableNameLabel
 from drawing_coach.session_manager import (
     SessionInfo,
@@ -25,6 +26,7 @@ from drawing_coach.session_manager import (
     list_sessions,
     write_session_name,
 )
+from drawing_coach.theme import Theme
 
 THUMB_SIZE = QSize(120, 80)
 PREVIEW_SIZE = QSize(360, 240)
@@ -53,14 +55,14 @@ class _ThumbnailLabel(QLabel):
                 f'width="{PREVIEW_SIZE.width()}" height="{PREVIEW_SIZE.height()}">'
             )
         else:
-            self.setStyleSheet("background: #cccccc;")
+            Theme.dialog.apply_placeholder(self)
 
     def mouseDoubleClickEvent(self, event) -> None:  # type: ignore[override]
         self.doubleClicked.emit()
         super().mouseDoubleClickEvent(event)
 
 
-class _SessionRow(QFrame):
+class _SessionRow(Card):
     """One row in the picker: thumbnail, editable name, date, pencil button."""
 
     clicked = pyqtSignal()
@@ -68,10 +70,14 @@ class _SessionRow(QFrame):
     renamed = pyqtSignal()
 
     def __init__(self, info: SessionInfo, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
+        super().__init__(
+            parent,
+            border=Theme.dialog.selection_border,
+            border_width=Theme.border_width_thick,
+            radius=Theme.border_radius,
+        )
         self.info = info
         self.setFrameShape(QFrame.Shape.StyledPanel)
-        self.set_selected(False)
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(6, 6, 6, 6)
@@ -85,8 +91,7 @@ class _SessionRow(QFrame):
         self._name_label.renamed.connect(self._on_renamed)
         text_col.addWidget(self._name_label)
 
-        date_label = QLabel(info.start_time.strftime("%Y-%m-%d %H:%M"))
-        date_label.setStyleSheet("color: #888;")
+        date_label = MutedLabel(info.start_time.strftime("%Y-%m-%d %H:%M"))
         date_label.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextSelectableByMouse
             | Qt.TextInteractionFlag.TextSelectableByKeyboard
@@ -101,9 +106,8 @@ class _SessionRow(QFrame):
         layout.addWidget(pencil_btn)
 
     def set_selected(self, selected: bool) -> None:
-        color = "#3b82f6" if selected else "#d1d5db"
-        self.setStyleSheet(
-            f"_SessionRow {{ border: 2px solid {color}; border-radius: 4px; }}"
+        self.set_border(
+            Theme.dialog.selection_border_selected if selected else Theme.dialog.selection_border
         )
 
     def mousePressEvent(self, event) -> None:  # type: ignore[override]

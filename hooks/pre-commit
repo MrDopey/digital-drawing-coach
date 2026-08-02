@@ -1,0 +1,36 @@
+#!/usr/bin/env python3
+"""Blocks a commit if the design-system compliance check fails.
+
+Local convenience only — not a substitute for CI. Bypassed by
+`git commit --no-verify`, or simply absent if `scripts/install_git_hooks.sh`
+was never run; `.github/workflows/test.yml` is the authoritative gate
+regardless of local hook state (see design.md's Decisions/Risks).
+"""
+
+from __future__ import annotations
+
+import shutil
+import subprocess
+import sys
+
+
+def main() -> int:
+    if shutil.which("uv") is None:
+        print("uv not found on PATH — skipping local design-system check.")
+        print("CI will still enforce this on push/PR.")
+        return 0
+
+    result = subprocess.run(
+        ["uv", "run", "pytest", "tests/test_design_system_compliance.py", "-q"]
+    )
+    if result.returncode != 0:
+        print()
+        print("Commit blocked: design-system compliance check failed (see above).")
+        print("Use a Theme token / design_system component, or mark a genuine")
+        print("exception with a trailing `# theme-exempt` comment.")
+        print("(Emergency bypass: `git commit --no-verify` — CI will still catch it.)")
+    return result.returncode
+
+
+if __name__ == "__main__":
+    sys.exit(main())

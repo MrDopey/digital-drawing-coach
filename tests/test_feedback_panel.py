@@ -6,8 +6,10 @@ from unittest.mock import MagicMock
 from PIL import Image
 from PyQt6.QtWidgets import QRadioButton
 
+from drawing_coach.design_system import MutedLabel, PrimaryButton
 from drawing_coach.feedback_engine import FeedbackResponse
 from drawing_coach.feedback_panel import MODE_LABELS, FeedbackPanel
+from drawing_coach.theme import Theme
 
 
 def _overlay_response() -> FeedbackResponse:
@@ -124,6 +126,36 @@ def test_zoom_in_and_out_change_pixmap_size(qtbot):
     panel._zoom_out()
     zoomed_out_size = panel._image_label.pixmap().size()
     assert zoomed_out_size.width() < original_size.width()
+
+
+# ---------------------------------------------------------------------------
+# Design-system components (theme-driven styling, not raw QSS strings)
+# ---------------------------------------------------------------------------
+
+
+def test_panel_uses_overlay_background(qtbot):
+    panel = FeedbackPanel()
+    qtbot.addWidget(panel)
+
+    assert Theme.overlay.background in panel.styleSheet()
+
+
+def test_request_and_history_buttons_are_primary_buttons(qtbot):
+    panel = FeedbackPanel()
+    qtbot.addWidget(panel)
+
+    assert isinstance(panel._request_btn, PrimaryButton)
+    assert isinstance(panel._prev_btn, PrimaryButton)
+    assert isinstance(panel._next_btn, PrimaryButton)
+
+
+def test_zoom_and_history_labels_are_muted_labels(qtbot):
+    panel = FeedbackPanel()
+    qtbot.addWidget(panel)
+
+    assert isinstance(panel._zoom_label, MutedLabel)
+    assert isinstance(panel._hist_label, MutedLabel)
+    assert Theme.overlay.muted_text_dim in panel._zoom_label.styleSheet()
 
 
 def test_zoom_resets_on_history_navigation(qtbot):
