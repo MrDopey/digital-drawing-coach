@@ -332,7 +332,14 @@ class MainWindow(QMainWindow):
         menu.addAction(f"About (v{__version__})", self._show_about)
         menu.addAction("Quit", QApplication.quit)
         self._tray.setContextMenu(menu)
+        self._tray.activated.connect(self._on_tray_activated)
         self._tray.show()
+
+    def _on_tray_activated(
+        self, reason: QSystemTrayIcon.ActivationReason
+    ) -> None:
+        if reason == QSystemTrayIcon.ActivationReason.DoubleClick:
+            self._restore_main_window()
 
     @staticmethod
     def _make_tray_icon() -> QIcon:
