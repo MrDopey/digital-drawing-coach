@@ -6,9 +6,11 @@ from unittest.mock import MagicMock
 from PIL import Image
 from PyQt6.QtWidgets import QRadioButton
 
+from drawing_coach.capture_engine import CapturedFrame
 from drawing_coach.design_system import MutedLabel, PrimaryButton
 from drawing_coach.feedback_engine import FeedbackResponse
 from drawing_coach.feedback_panel import MODE_LABELS, FeedbackPanel
+from drawing_coach.feedback_store import FeedbackStore
 from drawing_coach.theme import Theme
 
 
@@ -175,3 +177,70 @@ def test_zoom_resets_on_history_navigation(qtbot):
     panel._show_prev()
 
     assert panel._zoom_factor == 1.0
+
+
+# ---------------------------------------------------------------------------
+# Request Feedback deduplication
+# ---------------------------------------------------------------------------
+
+
+def _store_with_entry(tmp_path, mode="quick_hint", frame_hashes=("abc",)):
+    store = FeedbackStore(tmp_path)
+    frame = CapturedFrame(image=Image.new("RGB", (100, 100)))
+    store.save(
+        FeedbackResponse(mode=mode, text="ok", frame_hashes=list(frame_hashes)),
+        frame,
+    )
+    return store
+
+
+def test_update_request_state_disables_button_on_match(tmp_path, qtbot):
+    panel = FeedbackPanel()
+    qtbot.addWidget(panel)
+    panel.set_store(_store_with_entry(tmp_path))
+
+    panel.update_request_state(["abc"])
+
+    assert not panel._request_btn.isEnabled()
+    assert (
+        panel._request_btn.toolTip() == "Already generated for this drawing and mode"
+    )
+
+
+def test_update_request_state_reenables_on_new_frame(tmp_path, qtbot):
+    panel = FeedbackPanel()
+    qtbot.addWidget(panel)
+    panel.set_store(_store_with_entry(tmp_path))
+    panel.update_request_state(["abc"])
+    assert not panel._request_btn.isEnabled()
+
+    panel.update_request_state(["a-new-hash"])
+
+    assert panel._request_btn.isEnabled()
+    assert panel._request_btn.toolTip() == ""
+
+
+def test_update_request_state_reenables_on_mode_change(tmp_path, qtbot):
+    panel = FeedbackPanel()
+    qtbot.addWidget(panel)
+    panel.set_store(_store_with_entry(tmp_path, mode="quick_hint"))
+    panel.update_request_state(["abc"])
+    assert not panel._request_btn.isEnabled()
+
+    radios = panel.findChildren(QRadioButton)
+    other_mode = next(
+        r for r in radios if r.property("mode_key") == "full_critique"
+    )
+    other_mode.setChecked(True)
+    panel.update_request_state(["abc"])
+
+    assert panel._request_btn.isEnabled()
+
+
+def test_update_request_state_enabled_with_no_history(qtbot):
+    panel = FeedbackPanel()
+    qtbot.addWidget(panel)
+
+    panel.update_request_state(["anything"])
+
+    assert panel._request_btn.isEnabled()
