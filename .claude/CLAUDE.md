@@ -17,6 +17,7 @@ Dialogs must be resizable: content reflows correctly when the user drags the win
 - Scrollable content: `QScrollArea(setWidgetResizable=True, frameShape=NoFrame)`; no hardcoded dialog heights
 - Child dialogs opened from a modal parent must use `exec()` not `show()` — `show()` inside an `exec()` loop cannot receive focus
 - A scaled pixmap in a stretch-factored widget needs a `resizeEvent` override to re-scale it — without one, the image only updates on its next content change, not on window resize
+- A widget with more than one independent visual state driven by `setStyleSheet()` (e.g. a hover highlight plus a separate persistent indicator) must track each state as its own field and recompute one combined stylesheet string from all of them — two handlers each calling `setStyleSheet()` on their own will clobber each other instead of composing
 
 ## Tech Stack
 

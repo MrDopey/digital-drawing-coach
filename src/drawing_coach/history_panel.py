@@ -22,7 +22,12 @@ from PyQt6.QtWidgets import (
 from drawing_coach.capture_engine import CapturedFrame, CaptureEngine
 from drawing_coach.llm_config import LLMConfig
 
-_LOOKBACK_BORDER_STYLE = "border-left: 3px solid #4A90D9;"
+_LOOKBACK_BORDER = "border-left: 3px solid #4A90D9;"
+_HOVER_BACKGROUND = "background: #e8f0fe;"
+_DELETE_BUTTON_STYLE = (
+    "QPushButton { background: #333; color: #e0e0e0; border-radius: 4px; }"
+    "QPushButton:hover { background: #444; }"
+)
 
 
 def _pil_to_pixmap(frame: CapturedFrame, max_size: int = 48) -> QPixmap:
@@ -68,10 +73,14 @@ class _FrameRowWidget(QWidget):
         layout.addWidget(ts_label, 1)
 
         self.delete_button = QPushButton("×")
-        self.delete_button.setFixedSize(20, 20)
+        self.delete_button.setFixedSize(24, 24)
         self.delete_button.setVisible(False)
+        self.delete_button.setStyleSheet(_DELETE_BUTTON_STYLE)
         self.delete_button.clicked.connect(lambda: self._on_delete(self._frame))
         layout.addWidget(self.delete_button)
+
+        self._is_hovered = False
+        self._is_lookback = False
 
         self.installEventFilter(self)
 
@@ -79,8 +88,12 @@ class _FrameRowWidget(QWidget):
         if obj is self:
             if event.type() == QEvent.Type.Enter:
                 self.delete_button.setVisible(True)
+                self._is_hovered = True
+                self._apply_style()
             elif event.type() == QEvent.Type.Leave:
                 self.delete_button.setVisible(False)
+                self._is_hovered = False
+                self._apply_style()
         return super().eventFilter(obj, event)
 
     def mouseDoubleClickEvent(self, event) -> None:  # noqa: N802 - Qt override
@@ -88,7 +101,16 @@ class _FrameRowWidget(QWidget):
         super().mouseDoubleClickEvent(event)
 
     def set_highlighted(self, highlighted: bool) -> None:
-        self.setStyleSheet(_LOOKBACK_BORDER_STYLE if highlighted else "")
+        self._is_lookback = highlighted
+        self._apply_style()
+
+    def _apply_style(self) -> None:
+        style = ""
+        if self._is_hovered:
+            style += _HOVER_BACKGROUND
+        if self._is_lookback:
+            style += _LOOKBACK_BORDER
+        self.setStyleSheet(style)
 
 
 class HistoryPanel(QDialog):
