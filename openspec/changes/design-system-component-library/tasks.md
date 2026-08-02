@@ -24,7 +24,7 @@
 
 - [x] 4.1 Replace `_LOOKBACK_BORDER` and `_DELETE_BUTTON_STYLE` with theme tokens and shared components as appropriate; leave `_FrameRowWidget._apply_style()`'s `QPalette.ColorRole.Highlight`/`HighlightedText` hover lookup untouched (it's a deliberate OS-theme-following exception, not a candidate for a static token — see design.md Non-Goals)
 - [x] 4.2 Update any `tests/test_history_panel.py` assertions that check stylesheet strings for the lookback border / delete button to instead check component/semantic state; leave the existing `QPalette`-based hover-color assertions (lines ~239-262) unchanged
-- [ ] 4.3 Confirm the lookback-window border indicator and the theme-aware hover highlight still render identically (per design.md's visual-parity requirement)
+- [x] 4.3 Confirm the lookback-window border indicator and the theme-aware hover highlight still render identically (per design.md's visual-parity requirement)
 
 ## 5. Migrate Remaining Files
 
