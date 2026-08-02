@@ -43,6 +43,6 @@
 ## 7. Documentation
 
 - [x] 7.1 Update `README.md` with feedback persistence and deduplication behaviour
-- [ ] 7.2 Review `.claude/CLAUDE.md` — no new UI conventions beyond existing guidelines (design-system compliance is already documented there); no changes needed
+- [x] 7.2 Review `.claude/CLAUDE.md` — no new UI conventions beyond existing guidelines (design-system compliance is already documented there); no changes needed
 - [ ] 7.3 Review `openspec/config.yaml` — no recurring gap identified; no changes needed
 - [ ] 7.4 Run `uv run pytest` and confirm all tests pass
