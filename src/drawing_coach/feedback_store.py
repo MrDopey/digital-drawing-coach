@@ -86,3 +86,11 @@ class FeedbackStore:
     def thumbnail_path_for(self, response: FeedbackResponse) -> Path | None:
         thumb_path = self._dir / f"{self._stem(response)}_thumb.jpg"
         return thumb_path if thumb_path.is_file() else None
+
+    def last_entry_for(
+        self, mode: str, frame_hashes: list[str]
+    ) -> FeedbackResponse | None:
+        for response in reversed(self.load()):
+            if response.mode == mode and response.frame_hashes == frame_hashes:
+                return response
+        return None
