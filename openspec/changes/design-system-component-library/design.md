@@ -1,0 +1,54 @@
+## Context
+
+Styling today is spread across six files as 22+ independent `setStyleSheet()` calls with inline hex literals. Inspecting the actual call sites surfaces three patterns that matter for the design:
+
+1. **Two distinct visual surfaces already exist by design, not by accident.** `feedback_panel.py` is a frameless, always-on-top dark overlay (`background: #1e1e1e; color: #e0e0e0`) styled like an OSD, while `main_window.py`, `settings_dialog.py`, `session_picker_dialog.py`, and `diagnostics.py` are native `QDialog`/`QWidget` windows left on the system's default (light) palette with only accent colors overridden. Unifying these into one flat palette would be a visual regression, not a fix.
+2. **The same semantic color triples are duplicated independently.** `diagnostics.py` and `settings_dialog.py` each hand-roll their own green/red "success/error" label coloring (`color: green;` / `color: red;`), and greys used for secondary/muted text (`#888`, `#aaa`) recur in `feedback_panel.py`, `session_picker_dialog.py`, and `main_window.py` with no shared name tying them together.
+3. **`history_panel.py`'s `_FrameRowWidget._apply_style()` already does what CLAUDE.md's UI-conventions rule asks for** — it tracks `_is_hovered` and `_is_lookback` as separate fields and recomputes one combined stylesheet, rather than two handlers clobbering each other. Critically, its hover color is **not** a static hex value: it reads `self.palette().color(QPalette.ColorRole.Highlight)` at call time, so the row highlight automatically follows the OS's active (light/dark) palette — a fix landed specifically for this (`1efd63a fix: session history row hover uses theme-aware highlight colors`), and asserted on directly in `tests/test_history_panel.py`. This is a deliberate exception to "colors come from `theme.py`": the design-system migration must preserve the dynamic `QPalette` lookup here rather than replacing it with a static token, which would regress that fix.
+
+## Goals / Non-Goals
+
+**Goals:**
+- One module (`theme.py`) as the single source of truth for color, spacing, and font-size tokens, expressed as semantic names (`Theme.danger`, `Theme.muted_text`) rather than raw hex.
+- A small set of reusable widget classes (`Card`, `PillBadge`, `SectionHeader`, `PrimaryButton`) that read from `theme.py` internally, so call sites stop writing `setStyleSheet()` altogether for anything the library covers.
+- Preserve the existing dark-overlay-vs-native-dialog visual split as an intentional, named distinction in the theme (not something migration accidentally collapses).
+- Migrate all six files to compose the new components with no visible change in appearance or behavior.
+
+**Non-Goals:**
+- No global light/dark mode *toggle* — that's a separate feature; this change only formalizes the two surfaces that already exist.
+- No new UI framework, QML, or styling engine — stays PyQt6 + QSS under the hood.
+- No visual redesign — colors and spacing values carry over as-is, just centralized and named.
+- No replacing `_FrameRowWidget`'s `QPalette`-driven hover color with a static token — that dynamic, OS-theme-following lookup is a recently-landed fix and stays as-is.
+
+## Decisions
+
+- **Widget subclasses over global QSS or a bare constants module.** Considered (a) an app-level `QApplication.setStyleSheet()` with object-name selectors, and (b) a constants-only `theme.py` that call sites still build `setStyleSheet()` strings from. Rejected (a): the dark-overlay/native-dialog split makes one global stylesheet awkward (everything would need scoped selectors to avoid bleeding overlay styling into native dialogs), and it's the largest rewrite for the least reuse. Rejected (b) alone: it stops hex duplication but does nothing to stop the next panel from writing its own new one-off `setStyleSheet()` call — the goal is components that make the *inconsistent* path harder to reach than the *consistent* one, not just a shared vocabulary. Chosen approach: `theme.py` for tokens, consumed internally by a handful of widget subclasses that other code imports and composes.
+- **Two token groups, not one flat palette.** `theme.py` exposes `Theme.overlay` (dark, for `feedback_panel.py`) and `Theme.dialog` (native/light, for everything else) as separate namespaces, plus shared semantic tokens that don't depend on surface (`Theme.success`, `Theme.danger`, `Theme.warning` for the green/red/orange status-label pattern duplicated in `diagnostics.py` and `settings_dialog.py`).
+- **Components ship as classes, not factory functions.** `Card(QFrame)`, `PillBadge(QLabel)`, etc. subclass the Qt widget they replace, so existing layout code (`layout.addWidget(...)`) doesn't change shape — only construction does. This keeps the migration mechanical (swap `QFrame()` + manual style for `Card()`) rather than requiring layout rewrites.
+- **Migrate `feedback_panel.py` and `history_panel.py` first.** They're the most actively developed panels per current git history, so landing the library there first gives it real usage pressure before the remaining four files migrate.
+- **Enforce compliance with two layered checks, not documentation alone.** CLAUDE.md's UI Conventions section documents the preferred pattern but doesn't stop anyone (human or a future agent session) from writing a new one-off `setStyleSheet()` call — nothing about the components is self-enforcing. Two layers close that gap: (1) a pytest test (`tests/test_design_system_compliance.py`) that statically scans `src/drawing_coach/` for stray hex literals and `setStyleSheet()` calls outside `theme.py`, with a `# theme-exempt` escape hatch for genuine runtime-computed exceptions; (2) a `.github/workflows/test.yml` CI job running that test on every push/PR — the repo currently has no CI test gate at all (only a release-tag build workflow), so this is the layer that can actually block a violating merge regardless of what any individual contributor has set up locally.
+- **Local enforcement via a `pre-commit` git hook, written in Python and driven by the project's existing `uv`/`pytest` toolchain.** A tracked `hooks/pre-commit` script blocks `git commit` locally when `tests/test_design_system_compliance.py` fails, giving the fastest possible feedback loop (before the commit exists, not after). It's a plain Python script (`#!/usr/bin/env python3`) that shells out to `uv run pytest tests/test_design_system_compliance.py -q` and exits non-zero on failure — deliberately not the separate `pre-commit` pip framework (that would be a new dependency requiring its own config and install step); this reuses only what the project already has. Git picks it up via `core.hooksPath`, set once per clone by `scripts/install_git_hooks.sh`. It is opt-in per clone precisely because `.git/hooks/` isn't version-controlled — CI remains the authoritative gate for contributors who haven't run the install step, or who bypass the hook with `git commit --no-verify`.
+
+## Risks / Trade-offs
+
+- **[Risk]** Collapsing the overlay/native-dialog split by mistake during migration would visibly break the app (native dialogs going dark, or the overlay losing its OSD look) → Mitigation: keep `Theme.overlay` and `Theme.dialog` as explicitly separate, non-overlapping namespaces; component classes take an explicit surface/variant argument rather than inferring it.
+- **[Risk]** `tests/test_history_panel.py` and any other test asserting on stylesheet strings will break once styling moves into component internals → Mitigation: update assertions to check the component's semantic state (e.g. `widget.property("selected")` or the component's own attribute) rather than exact QSS text, called out explicitly in tasks.
+- **[Risk]** Introducing components before their internal API stabilizes could cause churn across six call sites → Mitigation: build and stabilize against the two highest-traffic files (`feedback_panel.py`, `history_panel.py`) first; treat the other four as a mechanical follow-up once the component API isn't moving.
+- **[Risk]** The `pre-commit` hook blocks local commits and can be bypassed with `git commit --no-verify`, or is simply absent for contributors who never ran `scripts/install_git_hooks.sh` → Mitigation: CI (`.github/workflows/test.yml`) is documented as the authoritative gate regardless of local hook state, so a bypassed or missing local hook doesn't silently disable enforcement — it only delays discovery from commit-time to PR-time.
+- **[Risk]** The hook shells out to `uv run pytest`, so it fails (or silently no-ops, depending on shell settings) on a machine without `uv` on `PATH` → Mitigation: the hook script checks for `uv` up front and prints a clear "uv not found, skipping local check — CI will still catch this" message instead of an opaque error.
+
+## Migration Plan
+
+1. Add `theme.py` with `Theme.overlay`, `Theme.dialog`, and shared semantic tokens, values copied verbatim from current call sites (no new colors introduced).
+2. Add component classes (`Card`, `PillBadge`, `SectionHeader`, `PrimaryButton`) built against `theme.py`.
+3. Migrate `feedback_panel.py`, updating its existing tests if any assert on styling.
+4. Migrate `history_panel.py` and update `tests/test_history_panel.py` assertions to check component state instead of raw QSS strings.
+5. Migrate `main_window.py`, `session_picker_dialog.py`, `settings_dialog.py`, `diagnostics.py` in any order — each is an independent, mechanical swap.
+6. Grep for `setStyleSheet` and hex literals (`#[0-9a-fA-F]{3,6}`) across `src/drawing_coach/` as a completion check; anything remaining should be a deliberate, commented exception (e.g. a value that must vary at runtime and can't be a static token).
+7. Land the compliance test, CI workflow, and pre-commit hook (see Decisions above) so the check in step 6 stops being a one-time manual pass and becomes a standing guard against regression.
+
+Rollback is trivial at any step: each file's migration is an isolated commit: revert the one file's commit to fall back to its prior inline styling without affecting the others.
+
+## Open Questions
+
+- Should `PillBadge`/status-label coloring (`Theme.success`/`danger`/`warning`) also be applied retroactively to `diagnostics.py`'s check-result rows and `settings_dialog.py`'s connection-test label, or left as a follow-up change once the base library lands? (Proposed default: include it — it's the clearest duplicated pattern found, and both files are already in the migration list.)
