@@ -187,6 +187,7 @@ class MainWindow(QMainWindow):
         self._build_ui()
         self._build_menu()
         self._build_tray()
+        self._update_status()
         self._hotkeys.set_hotkey(self._config.hotkey)
         self._hotkeys.start()
 
@@ -437,6 +438,11 @@ class MainWindow(QMainWindow):
     def _on_window_lost(self) -> None:
         self._capture.pause()
         self._update_status()
+        # `_capture.target` still points at the now-invalid window, so
+        # `_update_status()` alone would leave the control enabled; force it
+        # disabled here until a new window is selected.
+        self._pause_btn.setEnabled(False)
+        self._tray_pause_action.setEnabled(False)
         QMessageBox.warning(
             self,
             "Window Closed",
@@ -445,9 +451,10 @@ class MainWindow(QMainWindow):
         self._open_app_selection()
 
     def _update_status(self) -> None:
-        if self._capture.target:
+        has_target = self._capture.target is not None
+        if has_target:
             self._window_label.setText(f"Monitoring: {self._capture.target.title}")
-        if self._capture.paused:
+        if not has_target or self._capture.paused:
             self._status_label.setText("Capture: paused")
             self._pause_btn.setText("Resume")
             self._tray_pause_action.setText("Resume Capture")
@@ -456,6 +463,8 @@ class MainWindow(QMainWindow):
             self._status_label.setText(f"Capture: active  ({frames} frames)")
             self._pause_btn.setText("Pause")
             self._tray_pause_action.setText("Pause Capture")
+        self._pause_btn.setEnabled(has_target)
+        self._tray_pause_action.setEnabled(has_target)
 
     def _update_window_title(self) -> None:
         session_dir = self._capture.session_dir

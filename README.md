@@ -41,6 +41,7 @@ Each platform's `WindowBackend` (`window_manager.py`) implements `capture_image(
 ## Features
 
 - Captures screenshots of any drawing application at a configurable interval (default: 30 s)
+- Pause/Resume control for capture; disabled until a drawing window has been selected via **Select Window**, since capture has nothing to monitor before that
 - Detects when you are stuck via pixel-change (MAE) analysis, or responds to a manual hotkey
 - Four feedback modes — Quick Hint, Full Critique, Practice Exercise, and Overlay (correction lines and annotations drawn directly onto the canvas screenshot) — selected via a horizontal radio-button strip in the feedback panel, with a "Get Feedback" button right beside it to fire a request in the currently selected mode. The panel opens at a larger default size and its overlay image rescales live as the panel is resized.
 - Drawing style and focus selector — choose from presets (Line Drawing, Realistic, Anime/Manga, Chibi, Concept Art, Portrait) or enter free text (e.g. `gothic pokemon`) to tailor every LLM prompt
