@@ -24,7 +24,7 @@
 ## 5. Documentation
 
 - [x] 5.1 Update `README.md` from a developer's perspective to describe the panel's new default size, radio-button mode strip, and in-panel trigger button.
-- [ ] 5.2 Review `.claude/CLAUDE.md`'s "UI Conventions (PyQt6)" section and add a line about overlay/image content needing a `resizeEvent`-driven rescale when a stretch-factored widget contains a scaled pixmap, since this wasn't previously called out and this change fixes a bug caused by its absence.
+- [x] 5.2 Review `.claude/CLAUDE.md`'s "UI Conventions (PyQt6)" section and add a line about overlay/image content needing a `resizeEvent`-driven rescale when a stretch-factored widget contains a scaled pixmap, since this wasn't previously called out and this change fixes a bug caused by its absence.
 - [ ] 5.3 Review `openspec/config.yaml` and propose changes only if this spec reveals a clear, recurring gap in the current rules; otherwise leave unchanged.
 
 ## 6. Verification
