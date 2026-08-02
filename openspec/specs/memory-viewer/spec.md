@@ -51,3 +51,18 @@ The memory viewer SHALL provide an "Export Memory" button that opens a destinati
 #### Scenario: Exporting when summary history does not yet exist
 - **WHEN** the user clicks Export Memory and `memory_summaries.json` does not yet exist (no re-summarisation has happened yet)
 - **THEN** `memory.json` is still copied, `memory_summaries.json` is skipped, and the success message reflects what was actually exported
+
+### Requirement: Observation row background highlight on hover
+Each observation row in the memory viewer's tree SHALL highlight its background when the mouse cursor is over that row, consistent with the row hover-highlight behavior of the Session History panel.
+
+#### Scenario: Mouse enters an observation row
+- **WHEN** the mouse cursor enters an observation row's area in the memory viewer
+- **THEN** that row's background SHALL change to a distinct highlight color
+
+#### Scenario: Mouse leaves an observation row
+- **WHEN** the mouse cursor leaves an observation row's area
+- **THEN** that row's background SHALL return to its normal (non-highlighted) color
+
+#### Scenario: Category header rows are unaffected
+- **WHEN** the mouse cursor moves over a top-level category header row (not an individual observation)
+- **THEN** no observation-row hover highlight is required for that header row

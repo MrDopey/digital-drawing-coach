@@ -3,6 +3,7 @@ from __future__ import annotations
 import shutil
 from pathlib import Path
 
+from PyQt6.QtGui import QPalette
 from PyQt6.QtWidgets import (
     QDialog,
     QFileDialog,
@@ -48,6 +49,15 @@ class MemoryViewerDialog(QDialog):
         )
         self._tree.setWordWrap(True)
         self._tree.setUniformRowHeights(False)
+        palette = self.palette()
+        hover_background = palette.color(QPalette.ColorRole.Highlight).name()
+        hover_text = palette.color(QPalette.ColorRole.HighlightedText).name()
+        # Runtime QPalette-driven hover color, must follow the OS's active
+        # theme (same convention as history_panel.py's _FrameRowWidget).
+        self._tree.setStyleSheet(  # theme-exempt
+            "QTreeWidget::item:hover { "
+            f"background: {hover_background}; color: {hover_text}; }}"
+        )
         layout.addWidget(self._tree, 3)
 
         btn_row = QHBoxLayout()
