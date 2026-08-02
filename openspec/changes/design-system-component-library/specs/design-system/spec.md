@@ -35,7 +35,11 @@ Once a file has been migrated to the design system, it SHALL NOT contain `setSty
 
 #### Scenario: Migrated file is checked for inline hex literals
 - **WHEN** `src/drawing_coach/feedback_panel.py`, `history_panel.py`, `main_window.py`, `session_picker_dialog.py`, `settings_dialog.py`, or `diagnostics.py` is searched for hex color literals (`#[0-9a-fA-F]{3,6}`) after migration
-- **THEN** no matches SHALL remain outside of `theme.py` itself, except for a value that must vary at runtime in a way a static token cannot express, which SHALL be marked with an explanatory comment
+- **THEN** no matches SHALL remain outside of `theme.py` itself, except for (a) a value that must vary at runtime in a way a static token cannot express, or (b) a color that isn't a UI theme value at all (e.g. a decorative color used to render a drawn icon/asset) — either SHALL be marked with a `# theme-exempt` comment and a brief reason
+
+#### Scenario: A decorative, non-theme color is exempted
+- **WHEN** code draws a fixed-color decorative asset (e.g. `MainWindow._make_tray_icon`'s hand-drawn pencil glyph) using `QColor`/`QPen` hex literals that have no relationship to the app's light/dark UI palette
+- **THEN** each such line MAY be marked `# theme-exempt` with a comment noting it's a decorative/icon color rather than a UI theme value, and the compliance check SHALL NOT flag it
 
 ### Requirement: Automated compliance enforcement
 The system SHALL provide an automated check that fails when a file outside `theme.py` (and the component module) contains a hex color literal or a raw `setStyleSheet()` call without an explicit `# theme-exempt` escape-hatch comment. This check SHALL run in continuous integration on every push and pull request, and SHALL additionally be available as an opt-in local `pre-commit` git hook, implemented as a Python script that invokes the project's existing `uv run pytest` toolchain, blocking the commit when a violation is detected. CI SHALL remain the authoritative enforcement layer regardless of whether a given contributor has installed the local hook.
