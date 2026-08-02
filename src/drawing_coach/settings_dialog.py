@@ -6,7 +6,6 @@ from PyQt6.QtWidgets import (
     QFileDialog,
     QFormLayout,
     QHBoxLayout,
-    QLabel,
     QLineEdit,
     QMessageBox,
     QPushButton,
@@ -17,6 +16,7 @@ from PyQt6.QtWidgets import (
 )
 
 from drawing_coach.config_manager import ConfigManager
+from drawing_coach.design_system import PillBadge
 from drawing_coach.diagnostics import DiagnosticsDialog
 from drawing_coach.hotkey_manager import HotkeyManager
 from drawing_coach.llm_config import LLMConfig
@@ -95,7 +95,7 @@ class SettingsDialog(QDialog):
         layout.addLayout(form)
 
         test_row = QHBoxLayout()
-        self._test_label = QLabel("")
+        self._test_label = PillBadge("")
         test_row.addWidget(self._test_label)
         test_row.addStretch()
         test_btn = QPushButton("Test Connection")
@@ -130,8 +130,7 @@ class SettingsDialog(QDialog):
         self._hotkey_edit.textChanged.connect(self._check_hotkey_conflict)
         form.addRow("Feedback Hotkey:", self._hotkey_edit)
 
-        self._conflict_label = QLabel("")
-        self._conflict_label.setStyleSheet("color: orange;")
+        self._conflict_label = PillBadge("", variant="warning")
         form.addRow("", self._conflict_label)
         self._check_hotkey_conflict(self._config.hotkey)
         return w
@@ -266,10 +265,10 @@ class SettingsDialog(QDialog):
                 kwargs["api_base"] = base
             litellm.completion(**kwargs)
             self._test_label.setText("✓ Connection successful")
-            self._test_label.setStyleSheet("color: green;")
+            self._test_label.set_variant("success")
         except Exception as exc:
             self._test_label.setText(f"✗ {exc}")
-            self._test_label.setStyleSheet("color: red;")
+            self._test_label.set_variant("danger")
 
     def _export(self) -> None:
         path, _ = QFileDialog.getSaveFileName(

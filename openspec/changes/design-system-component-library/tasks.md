@@ -30,7 +30,7 @@
 
 - [x] 5.1 Migrate `main_window.py` (`_WriteErrorPopup` to `Card`, status/hint labels to theme tokens)
 - [x] 5.2 Migrate `session_picker_dialog.py` (`_SessionRow` selection styling to `Card`, muted date label to theme tokens)
-- [ ] 5.3 Migrate `settings_dialog.py` (connection-test label and hotkey-conflict label to `PillBadge`/theme tokens)
+- [x] 5.3 Migrate `settings_dialog.py` (connection-test label and hotkey-conflict label to `PillBadge`/theme tokens)
 - [ ] 5.4 Migrate `diagnostics.py` (check-result status labels to `PillBadge`, hint label to theme tokens)
 
 ## 6. Automated Enforcement
