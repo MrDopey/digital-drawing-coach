@@ -1,10 +1,10 @@
 ## 1. Row hover-highlight + delete button restyle
 
-- [ ] 1.1 Add `_is_hovered` and `_is_lookback` state fields to `_FrameRowWidget` and a single method that recomputes one combined stylesheet string from both (background highlight + `_LOOKBACK_BORDER_STYLE` border), replacing the current unconditional `setStyleSheet(_LOOKBACK_BORDER_STYLE if highlighted else "")` in `set_highlighted()`
-- [ ] 1.2 Update `eventFilter`'s `Enter`/`Leave` handling to set `_is_hovered` and trigger the combined-style recompute, alongside the existing `delete_button.setVisible(...)` toggle
-- [ ] 1.3 Update `set_highlighted()` to set `_is_lookback` and trigger the combined-style recompute instead of calling `setStyleSheet()` directly, keeping its external signature unchanged
-- [ ] 1.4 Restyle `delete_button` with rounded corners and the app's themed button colors (`#333` background, `#444` hover), matching `feedback_panel.py`'s `QPushButton` styling
-- [ ] 1.5 Manually verify in the running app: hovering a row highlights its background and reveals the delete button; hovering a lookback-window row shows both the highlight and the left border at once; leaving a row clears the highlight
+- [x] 1.1 Add `_is_hovered` and `_is_lookback` state fields to `_FrameRowWidget` and a single method that recomputes one combined stylesheet string from both (background highlight + `_LOOKBACK_BORDER_STYLE` border), replacing the current unconditional `setStyleSheet(_LOOKBACK_BORDER_STYLE if highlighted else "")` in `set_highlighted()`
+- [x] 1.2 Update `eventFilter`'s `Enter`/`Leave` handling to set `_is_hovered` and trigger the combined-style recompute, alongside the existing `delete_button.setVisible(...)` toggle
+- [x] 1.3 Update `set_highlighted()` to set `_is_lookback` and trigger the combined-style recompute instead of calling `setStyleSheet()` directly, keeping its external signature unchanged
+- [x] 1.4 Restyle `delete_button` with rounded corners and the app's themed button colors (`#333` background, `#444` hover), matching `feedback_panel.py`'s `QPushButton` styling
+- [x] 1.5 Manually verify in the running app: hovering a row highlights its background and reveals the delete button; hovering a lookback-window row shows both the highlight and the left border at once; leaving a row clears the highlight
 
 ## 2. Tests
 
