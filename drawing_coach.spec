@@ -22,11 +22,6 @@ a = Analysis(
         "pynput.mouse._xorg",
         "pynput.mouse._win32",
         "pynput.mouse._darwin",
-        # keyring backends
-        "keyring.backends.SecretService",
-        "keyring.backends.macOS",
-        "keyring.backends.Windows",
-        "keyring.backends.fail",
         # litellm encoders
         "tiktoken_ext.openai_public",
         "tiktoken_ext",
