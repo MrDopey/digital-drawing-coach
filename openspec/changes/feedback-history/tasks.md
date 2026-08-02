@@ -1,7 +1,7 @@
 ## 1. Data model — FeedbackResponse frame hashes
 
 - [x] 1.1 Add `frame_hashes: list[str] = field(default_factory=list)` to the `FeedbackResponse` dataclass (alongside its existing `observations`/`used_structured_output` fields)
-- [ ] 1.2 Extract the mode-based frame-selection logic already inside `_build_messages` (single latest frame for `overlay`; latest + lookback window otherwise) into a shared `_select_frames(frames, mode)` helper. In `FeedbackEngine.request_feedback`, compute `hashlib.sha256(frame.image.tobytes()).hexdigest()` for each selected frame before dispatching, and pass `frame_hashes=` into the `FeedbackResponse` constructed by both `_call_structured` and `_call_prose`
+- [x] 1.2 Extract the mode-based frame-selection logic already inside `_build_messages` (single latest frame for `overlay`; latest + lookback window otherwise) into a shared `_select_frames(frames, mode)` helper. In `FeedbackEngine.request_feedback`, compute `hashlib.sha256(frame.image.tobytes()).hexdigest()` for each selected frame before dispatching, and pass `frame_hashes=` into the `FeedbackResponse` constructed by both `_call_structured` and `_call_prose`
 
 ## 2. FeedbackStore — disk persistence
 
