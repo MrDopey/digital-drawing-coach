@@ -188,6 +188,15 @@ class MemoryStore:
         ):
             self._try_resummarize()
 
+        return self._format_notes(max_obs)
+
+    def current_notes(self, max_obs: int = 20) -> str:
+        """Read-only preview of the coach's notes: formats already-persisted
+        state without checking the re-summarisation threshold, calling the
+        re-summarisation LLM, or writing to `memory_summaries.json`."""
+        return self._format_notes(max_obs)
+
+    def _format_notes(self, max_obs: int = 20) -> str:
         if not self._observations and not self._summaries:
             return ""
 

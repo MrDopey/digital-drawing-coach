@@ -1,9 +1,9 @@
 ## 1. MemoryStore: split formatting from the resummarize side effect
 
-- [ ] 1.1 Extract the notes-formatting logic currently inline in `MemoryStore.summarise()` (session-count line, latest summary text, recent-observations-since-summary bullets) into a private helper, e.g. `_format_notes()`
-- [ ] 1.2 Add a public `current_notes()` method that calls only `_format_notes()` — no `_try_resummarize()` call, no file writes
-- [ ] 1.3 Update `summarise()` to: maybe call `_try_resummarize()` (unchanged threshold/config logic), then return `_format_notes()`
-- [ ] 1.4 Verify `summarise()`'s existing behavior (cadence, cap, opt-out via `memory_resummarize_interval = 0`, graceful fallback on LLM failure) is unchanged after the refactor
+- [x] 1.1 Extract the notes-formatting logic currently inline in `MemoryStore.summarise()` (session-count line, latest summary text, recent-observations-since-summary bullets) into a private helper, e.g. `_format_notes()`
+- [x] 1.2 Add a public `current_notes()` method that calls only `_format_notes()` — no `_try_resummarize()` call, no file writes
+- [x] 1.3 Update `summarise()` to: maybe call `_try_resummarize()` (unchanged threshold/config logic), then return `_format_notes()`
+- [x] 1.4 Verify `summarise()`'s existing behavior (cadence, cap, opt-out via `memory_resummarize_interval = 0`, graceful fallback on LLM failure) is unchanged after the refactor
 
 ## 2. Memory Viewer: use the read-only accessor
 
