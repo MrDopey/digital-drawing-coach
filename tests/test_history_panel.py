@@ -13,7 +13,6 @@ from PyQt6.QtWidgets import QApplication
 from drawing_coach.capture_engine import CapturedFrame, CaptureEngine
 from drawing_coach.history_panel import HistoryPanel
 from drawing_coach.llm_config import LLMConfig
-from drawing_coach.theme import Theme
 from drawing_coach.window_manager import WindowInfo
 
 
@@ -183,7 +182,7 @@ def test_lookback_indicator_highlights_window(qtbot):
     for i in range(panel._list_widget.count()):
         widget = panel._list_widget.itemWidget(panel._list_widget.item(i))
         expect_highlighted = i in (0, 1)
-        assert (Theme.dialog.lookback_border in widget.styleSheet()) == expect_highlighted
+        assert widget._is_lookback == expect_highlighted
 
 
 def test_lookback_indicator_zero_highlights_only_latest(qtbot):
@@ -195,7 +194,7 @@ def test_lookback_indicator_zero_highlights_only_latest(qtbot):
 
     for i in range(panel._list_widget.count()):
         widget = panel._list_widget.itemWidget(panel._list_widget.item(i))
-        assert (Theme.dialog.lookback_border in widget.styleSheet()) == (i == 0)
+        assert widget._is_lookback == (i == 0)
 
 
 def test_lookback_indicator_updates_after_delete(qtbot):
@@ -211,7 +210,7 @@ def test_lookback_indicator_updates_after_delete(qtbot):
 
     new_latest_widget = panel._list_widget.itemWidget(panel._list_widget.item(0))
     assert new_latest_widget._frame is frames[1]
-    assert Theme.dialog.lookback_border in new_latest_widget.styleSheet()
+    assert new_latest_widget._is_lookback is True
 
 
 # ---------------------------------------------------------------------------
@@ -225,13 +224,13 @@ def test_row_background_highlighted_on_hover_and_cleared_on_leave(qtbot):
     panel.show()
 
     row_widget = panel._list_widget.itemWidget(panel._list_widget.item(0))
-    assert "background" not in row_widget.styleSheet()
+    assert row_widget._is_hovered is False
 
     row_widget.set_hovered(True)
-    assert "background" in row_widget.styleSheet()
+    assert row_widget._is_hovered is True
 
     row_widget.set_hovered(False)
-    assert "background" not in row_widget.styleSheet()
+    assert row_widget._is_hovered is False
 
 
 def test_row_background_actually_paints_the_hover_color(qtbot):
@@ -247,7 +246,11 @@ def test_row_background_actually_paints_the_hover_color(qtbot):
     panel.show()
 
     row_widget = panel._list_widget.itemWidget(panel._list_widget.item(0))
-    margin_point = QPoint(2, row_widget.height() // 2)
+    # Sample the right margin, not the left — the lookback-window border
+    # (drawn at x=1 when this frame falls within it, as the sole frame here
+    # does under the default config) would otherwise bleed into a left-edge
+    # sample and mask the hover-background color being tested.
+    margin_point = QPoint(row_widget.width() - 2, row_widget.height() // 2)
     expected_hover_color = row_widget.palette().color(QPalette.ColorRole.Highlight)
 
     row_widget.set_hovered(False)
@@ -317,14 +320,21 @@ def test_hover_text_color_contrasts_with_hover_background_on_dark_theme(qtbot):
         row_widget = panel._list_widget.itemWidget(panel._list_widget.item(0))
         row_widget.set_hovered(True)
 
-        style = row_widget.styleSheet()
+        label_style = row_widget._ts_label.styleSheet()
         background = row_widget.palette().color(QPalette.ColorRole.Highlight).name()
         text_color = row_widget.palette().color(
             QPalette.ColorRole.HighlightedText
         ).name()
 
-        assert background.lower() in style.lower()
-        assert text_color.lower() in style.lower()
+        # Sample the right margin, not the left — the lookback-window border
+        # (drawn at x=1 when this frame falls within it, as the sole frame
+        # here does under the default config) would otherwise bleed into a
+        # left-edge sample and mask the hover-background color being tested.
+        margin_point = QPoint(row_widget.width() - 2, row_widget.height() // 2)
+        painted_background = row_widget.grab().toImage().pixelColor(margin_point)
+
+        assert text_color.lower() in label_style.lower()
+        assert painted_background.name().lower() == background.lower()
         assert background.lower() != text_color.lower()
     finally:
         QApplication.setPalette(QApplication.style().standardPalette())
@@ -340,12 +350,12 @@ def test_lookback_border_survives_hover_enter_and_leave(qtbot):
 
     # row 0 is the latest frame, which the zero-lookback window highlights.
     row_widget = panel._list_widget.itemWidget(panel._list_widget.item(0))
-    assert Theme.dialog.lookback_border in row_widget.styleSheet()
+    assert row_widget._is_lookback is True
 
     row_widget.set_hovered(True)
-    assert Theme.dialog.lookback_border in row_widget.styleSheet()
-    assert "background" in row_widget.styleSheet()
+    assert row_widget._is_lookback is True
+    assert row_widget._is_hovered is True
 
     row_widget.set_hovered(False)
-    assert Theme.dialog.lookback_border in row_widget.styleSheet()
-    assert "background" not in row_widget.styleSheet()
+    assert row_widget._is_lookback is True
+    assert row_widget._is_hovered is False

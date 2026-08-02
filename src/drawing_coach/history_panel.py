@@ -6,7 +6,15 @@ from pathlib import Path
 from typing import Callable
 
 from PyQt6.QtCore import QEvent, QSize, Qt, QUrl
-from PyQt6.QtGui import QDesktopServices, QImage, QPalette, QPixmap
+from PyQt6.QtGui import (
+    QColor,
+    QDesktopServices,
+    QImage,
+    QPainter,
+    QPalette,
+    QPen,
+    QPixmap,
+)
 from PyQt6.QtWidgets import (
     QDialog,
     QHBoxLayout,
@@ -23,8 +31,6 @@ from drawing_coach.capture_engine import CapturedFrame, CaptureEngine
 from drawing_coach.design_system import IconButton
 from drawing_coach.llm_config import LLMConfig
 from drawing_coach.theme import Theme
-
-_LOOKBACK_BORDER = f"border-left: 3px solid {Theme.dialog.lookback_border};"
 
 
 def _pil_to_pixmap(frame: CapturedFrame, max_size: int = 48) -> QPixmap:
@@ -52,12 +58,6 @@ class _FrameRowWidget(QWidget):
         self._on_delete = on_delete
         self._on_open = on_open
 
-        # A plain QWidget subclass doesn't reliably paint a setStyleSheet()
-        # background/border unless it opts in via this attribute — without
-        # it, some native styles (observed on macOS) silently skip painting
-        # the hover background this widget sets in _apply_style().
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-
         layout = QHBoxLayout(self)
         layout.setContentsMargins(4, 2, 4, 2)
 
@@ -72,8 +72,8 @@ class _FrameRowWidget(QWidget):
         )
         layout.addWidget(thumb)
 
-        ts_label = QLabel(frame.timestamp.strftime("%Y-%m-%d %H:%M:%S"))
-        layout.addWidget(ts_label, 1)
+        self._ts_label = QLabel(frame.timestamp.strftime("%Y-%m-%d %H:%M:%S"))
+        layout.addWidget(self._ts_label, 1)
 
         self.delete_button = IconButton("×", size=24)
         self.delete_button.setVisible(False)
@@ -90,28 +90,37 @@ class _FrameRowWidget(QWidget):
     def set_hovered(self, hovered: bool) -> None:
         self.delete_button.setVisible(hovered)
         self._is_hovered = hovered
-        self._apply_style()
+        # Only the label's text color goes through setStyleSheet() (a cheap,
+        # palette-based property) — the row background is painted directly
+        # in paintEvent() below rather than via a stylesheet background/
+        # border rule, which would need Qt::WA_StyledBackground and force a
+        # full CSS re-resolution of every row (not just the hovered one) on
+        # every repaint, visibly slowing down the whole list.
+        if hovered:
+            text_color = self.palette().color(QPalette.ColorRole.HighlightedText).name()
+            self._ts_label.setStyleSheet(f"color: {text_color};")  # theme-exempt
+        else:
+            self._ts_label.setStyleSheet("")  # theme-exempt
+        self.update()
 
     def set_highlighted(self, highlighted: bool) -> None:
         self._is_lookback = highlighted
-        self._apply_style()
+        self.update()
 
-    def _apply_style(self) -> None:
-        style = ""
+    def paintEvent(self, event) -> None:  # noqa: N802 - Qt override
+        painter = QPainter(self)
         if self._is_hovered:
-            palette = self.palette()
-            background = palette.color(QPalette.ColorRole.Highlight).name()
-            text_color = palette.color(QPalette.ColorRole.HighlightedText).name()
-            style += (
-                f"_FrameRowWidget {{ background: {background}; }}"
-                f"_FrameRowWidget QLabel {{ color: {text_color}; }}"
-            )
+            # Runtime QPalette-driven hover color, must follow the OS's
+            # active theme (see design.md Non-Goals).
+            painter.fillRect(
+                self.rect(), self.palette().color(QPalette.ColorRole.Highlight)
+            )  # theme-exempt
         if self._is_lookback:
-            style += _LOOKBACK_BORDER
-        # Composes the runtime QPalette-driven hover color (which must follow
-        # the OS's active theme, see design.md Non-Goals) with the lookback
-        # border indicator — doesn't fit a static component.
-        self.setStyleSheet(style)  # theme-exempt
+            pen = QPen(QColor(Theme.dialog.lookback_border))
+            pen.setWidth(3)
+            painter.setPen(pen)
+            painter.drawLine(1, 0, 1, self.height())
+        super().paintEvent(event)
 
 
 class HistoryPanel(QDialog):
