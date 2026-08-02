@@ -11,7 +11,6 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable
 
-import mss
 import numpy as np
 from PIL import Image
 
@@ -294,15 +293,16 @@ class CaptureEngine:
                 self.on_window_lost()
             return None
 
-        left, top, width, height = rect
+        _, _, width, height = rect
         if width <= 0 or height <= 0:
             return None
 
-        with mss.mss() as sct:
-            shot = sct.grab(
-                {"left": left, "top": top, "width": width, "height": height}
-            )
-            img = Image.frombytes("RGB", shot.size, shot.bgra, "raw", "BGRX")
+        img = self._manager.capture_image(self._target.id)
+        if img is None:
+            _log.warning("Drawing window lost — capture paused")
+            if self.on_window_lost:
+                self.on_window_lost()
+            return None
 
         # Dedup check
         dedup_threshold = self._config.dedup_threshold if self._config else 2.0

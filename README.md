@@ -29,6 +29,13 @@ flowchart LR
 
 The app runs as a **GUI desktop window** — PyQt6 with a live feedback panel, session history thumbnails, and a system tray icon.
 
+### Platform-specific window capture
+
+Each platform's `WindowBackend` (`window_manager.py`) implements `capture_image(window_id)` to grab the selected window's content:
+
+- **Windows/Linux**: `mss.grab()` with the window's rect (`get_window_rect`).
+- **macOS**: a direct CoreGraphics call, `CGWindowListCreateImage(CGRectNull, kCGWindowListOptionIncludingWindow, windowID, imageOption)`, scoped to the window's own ID rather than a screen rectangle. `mss`'s macOS backend captures a screen *region* (compositing whatever is on-screen there), which bleeds in other windows when they overlap the target — passing `windowID` directly instead avoids that entirely.
+
 ---
 
 ## Features

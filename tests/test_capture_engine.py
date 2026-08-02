@@ -14,6 +14,7 @@ from drawing_coach.window_manager import WindowInfo
 def _make_engine() -> CaptureEngine:
     manager = MagicMock()
     manager.get_window_rect.return_value = (0, 0, 100, 100)
+    manager.capture_image.return_value = Image.new("RGB", (100, 100), (128, 128, 128))
     engine = CaptureEngine(manager)
     win = WindowInfo(id=1, title="Test", app_name="Test")
     engine.set_target(win)
@@ -74,6 +75,48 @@ def test_get_frames_returns_copy():
     b = engine.get_frames()
     assert len(a) == 1
     assert len(b) == 2
+
+
+# ---------------------------------------------------------------------------
+# _do_capture delegates image capture to the backend (not mss directly)
+# ---------------------------------------------------------------------------
+
+def test_do_capture_calls_manager_capture_image(tmp_path):
+    engine = _make_engine()
+    engine._session_dir = tmp_path
+    (tmp_path / "frames").mkdir()
+
+    frame = engine._do_capture()
+
+    engine._manager.capture_image.assert_called_once_with(engine.target.id)
+    assert frame is not None
+    assert frame.image is engine._manager.capture_image.return_value
+
+
+def test_do_capture_never_instantiates_mss_directly(tmp_path):
+    engine = _make_engine()
+    engine._session_dir = tmp_path
+    (tmp_path / "frames").mkdir()
+
+    with patch("mss.mss") as mock_mss_ctor:
+        engine._do_capture()
+
+    mock_mss_ctor.assert_not_called()
+
+
+def test_do_capture_treats_none_image_as_window_lost(tmp_path):
+    engine = _make_engine()
+    engine._session_dir = tmp_path
+    (tmp_path / "frames").mkdir()
+    engine._manager.capture_image.return_value = None
+
+    lost: list[bool] = []
+    engine.on_window_lost = lambda: lost.append(True)
+
+    frame = engine._do_capture()
+
+    assert frame is None
+    assert lost == [True]
 
 
 # ---------------------------------------------------------------------------

@@ -2,8 +2,12 @@ from __future__ import annotations
 
 import re
 import subprocess
+from typing import TYPE_CHECKING
 
 from drawing_coach.window_manager import WindowInfo
+
+if TYPE_CHECKING:
+    from PIL import Image
 
 
 class LinuxBackend:
@@ -45,6 +49,21 @@ class LinuxBackend:
         if {"X", "Y", "WIDTH", "HEIGHT"} <= props.keys():
             return props["X"], props["Y"], props["WIDTH"], props["HEIGHT"]
         return None
+
+    def capture_image(self, window_id: int | str) -> Image.Image | None:
+        import mss
+        from PIL import Image
+
+        rect = self.get_window_rect(window_id)
+        if rect is None:
+            return None
+        left, top, width, height = rect
+        if width <= 0 or height <= 0:
+            return None
+
+        with mss.mss() as sct:
+            shot = sct.grab({"left": left, "top": top, "width": width, "height": height})
+            return Image.frombytes("RGB", shot.size, shot.bgra, "raw", "BGRX")
 
     def _get_title(self, wid: int) -> str:
         try:
