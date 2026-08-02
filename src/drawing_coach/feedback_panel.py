@@ -4,11 +4,12 @@ from PIL import Image as PilImage
 from PyQt6.QtCore import QPoint, Qt
 from PyQt6.QtGui import QImage, QKeyEvent, QMouseEvent, QPixmap, QResizeEvent
 from PyQt6.QtWidgets import (
-    QComboBox,
+    QButtonGroup,
     QFileDialog,
     QHBoxLayout,
     QLabel,
     QPushButton,
+    QRadioButton,
     QStackedWidget,
     QTextEdit,
     QVBoxLayout,
@@ -74,10 +75,12 @@ class FeedbackPanel(QWidget):
         # Mode selector
         mode_row = QHBoxLayout()
         mode_row.addWidget(QLabel("Mode:"))
-        self._mode_combo = QComboBox()
+        self._mode_group = QButtonGroup(self)
         for key, label in MODE_LABELS.items():
-            self._mode_combo.addItem(label, key)
-        mode_row.addWidget(self._mode_combo)
+            radio = QRadioButton(label)
+            radio.setProperty("mode_key", key)
+            self._mode_group.addButton(radio)
+            mode_row.addWidget(radio)
         mode_row.addStretch()
         layout.addLayout(mode_row)
 
