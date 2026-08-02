@@ -10,8 +10,8 @@
 
 ## 3. Windows/Linux backends (no behavior change)
 
-- [ ] 3.1 In `_backend_windows.py`, implement `capture_image` using the existing `get_window_rect` + `mss.grab()` rect approach, preserving current behavior exactly
-- [ ] 3.2 In `_backend_linux.py`, implement `capture_image` the same way as Windows
+- [x] 3.1 In `_backend_windows.py`, implement `capture_image` using the existing `get_window_rect` + `mss.grab()` rect approach, preserving current behavior exactly
+- [x] 3.2 In `_backend_linux.py`, implement `capture_image` the same way as Windows
 
 ## 4. Capture engine integration
 
