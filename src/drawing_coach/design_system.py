@@ -7,7 +7,7 @@ so a token change in `theme.py` propagates to every call site automatically.
 from __future__ import annotations
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QFrame, QLabel, QWidget
+from PyQt6.QtWidgets import QFrame, QLabel, QPushButton, QWidget
 
 from drawing_coach.theme import Theme
 
@@ -115,3 +115,31 @@ class SectionHeader(QLabel):
     def __init__(self, text: str = "", parent: QWidget | None = None) -> None:
         super().__init__(text, parent)
         self.setStyleSheet("font-weight: bold;")
+
+
+class PrimaryButton(QPushButton):
+    """The feedback panel's standard button styling (dark overlay surface)."""
+
+    def __init__(self, text: str = "", parent: QWidget | None = None) -> None:
+        super().__init__(text, parent)
+        self.setStyleSheet(
+            f"PrimaryButton {{ background: {Theme.overlay.button_background};"
+            f" border-radius: {Theme.border_radius}; padding: {Theme.button_padding}; }}"
+            f"PrimaryButton:hover {{ background: {Theme.overlay.button_hover}; }}"
+        )
+
+
+class IconButton(QPushButton):
+    """A small fixed-size icon-only button (e.g. a row's hover-reveal delete
+    control) — no padding, unlike `PrimaryButton`, so a glyph isn't clipped."""
+
+    def __init__(
+        self, text: str = "", parent: QWidget | None = None, *, size: int = 24
+    ) -> None:
+        super().__init__(text, parent)
+        self.setFixedSize(size, size)
+        self.setStyleSheet(
+            f"IconButton {{ background: {Theme.overlay.button_background};"
+            f" color: {Theme.overlay.text}; border-radius: {Theme.border_radius}; }}"
+            f"IconButton:hover {{ background: {Theme.overlay.button_hover}; }}"
+        )
