@@ -282,6 +282,50 @@ def test_sidebar_row_click_navigates_and_stays_synced_with_prev_next(qtbot):
     assert panel._text_edit.toPlainText().strip() == "second"
 
 
+# ---------------------------------------------------------------------------
+# Structured observations
+# ---------------------------------------------------------------------------
+
+
+def test_show_feedback_renders_observations_alongside_text(qtbot):
+    panel = FeedbackPanel()
+    qtbot.addWidget(panel)
+
+    panel.show_feedback(
+        FeedbackResponse(
+            mode="full_critique",
+            text="Great progress overall.",
+            timestamp=datetime(2024, 1, 1, 10, 0, 0),
+            observations=[
+                {"category": "anatomy", "note": "eyes are too wide apart."},
+                {"category": "anatomy", "note": "jawline is too angular."},
+                {"category": "gesture", "note": "pose flow has improved."},
+            ],
+        )
+    )
+
+    shown = panel._text_edit.toPlainText()
+    assert "Great progress overall." in shown
+    assert "eyes are too wide apart." in shown
+    assert "jawline is too angular." in shown
+    assert "pose flow has improved." in shown
+
+
+def test_show_feedback_with_no_observations_shows_only_text(qtbot):
+    panel = FeedbackPanel()
+    qtbot.addWidget(panel)
+
+    panel.show_feedback(
+        FeedbackResponse(
+            mode="quick_hint",
+            text="Nice work",
+            timestamp=datetime(2024, 1, 1, 10, 0, 0),
+        )
+    )
+
+    assert panel._text_edit.toPlainText().strip() == "Nice work"
+
+
 def test_thumbnail_caption_is_muted_label(qtbot):
     panel = FeedbackPanel()
     qtbot.addWidget(panel)

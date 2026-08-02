@@ -40,6 +40,40 @@ MODE_LABELS = {
     "overlay": "Overlay",
 }
 
+_CATEGORY_LABELS = {
+    "anatomy": "Anatomy",
+    "gesture": "Gesture",
+    "line_quality": "Line Quality",
+    "composition": "Composition",
+    "progress": "Progress",
+}
+
+
+def _category_label(category: str) -> str:
+    return _CATEGORY_LABELS.get(category, category.replace("_", " ").strip().title())
+
+
+def _format_observations_markdown(observations: list[dict]) -> str:
+    """Render the LLM's structured `observations` as a markdown section.
+
+    These often carry the concrete, actionable detail that `feedback_text`
+    only summarises in passing, so they need to be shown alongside it.
+    """
+    by_category: dict[str, list[str]] = {}
+    for obs in observations:
+        note = obs.get("note", "").strip()
+        if not note:
+            continue
+        by_category.setdefault(obs.get("category", ""), []).append(note)
+    if not by_category:
+        return ""
+
+    lines = ["### Detailed Observations"]
+    for category in sorted(by_category):
+        lines.append(f"\n**{_category_label(category)}**")
+        lines.extend(f"- {note}" for note in by_category[category])
+    return "\n".join(lines)
+
 MIN_ZOOM = 0.25
 MAX_ZOOM = 4.0
 ZOOM_STEP = 1.25
@@ -405,7 +439,12 @@ class FeedbackPanel(QWidget):
         self._prev_btn.setEnabled(self._history_idx > 0)
         self._next_btn.setEnabled(self._history_idx < total - 1)
 
-        self._text_edit.setMarkdown(resp.text)
+        observations_md = _format_observations_markdown(resp.observations)
+        if observations_md:
+            markdown = f"{resp.text.rstrip()}\n\n---\n\n{observations_md}"
+        else:
+            markdown = resp.text
+        self._text_edit.setMarkdown(markdown)
         self._set_zoom(1.0)
 
         overlay_img = self._overlay_images.get(self._history_idx)

@@ -107,9 +107,12 @@ _STRUCTURED_RESPONSE_SCHEMA = {
                 "observations": {
                     "type": "array",
                     "description": (
-                        "Structured observations for future reference. Use short "
-                        f"lowercase categories (e.g. {_CATEGORY_EXAMPLES}) and "
-                        "concise notes. Empty array if none."
+                        "Structured observations shown to the user grouped by "
+                        "category (categories sorted alphabetically) and kept "
+                        "for future reference. Use short lowercase categories "
+                        f"(e.g. {_CATEGORY_EXAMPLES}) and concise, self-contained "
+                        "notes — do not rely on ordering to convey priority. "
+                        "Empty array if none."
                     ),
                     "items": {
                         "type": "object",
