@@ -5,9 +5,9 @@
 
 ## 2. Label legibility
 
-- [ ] 2.1 In `src/drawing_coach/overlay_renderer.py`, add fixed, preselected module-level constants for label text color and label background color (e.g. black text on a white/light background) — no dynamic/luminance-based computation
-- [ ] 2.2 Before drawing arrow labels, compute the text bounding box via `draw.textbbox` (with small padding) and draw a filled background rectangle using the fixed background color, then draw the label text on top in the fixed text color (independent of the annotation's own `color`)
-- [ ] 2.3 Apply the same background-rectangle treatment to circle labels
+- [x] 2.1 In `src/drawing_coach/overlay_renderer.py`, add fixed, preselected module-level constants for label text color and label background color (e.g. black text on a white/light background) — no dynamic/luminance-based computation
+- [x] 2.2 Before drawing arrow labels, compute the text bounding box via `draw.textbbox` (with small padding) and draw a filled background rectangle using the fixed background color, then draw the label text on top in the fixed text color (independent of the annotation's own `color`)
+- [x] 2.3 Apply the same background-rectangle treatment to circle labels
 
 ## 3. Tests
 

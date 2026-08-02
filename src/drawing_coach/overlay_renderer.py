@@ -18,6 +18,9 @@ _COLOR_MAP = {
 _DEFAULT_COLOR = (220, 50, 50)
 _LINE_WIDTH = 3
 _ARROW_HEAD = 12  # pixels
+_LABEL_TEXT_COLOR = (0, 0, 0)
+_LABEL_BG_COLOR = (255, 255, 255)
+_LABEL_PADDING = 3
 
 
 def render(image: Image.Image, annotation_json: str) -> tuple[Image.Image, str | None]:
@@ -57,7 +60,7 @@ def _render_annotation(draw: ImageDraw.ImageDraw, ann: dict, w: int, h: int) -> 
         _draw_arrowhead(draw, p1, p2, color)
         label = ann.get("label", "")
         if label:
-            draw.text((p2[0] + 6, p2[1] - 10), label, fill=color)
+            _draw_label(draw, (p2[0] + 6, p2[1] - 10), label)
 
     elif atype == "line":
         points = [(int(px * w), int(py * h)) for px, py in ann["points"]]
@@ -73,7 +76,7 @@ def _render_annotation(draw: ImageDraw.ImageDraw, ann: dict, w: int, h: int) -> 
         draw.ellipse(bbox, outline=color, width=_LINE_WIDTH)
         label = ann.get("label", "")
         if label:
-            draw.text((px - pr, py - pr - 16), label, fill=color)
+            _draw_label(draw, (px - pr, py - pr - 16), label)
 
 
 def _draw_arrowhead(
@@ -96,6 +99,20 @@ def _draw_arrowhead(
         [p2, (int(ax), int(ay)), (int(bx), int(by))],
         fill=color,
     )
+
+
+def _draw_label(draw: ImageDraw.ImageDraw, pos: tuple[int, int], label: str) -> None:
+    """Draws label text on a filled background for legibility, using a fixed,
+    preselected text/background color pair independent of the annotation's own color."""
+    bbox = draw.textbbox(pos, label)
+    padded = (
+        bbox[0] - _LABEL_PADDING,
+        bbox[1] - _LABEL_PADDING,
+        bbox[2] + _LABEL_PADDING,
+        bbox[3] + _LABEL_PADDING,
+    )
+    draw.rectangle(padded, fill=_LABEL_BG_COLOR)
+    draw.text(pos, label, fill=_LABEL_TEXT_COLOR)
 
 
 def _resolve_color(name: str | list) -> tuple[int, int, int]:
