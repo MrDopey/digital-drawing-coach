@@ -12,10 +12,10 @@
 
 ## 3. Tests
 
-- [ ] 3.1 Add/update a `MemoryStore` test asserting `current_notes()` never calls the re-summarisation LLM and never writes `memory_summaries.json`, even when the resummarize threshold has been crossed
-- [ ] 3.2 Add/update a `MemoryStore` test asserting `current_notes()` and `summarise()` produce identical text when no new observations have been appended and no threshold is newly crossed
-- [ ] 3.3 Add/update a Memory Viewer test (`tests/`) asserting that opening the viewer, and refreshing it after a delete or clear-all, does not modify `memory_summaries.json` and does not invoke the LLM
-- [ ] 3.4 Search existing tests for any assertion that opening the Memory Viewer triggers re-summarisation, and correct it to reflect the new read-only behavior
+- [x] 3.1 Add/update a `MemoryStore` test asserting `current_notes()` never calls the re-summarisation LLM and never writes `memory_summaries.json`, even when the resummarize threshold has been crossed
+- [x] 3.2 Add/update a `MemoryStore` test asserting `current_notes()` and `summarise()` produce identical text when no new observations have been appended and no threshold is newly crossed
+- [x] 3.3 Add/update a Memory Viewer test (`tests/`) asserting that opening the viewer, and refreshing it after a delete or clear-all, does not modify `memory_summaries.json` and does not invoke the LLM
+- [x] 3.4 Search existing tests for any assertion that opening the Memory Viewer triggers re-summarisation, and correct it to reflect the new read-only behavior (none found — no prior test relied on that behavior)
 
 ## 4. Documentation
 
