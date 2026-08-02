@@ -10,7 +10,7 @@
 - [x] 2.2 Implement `PillBadge(QLabel)` sourcing color from `theme.py`'s semantic status tokens, replacing the ad-hoc green/red/orange label coloring in `diagnostics.py` and `settings_dialog.py`
 - [x] 2.3 Implement `SectionHeader(QLabel)` sourcing font weight/size from `theme.py`, replacing the bold title-label pattern in `feedback_panel.py`
 - [x] 2.4 Implement `PrimaryButton(QPushButton)` sourcing background/hover/radius from `theme.py`'s overlay tokens, replacing `feedback_panel.py`'s inline `QPushButton` stylesheet block
-- [ ] 2.5 Write unit tests for each component covering: token values are applied, and overlay vs. dialog variants render distinct colors
+- [x] 2.5 Write unit tests for each component covering: token values are applied, and overlay vs. dialog variants render distinct colors
 - [x] 2.6 (Added during implementation, beyond the spec's named minimum) Implement `MutedLabel(QLabel)` — the recurring `#888`/`#aaa` secondary-text pattern noted in design.md Context point 2 doesn't fit Card/PillBadge/SectionHeader/PrimaryButton, so it gets its own small component rather than a one-off exemption in each of the four files that use it
 - [x] 2.7 (Added during implementation) Implement `IconButton(QPushButton)` — history_panel.py's hover-reveal delete button is a small fixed-size icon-only button with no padding, distinct from `PrimaryButton`'s padded default; forcing it into `PrimaryButton` would visually clip the glyph
 
