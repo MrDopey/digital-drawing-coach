@@ -34,5 +34,5 @@
 
 ## 7. Verification
 
-- [ ] 7.1 Run `uv run pytest` and confirm all tests pass
-- [ ] 7.2 Manually verify on macOS hardware: select a drawing app window, overlap it with another app window, and confirm the captured frame shows only the drawing app's content
+- [x] 7.1 Run `uv run pytest` and confirm all tests pass — all pass except 3 pre-existing failures unrelated to this change (timing-flaky `test_stuck_detector.py` cooldown tests, and an LLM error-message wording mismatch in `test_diagnostics.py`); none touch files changed here
+- [ ] 7.2 Manually verify on macOS hardware: select a drawing app window, overlap it with another app window, and confirm the captured frame shows only the drawing app's content — **not performed**: no macOS hardware available in this environment; requires manual verification before this change is considered fully validated
