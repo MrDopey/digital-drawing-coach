@@ -19,6 +19,7 @@ Dialogs must be resizable: content reflows correctly when the user drags the win
 - A scaled pixmap in a stretch-factored widget needs a `resizeEvent` override to re-scale it — without one, the image only updates on its next content change, not on window resize (unless the widget is meant to hold zoom/pan state independent of its container size, e.g. inside a `QScrollArea`, in which case it should *not* auto-rescale on resize)
 - A widget with more than one independent visual state driven by `setStyleSheet()` (e.g. a hover highlight plus a separate persistent indicator) must track each state as its own field and recompute one combined stylesheet string from all of them — two handlers each calling `setStyleSheet()` on their own will clobber each other instead of composing
 - A `QSplitter` pane that should sometimes disappear (e.g. no image to show) should be `hide()`/`show()`'d directly — Qt automatically excludes a hidden child (and its handle) from the splitter's layout, no manual `setSizes([0, ...])` needed
+- A window that hides itself to the system tray instead of closing (`closeEvent` → `event.ignore()` + `self.hide()`) must give an explicit way back: a tray menu action (and ideally double-clicking the tray icon) that calls `show()` / `raise_()` / `activateWindow()` on the existing window instance — otherwise the only way back is to quit and relaunch
 
 ## Tech Stack
 

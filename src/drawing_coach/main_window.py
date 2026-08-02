@@ -310,24 +310,34 @@ class MainWindow(QMainWindow):
         self._sessions_menu = self.menuBar().addMenu("Sessions")
         self._sessions_menu.aboutToShow.connect(self._populate_sessions_menu)
 
+    def _restore_main_window(self) -> None:
+        self.show()
+        self.raise_()
+        self.activateWindow()
+
     def _build_tray(self) -> None:
         self._tray = QSystemTrayIcon(self)
         self._tray.setIcon(self._make_tray_icon())
         self._tray.setToolTip("Drawing Coach")
         menu = QMenu()
-        menu.addAction("Feedback Management", self._open_feedback_panel)
+        menu.addAction("Show Drawing Coach", self._restore_main_window)
         menu.addSeparator()
         self._tray_pause_action = QAction("Pause Capture", self)
         self._tray_pause_action.triggered.connect(self._toggle_pause)
         menu.addAction(self._tray_pause_action)
         menu.addAction("Settings", self._open_settings)
-        menu.addAction("Memory", self._open_memory_viewer)
-        menu.addAction("Progress", self._open_progress_panel)
         menu.addSeparator()
         menu.addAction(f"About (v{__version__})", self._show_about)
         menu.addAction("Quit", QApplication.quit)
         self._tray.setContextMenu(menu)
+        self._tray.activated.connect(self._on_tray_activated)
         self._tray.show()
+
+    def _on_tray_activated(
+        self, reason: QSystemTrayIcon.ActivationReason
+    ) -> None:
+        if reason == QSystemTrayIcon.ActivationReason.DoubleClick:
+            self._restore_main_window()
 
     @staticmethod
     def _make_tray_icon() -> QIcon:
