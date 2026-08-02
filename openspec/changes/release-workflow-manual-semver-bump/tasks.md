@@ -27,9 +27,9 @@
 
 ## 4. Documentation
 
-- [ ] 4.1 Update README.md's release/versioning-relevant sections from a developer's perspective: how to cut a release now (dispatch the workflow with a bump choice) instead of pushing a tag, and that OCI/GHCR binary publishing no longer exists.
-- [ ] 4.2 Update `.claude/CLAUDE.md`'s Tech Stack / Build row (and anywhere else it describes the release process) to reflect the `workflow_dispatch` trigger, semver-in-`pyproject.toml` as the version source, and the removal of OCI/GHCR binary publishing.
-- [ ] 4.3 Review `openspec/config.yaml`'s `rules.tasks`/`rules.proposal` for a clear, recurring gap this change reveals (e.g. a rule about CI/workflow changes needing a branch-protection check called out) — propose an addition only if there's a genuine recurring pattern, not just to document this one change.
+- [x] 4.1 Update README.md's release/versioning-relevant sections from a developer's perspective: how to cut a release now (dispatch the workflow with a bump choice) instead of pushing a tag, and that OCI/GHCR binary publishing no longer exists.
+- [x] 4.2 Update `.claude/CLAUDE.md`'s Tech Stack / Build row (and anywhere else it describes the release process) to reflect the `workflow_dispatch` trigger, semver-in-`pyproject.toml` as the version source, and the removal of OCI/GHCR binary publishing.
+- [x] 4.3 Review `openspec/config.yaml`'s `rules.tasks`/`rules.proposal` for a clear, recurring gap this change reveals (e.g. a rule about CI/workflow changes needing a branch-protection check called out) — propose an addition only if there's a genuine recurring pattern, not just to document this one change. Decision: no addition — this is the repo's first CI/workflow-focused change, so a branch-protection rule would document this one change rather than a proven recurring pattern; revisit if a second workflow change hits the same issue.
 
 ## 5. Final Verification
 
