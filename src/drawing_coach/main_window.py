@@ -154,7 +154,9 @@ class _WriteErrorLabel(PillBadge):
 
 
 class _Signals(QObject):
-    feedback_ready = pyqtSignal(object, object)  # FeedbackResponse, overlay_image|None
+    feedback_ready = pyqtSignal(
+        object, object, object
+    )  # FeedbackResponse, overlay_image|None, last_frame|None
     feedback_error = pyqtSignal(str)
     window_lost = pyqtSignal()
     frame_captured = pyqtSignal()
@@ -450,9 +452,12 @@ class MainWindow(QMainWindow):
         self._write_error_label.set_error(Path(path_str), Exception(exc_str))
 
     def _on_feedback_ready(
-        self, response: FeedbackResponse, overlay_image: PilImage.Image | None
+        self,
+        response: FeedbackResponse,
+        overlay_image: PilImage.Image | None,
+        last_frame: CapturedFrame | None,
     ) -> None:
-        self._feedback_panel.show_feedback(response, overlay_image)
+        self._feedback_panel.show_feedback(response, overlay_image, last_frame)
 
     def _on_window_lost(self) -> None:
         self._capture.pause()
@@ -567,6 +572,7 @@ class MainWindow(QMainWindow):
             mode = self._feedback_panel.current_mode()
         frames = self._capture.get_frames()
         latest_image = frames[-1].image if frames else None
+        last_frame = frames[-1] if frames else None
 
         coach_notes = self._memory_store.summarise()
 
@@ -586,6 +592,7 @@ class MainWindow(QMainWindow):
                             mode=result.mode,
                             text=stripped_text,
                             annotation_json=result.annotation_json,
+                            frame_hashes=result.frame_hashes,
                         )
                 overlay_image = None
                 if mode == "overlay" and result.annotation_json and latest_image:
@@ -596,8 +603,9 @@ class MainWindow(QMainWindow):
                             mode=result.mode,
                             text=result.text + f"\n\n*{err}*",
                             annotation_json=None,
+                            frame_hashes=result.frame_hashes,
                         )
-                self._signals.feedback_ready.emit(result, overlay_image)
+                self._signals.feedback_ready.emit(result, overlay_image, last_frame)
             else:
                 self._signals.feedback_error.emit(result)
 

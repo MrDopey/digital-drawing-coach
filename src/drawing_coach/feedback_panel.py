@@ -27,6 +27,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from drawing_coach.capture_engine import CapturedFrame
 from drawing_coach.design_system import MutedLabel, PrimaryButton, SectionHeader
 from drawing_coach.feedback_engine import FeedbackResponse
 from drawing_coach.feedback_store import FeedbackStore
@@ -264,13 +265,18 @@ class FeedbackPanel(QWidget):
         self.raise_()
 
     def show_feedback(
-        self, response: FeedbackResponse, overlay_image: PilImage.Image | None = None
+        self,
+        response: FeedbackResponse,
+        overlay_image: PilImage.Image | None = None,
+        last_frame: CapturedFrame | None = None,
     ) -> None:
         idx = len(self._history)
         self._history.append(response)
         self._history_idx = idx
         if overlay_image is not None:
             self._overlay_images[idx] = overlay_image
+        if self._store is not None:
+            self._store.save(response, last_frame, overlay_image)
         self._loading_label.hide()
         self._splitter.show()
         self._render_current()
