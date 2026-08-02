@@ -5,8 +5,8 @@
 
 ## 2. Settings UI
 
-- [ ] 2.1 Add a `QCheckBox` "Debug logging of LLM input/output" to `SettingsDialog._build_llm_tab()` in `settings_dialog.py`, initialized from `self._config.debug_log_llm_io`, with a tooltip warning that this persists LLM requests/responses (including drawing screenshots) to disk
-- [ ] 2.2 Wire the checkbox's value back into `self._config.debug_log_llm_io` in the dialog's save handler
+- [x] 2.1 Add a `QCheckBox` "Debug logging of LLM input/output" to `SettingsDialog._build_llm_tab()` in `settings_dialog.py`, initialized from `self._config.debug_log_llm_io`, with a tooltip warning that this persists LLM requests/responses (including drawing screenshots) to disk
+- [x] 2.2 Wire the checkbox's value back into `self._config.debug_log_llm_io` in the dialog's save handler
 
 ## 3. CustomLogger callback
 
