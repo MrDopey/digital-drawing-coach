@@ -52,6 +52,12 @@ class _FrameRowWidget(QWidget):
         self._on_delete = on_delete
         self._on_open = on_open
 
+        # A plain QWidget subclass doesn't reliably paint a setStyleSheet()
+        # background/border unless it opts in via this attribute — without
+        # it, some native styles (observed on macOS) silently skip painting
+        # the hover background this widget sets in _apply_style().
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+
         layout = QHBoxLayout(self)
         layout.setContentsMargins(4, 2, 4, 2)
 

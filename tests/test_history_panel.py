@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from PIL import Image
-from PyQt6.QtCore import QEvent, QPointF, Qt
+from PyQt6.QtCore import QEvent, QPoint, QPointF, Qt
 from PyQt6.QtGui import QColor, QMouseEvent, QPalette
 from PyQt6.QtWidgets import QApplication
 
@@ -232,6 +232,31 @@ def test_row_background_highlighted_on_hover_and_cleared_on_leave(qtbot):
 
     row_widget.set_hovered(False)
     assert "background" not in row_widget.styleSheet()
+
+
+def test_row_background_actually_paints_the_hover_color(qtbot):
+    # Regression: a plain QWidget subclass doesn't reliably paint a
+    # setStyleSheet() background unless Qt::WA_StyledBackground is set —
+    # the stylesheet string being correct (as the test above checks) isn't
+    # proof the color actually renders. Render the widget and sample a
+    # pixel in an area no child widget covers (the layout margin) to check
+    # what's really painted.
+    engine = _make_engine(_frame("2024-01-01T10:00:00"))
+    panel = HistoryPanel(engine, LLMConfig())
+    qtbot.addWidget(panel)
+    panel.show()
+
+    row_widget = panel._list_widget.itemWidget(panel._list_widget.item(0))
+    margin_point = QPoint(2, row_widget.height() // 2)
+    expected_hover_color = row_widget.palette().color(QPalette.ColorRole.Highlight)
+
+    row_widget.set_hovered(False)
+    normal_pixel = row_widget.grab().toImage().pixelColor(margin_point)
+    assert normal_pixel != expected_hover_color
+
+    row_widget.set_hovered(True)
+    hovered_pixel = row_widget.grab().toImage().pixelColor(margin_point)
+    assert hovered_pixel == expected_hover_color
 
 
 def test_mouse_move_over_viewport_drives_row_hover(qtbot):
