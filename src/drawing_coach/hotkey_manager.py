@@ -10,7 +10,7 @@ _log = logging.getLogger("drawing_coach.hotkey_manager")
 
 
 def _patch_macos_keycode_context() -> None:
-    """Work around a pynput/macOS crash (upstream issue #511, still open).
+    """Work around a pynput/macOS crash (upstream issue 511, still open).
 
     pynput's Darwin keyboard Listener recomputes its keycode context by
     calling Carbon's TIS APIs from its own background thread every time it

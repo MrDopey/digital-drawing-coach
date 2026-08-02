@@ -20,13 +20,11 @@ from PyQt6.QtWidgets import (
 )
 
 from drawing_coach.capture_engine import CapturedFrame, CaptureEngine
+from drawing_coach.design_system import IconButton
 from drawing_coach.llm_config import LLMConfig
+from drawing_coach.theme import Theme
 
-_LOOKBACK_BORDER = "border-left: 3px solid #4A90D9;"
-_DELETE_BUTTON_STYLE = (
-    "QPushButton { background: #333; color: #e0e0e0; border-radius: 4px; }"
-    "QPushButton:hover { background: #444; }"
-)
+_LOOKBACK_BORDER = f"border-left: 3px solid {Theme.dialog.lookback_border};"
 
 
 def _pil_to_pixmap(frame: CapturedFrame, max_size: int = 48) -> QPixmap:
@@ -71,10 +69,8 @@ class _FrameRowWidget(QWidget):
         ts_label = QLabel(frame.timestamp.strftime("%Y-%m-%d %H:%M:%S"))
         layout.addWidget(ts_label, 1)
 
-        self.delete_button = QPushButton("×")
-        self.delete_button.setFixedSize(24, 24)
+        self.delete_button = IconButton("×", size=24)
         self.delete_button.setVisible(False)
-        self.delete_button.setStyleSheet(_DELETE_BUTTON_STYLE)
         self.delete_button.clicked.connect(lambda: self._on_delete(self._frame))
         layout.addWidget(self.delete_button)
 
@@ -115,7 +111,10 @@ class _FrameRowWidget(QWidget):
             )
         if self._is_lookback:
             style += _LOOKBACK_BORDER
-        self.setStyleSheet(style)
+        # Composes the runtime QPalette-driven hover color (which must follow
+        # the OS's active theme, see design.md Non-Goals) with the lookback
+        # border indicator — doesn't fit a static component.
+        self.setStyleSheet(style)  # theme-exempt
 
 
 class HistoryPanel(QDialog):

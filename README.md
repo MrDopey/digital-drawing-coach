@@ -263,6 +263,25 @@ The test suite covers the capture engine (ring buffer, dedup), stuck detector, f
 
 ---
 
+## Design System (contributing UI code)
+
+All widget styling goes through two modules instead of one-off `setStyleSheet()` calls:
+
+- **`src/drawing_coach/theme.py`** — the single source of truth for colors, spacing, and font sizes. `Theme.overlay` holds tokens for the feedback panel's dark OSD surface; `Theme.dialog` holds tokens for every other (native, system-palette) dialog; a few semantic tokens (`Theme.success`, `Theme.danger`, `Theme.warning`, `Theme.muted_text`) are shared across both.
+- **`src/drawing_coach/design_system.py`** — reusable styled widgets built on those tokens: `Card` (bordered/filled containers), `PillBadge` (semantic status text), `MutedLabel` (secondary text), `SectionHeader` (bold titles), `PrimaryButton` and `IconButton` (the feedback panel's button styling). Import and compose these instead of writing a new `setStyleSheet()` call.
+
+A test (`tests/test_design_system_compliance.py`) scans `src/drawing_coach/` for hex color literals and raw `setStyleSheet()` calls outside those two files, and fails the build if it finds any without a trailing `# theme-exempt` comment (for a genuinely unavoidable case — a runtime-varying value, or a color that isn't a UI theme value at all, like an icon's decorative colors).
+
+This is enforced two ways:
+- **CI** (`.github/workflows/test.yml`) runs the full test suite, including the compliance check, on every push and pull request — this is the authoritative gate.
+- **A local pre-commit hook** (optional, but recommended) gives the same feedback immediately, before the commit is even created:
+  ```bash
+  ./scripts/install_git_hooks.sh   # one-time per clone
+  ```
+  This points git at the repo's tracked `hooks/` directory (`git config core.hooksPath hooks`) so `hooks/pre-commit` runs automatically. It can be skipped for a specific commit with `git commit --no-verify` — CI will still catch a violation either way.
+
+---
+
 ---
 
 <!-- References -->

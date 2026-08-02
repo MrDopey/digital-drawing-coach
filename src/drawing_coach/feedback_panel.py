@@ -8,7 +8,6 @@ from PyQt6.QtWidgets import (
     QFileDialog,
     QHBoxLayout,
     QLabel,
-    QPushButton,
     QRadioButton,
     QScrollArea,
     QSplitter,
@@ -17,7 +16,9 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from drawing_coach.design_system import MutedLabel, PrimaryButton, SectionHeader
 from drawing_coach.feedback_engine import FeedbackResponse
+from drawing_coach.theme import Theme
 
 MODE_LABELS = {
     "quick_hint": "Quick Hint",
@@ -71,12 +72,7 @@ class FeedbackPanel(QWidget):
         self.setMinimumSize(380, 300)
         self.resize(720, 560)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, False)
-        self.setStyleSheet(
-            "QWidget { background: #1e1e1e; color: #e0e0e0; }"
-            "QTextEdit { background: #252525; border: none; }"
-            "QPushButton { background: #333; border-radius: 4px; padding: 4px 10px; }"
-            "QPushButton:hover { background: #444; }"
-        )
+        Theme.overlay.apply_to(self)
 
         self._drag_pos: QPoint | None = None
         self._history: list[FeedbackResponse] = []
@@ -89,11 +85,10 @@ class FeedbackPanel(QWidget):
 
         # Title bar
         title_row = QHBoxLayout()
-        title_label = QLabel("Feedback Management")
-        title_label.setStyleSheet("font-weight: bold;")
+        title_label = SectionHeader("Feedback Management")
         title_row.addWidget(title_label)
         title_row.addStretch()
-        dismiss_btn = QPushButton("✕")
+        dismiss_btn = PrimaryButton("✕")
         dismiss_btn.setFixedSize(24, 24)
         dismiss_btn.clicked.connect(self.hide)
         title_row.addWidget(dismiss_btn)
@@ -111,7 +106,7 @@ class FeedbackPanel(QWidget):
             self._mode_group.addButton(radio)
             mode_row.addWidget(radio)
         mode_row.addStretch()
-        self._request_btn = QPushButton("Request Feedback")
+        self._request_btn = PrimaryButton("Request Feedback")
         self._request_btn.clicked.connect(
             lambda: self.feedback_requested.emit(self.current_mode())
         )
@@ -128,19 +123,18 @@ class FeedbackPanel(QWidget):
         self._splitter = QSplitter(Qt.Orientation.Vertical)
 
         zoom_row = QHBoxLayout()
-        zoom_out_btn = QPushButton("−")
+        zoom_out_btn = PrimaryButton("−")
         zoom_out_btn.setFixedWidth(28)
         zoom_out_btn.clicked.connect(self._zoom_out)
         zoom_row.addWidget(zoom_out_btn)
-        zoom_reset_btn = QPushButton("Reset")
+        zoom_reset_btn = PrimaryButton("Reset")
         zoom_reset_btn.clicked.connect(self._zoom_reset)
         zoom_row.addWidget(zoom_reset_btn)
-        zoom_in_btn = QPushButton("+")
+        zoom_in_btn = PrimaryButton("+")
         zoom_in_btn.setFixedWidth(28)
         zoom_in_btn.clicked.connect(self._zoom_in)
         zoom_row.addWidget(zoom_in_btn)
-        self._zoom_label = QLabel("100%")
-        self._zoom_label.setStyleSheet("color: #aaa; font-size: 11px;")
+        self._zoom_label = MutedLabel("100%", dim=True, small=True)
         zoom_row.addWidget(self._zoom_label)
         zoom_row.addStretch()
 
@@ -167,7 +161,7 @@ class FeedbackPanel(QWidget):
         # Overlay save row
         self._save_row = QHBoxLayout()
         self._save_row.addStretch()
-        self._save_btn = QPushButton("Save Overlay…")
+        self._save_btn = PrimaryButton("Save Overlay…")
         self._save_btn.clicked.connect(self._save_overlay)
         self._save_btn.hide()
         self._save_row.addWidget(self._save_btn)
@@ -175,12 +169,11 @@ class FeedbackPanel(QWidget):
 
         # History navigation
         hist_row = QHBoxLayout()
-        self._prev_btn = QPushButton("◀ Previous")
+        self._prev_btn = PrimaryButton("◀ Previous")
         self._prev_btn.clicked.connect(self._show_prev)
-        self._next_btn = QPushButton("Next ▶")
+        self._next_btn = PrimaryButton("Next ▶")
         self._next_btn.clicked.connect(self._show_next)
-        self._hist_label = QLabel("")
-        self._hist_label.setStyleSheet("color: #888; font-size: 11px;")
+        self._hist_label = MutedLabel("", small=True)
         hist_row.addWidget(self._prev_btn)
         hist_row.addWidget(self._hist_label)
         hist_row.addStretch()

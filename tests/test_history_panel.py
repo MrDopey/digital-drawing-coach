@@ -13,6 +13,7 @@ from PyQt6.QtWidgets import QApplication
 from drawing_coach.capture_engine import CapturedFrame, CaptureEngine
 from drawing_coach.history_panel import HistoryPanel
 from drawing_coach.llm_config import LLMConfig
+from drawing_coach.theme import Theme
 from drawing_coach.window_manager import WindowInfo
 
 
@@ -182,7 +183,7 @@ def test_lookback_indicator_highlights_window(qtbot):
     for i in range(panel._list_widget.count()):
         widget = panel._list_widget.itemWidget(panel._list_widget.item(i))
         expect_highlighted = i in (0, 1)
-        assert (widget.styleSheet() != "") == expect_highlighted
+        assert (Theme.dialog.lookback_border in widget.styleSheet()) == expect_highlighted
 
 
 def test_lookback_indicator_zero_highlights_only_latest(qtbot):
@@ -194,7 +195,7 @@ def test_lookback_indicator_zero_highlights_only_latest(qtbot):
 
     for i in range(panel._list_widget.count()):
         widget = panel._list_widget.itemWidget(panel._list_widget.item(i))
-        assert (widget.styleSheet() != "") == (i == 0)
+        assert (Theme.dialog.lookback_border in widget.styleSheet()) == (i == 0)
 
 
 def test_lookback_indicator_updates_after_delete(qtbot):
@@ -210,7 +211,7 @@ def test_lookback_indicator_updates_after_delete(qtbot):
 
     new_latest_widget = panel._list_widget.itemWidget(panel._list_widget.item(0))
     assert new_latest_widget._frame is frames[1]
-    assert new_latest_widget.styleSheet() != ""
+    assert Theme.dialog.lookback_border in new_latest_widget.styleSheet()
 
 
 # ---------------------------------------------------------------------------
@@ -272,12 +273,12 @@ def test_lookback_border_survives_hover_enter_and_leave(qtbot):
 
     # row 0 is the latest frame, which the zero-lookback window highlights.
     row_widget = panel._list_widget.itemWidget(panel._list_widget.item(0))
-    assert "border-left" in row_widget.styleSheet()
+    assert Theme.dialog.lookback_border in row_widget.styleSheet()
 
     row_widget.eventFilter(row_widget, QEvent(QEvent.Type.Enter))
-    assert "border-left" in row_widget.styleSheet()
+    assert Theme.dialog.lookback_border in row_widget.styleSheet()
     assert "background" in row_widget.styleSheet()
 
     row_widget.eventFilter(row_widget, QEvent(QEvent.Type.Leave))
-    assert "border-left" in row_widget.styleSheet()
+    assert Theme.dialog.lookback_border in row_widget.styleSheet()
     assert "background" not in row_widget.styleSheet()
