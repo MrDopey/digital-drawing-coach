@@ -1,7 +1,7 @@
 ## 1. Tray menu restore action
 
 - [x] 1.1 In `main_window.py`, add a `_restore_main_window()` handler on `MainWindow` that calls `self.show()`, `self.raise_()`, and `self.activateWindow()`.
-- [ ] 1.2 In `_build_tray()`, replace the "Get Feedback" menu action with a "Show Drawing Coach" action wired to `_restore_main_window()`, as the first item in the menu.
+- [x] 1.2 In `_build_tray()`, replace the "Get Feedback" menu action with a "Show Drawing Coach" action wired to `_restore_main_window()`, as the first item in the menu.
 - [ ] 1.3 Connect `self._tray.activated` to a handler that calls `_restore_main_window()` only when the reason is `QSystemTrayIcon.ActivationReason.DoubleClick`.
 
 ## 2. Remove duplicated tray shortcuts

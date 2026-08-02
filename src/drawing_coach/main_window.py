@@ -320,7 +320,7 @@ class MainWindow(QMainWindow):
         self._tray.setIcon(self._make_tray_icon())
         self._tray.setToolTip("Drawing Coach")
         menu = QMenu()
-        menu.addAction("Get Feedback", self._trigger_feedback)
+        menu.addAction("Show Drawing Coach", self._restore_main_window)
         menu.addSeparator()
         self._tray_pause_action = QAction("Pause Capture", self)
         self._tray_pause_action.triggered.connect(self._toggle_pause)
