@@ -76,9 +76,11 @@ class FeedbackPanel(QWidget):
         mode_row = QHBoxLayout()
         mode_row.addWidget(QLabel("Mode:"))
         self._mode_group = QButtonGroup(self)
-        for key, label in MODE_LABELS.items():
+        for i, (key, label) in enumerate(MODE_LABELS.items()):
             radio = QRadioButton(label)
             radio.setProperty("mode_key", key)
+            if i == 0:
+                radio.setChecked(True)
             self._mode_group.addButton(radio)
             mode_row.addWidget(radio)
         mode_row.addStretch()
