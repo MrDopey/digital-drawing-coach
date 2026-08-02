@@ -19,7 +19,7 @@
 
 ## 4. Documentation
 
-- [ ] 4.1 Update README.md (developer-facing) to note that overlay mode always analyses a single frame, independent of the configured look-back setting, and that annotation labels always render with a contrasting background
-- [ ] 4.2 Update `.claude/CLAUDE.md` if it documents `FeedbackEngine`'s frame-selection behavior, to reflect the overlay-mode exception
-- [ ] 4.3 Review `openspec/config.yaml` and propose changes only if this change reveals a clear, recurring gap in the current rules (high threshold — skip if nothing qualifies)
-- [ ] 4.4 Run `uv run pytest` and confirm all tests pass
+- [x] 4.1 Update README.md (developer-facing) to note that overlay mode always analyses a single frame, independent of the configured look-back setting, and that annotation labels always render with a contrasting background
+- [x] 4.2 Update `.claude/CLAUDE.md` if it documents `FeedbackEngine`'s frame-selection behavior, to reflect the overlay-mode exception (no changes — CLAUDE.md doesn't document this behavior)
+- [x] 4.3 Review `openspec/config.yaml` and propose changes only if this change reveals a clear, recurring gap in the current rules (high threshold — skip if nothing qualifies) (no changes — this is a narrow bug fix, not a recurring pattern)
+- [x] 4.4 Run `uv run pytest` and confirm all tests pass
