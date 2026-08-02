@@ -36,6 +36,7 @@ The app runs as a **GUI desktop window** — PyQt6 with a live feedback panel, s
 - Captures screenshots of any drawing application at a configurable interval (default: 30 s)
 - Detects when you are stuck via pixel-change (MAE) analysis, or responds to a manual hotkey
 - Four feedback modes: Quick Hint, Full Critique, Practice Exercise, and Overlay (correction lines and annotations drawn directly onto the canvas screenshot)
+- **Feedback Management** panel: opening it (toolbar button, tray menu) just shows the panel — no LLM request is sent until you click **Request Feedback** inside it (the hotkey and automatic stuck-detection still request feedback directly, as before). The overlay image (top) and feedback text (bottom) are shown together in a resizable split with a draggable divider; feedback text always scrolls to show the full response, and the overlay image can be zoomed in/out (`+`/`−`/**Reset** buttons, or `Ctrl+Wheel`) and panned to see annotation detail
 - Drawing style and focus selector — choose from presets (Line Drawing, Realistic, Anime/Manga, Chibi, Concept Art, Portrait) or enter free text (e.g. `gothic pokemon`) to tailor every LLM prompt
 - Works with any vision-capable LLM via [LiteLLM][litellm] — OpenAI, Anthropic, Ollama, and more
 - Session history persisted to disk with duplicate-frame dropping and configurable session retention; double-click any thumbnail in the history panel to open it in the system default image viewer

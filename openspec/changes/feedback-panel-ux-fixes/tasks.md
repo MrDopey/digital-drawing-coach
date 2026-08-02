@@ -41,7 +41,7 @@
 
 ## 6. Documentation
 
-- [ ] 6.1 Update `README.md` to describe the renamed "Feedback Management" panel, the new explicit "Request Feedback" trigger, and the overlay zoom controls, from a developer's perspective
-- [ ] 6.2 Review `.claude/CLAUDE.md` for any memory/UI-convention updates implied by this change (e.g. `QSplitter` usage, `QScrollArea` wrapping a `QLabel`, zoom-control pattern) and update if a clear, recurring convention emerged
-- [ ] 6.3 Review `openspec/config.yaml` and propose changes only if this spec reveals a clear, recurring gap in current rules (high threshold — skip if not clearly warranted)
-- [ ] 6.4 Run `uv run pytest` and confirm all tests pass
+- [x] 6.1 Update `README.md` to describe the renamed "Feedback Management" panel, the new explicit "Request Feedback" trigger, and the overlay zoom controls, from a developer's perspective
+- [x] 6.2 Review `.claude/CLAUDE.md` for any memory/UI-convention updates implied by this change (e.g. `QSplitter` usage, `QScrollArea` wrapping a `QLabel`, zoom-control pattern) and update if a clear, recurring convention emerged — added a note on hiding/showing `QSplitter` panes directly instead of manual `setSizes([0, ...])`
+- [x] 6.3 Review `openspec/config.yaml` and propose changes only if this spec reveals a clear, recurring gap in current rules (high threshold — skip if not clearly warranted) — reviewed; existing `proposal` rule on dialog/panel resize behavior already covers this class of change, no gap found
+- [x] 6.4 Run `uv run pytest` and confirm all tests pass — 193/196 pass; 3 pre-existing failures in `test_diagnostics.py`/`test_stuck_detector.py` unrelated to this change (confirmed via `git diff` showing no commits in this change touch those source or test files)

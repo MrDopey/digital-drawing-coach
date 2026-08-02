@@ -16,6 +16,7 @@ Dialogs must be resizable: content reflows correctly when the user drags the win
 - Selectable `QLabel`s need `setTextInteractionFlags(TextSelectableByMouse | TextSelectableByKeyboard)` — without it users cannot copy displayed text
 - Scrollable content: `QScrollArea(setWidgetResizable=True, frameShape=NoFrame)`; no hardcoded dialog heights
 - Child dialogs opened from a modal parent must use `exec()` not `show()` — `show()` inside an `exec()` loop cannot receive focus
+- A `QSplitter` pane that should sometimes disappear (e.g. no image to show) should be `hide()`/`show()`'d directly — Qt automatically excludes a hidden child (and its handle) from the splitter's layout, no manual `setSizes([0, ...])` needed
 
 ## Tech Stack
 
