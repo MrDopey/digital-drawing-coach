@@ -1,13 +1,24 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from PIL import Image as PilImage
-from PyQt6.QtCore import QPoint, Qt, pyqtSignal
-from PyQt6.QtGui import QImage, QKeyEvent, QMouseEvent, QPixmap, QWheelEvent
+from PyQt6.QtCore import QPoint, Qt, QUrl, pyqtSignal
+from PyQt6.QtGui import (
+    QDesktopServices,
+    QImage,
+    QKeyEvent,
+    QMouseEvent,
+    QPixmap,
+    QWheelEvent,
+)
 from PyQt6.QtWidgets import (
     QButtonGroup,
     QFileDialog,
     QHBoxLayout,
     QLabel,
+    QListWidget,
+    QListWidgetItem,
     QRadioButton,
     QScrollArea,
     QSplitter,
@@ -18,6 +29,7 @@ from PyQt6.QtWidgets import (
 
 from drawing_coach.design_system import MutedLabel, PrimaryButton, SectionHeader
 from drawing_coach.feedback_engine import FeedbackResponse
+from drawing_coach.feedback_store import FeedbackStore
 from drawing_coach.theme import Theme
 
 MODE_LABELS = {
@@ -30,6 +42,9 @@ MODE_LABELS = {
 MIN_ZOOM = 0.25
 MAX_ZOOM = 4.0
 ZOOM_STEP = 1.25
+
+SIDEBAR_WIDTH = 180
+THUMBNAIL_SIZE = 160
 
 
 def _pil_to_pixmap(img: PilImage.Image) -> QPixmap:
@@ -61,6 +76,24 @@ class _ZoomScrollArea(QScrollArea):
             super().wheelEvent(event)
 
 
+class _ClickableThumbnail(QLabel):
+    """Thumbnail label that opens its bound image path in the system viewer."""
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._path: Path | None = None
+        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+
+    def set_path(self, path: Path | None) -> None:
+        self._path = path
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        if event.button() == Qt.MouseButton.LeftButton and self._path is not None:
+            QDesktopServices.openUrl(QUrl.fromLocalFile(str(self._path)))
+        super().mousePressEvent(event)
+
+
 class FeedbackPanel(QWidget):
     """Floating, draggable panel that shows LLM feedback."""
 
@@ -78,7 +111,9 @@ class FeedbackPanel(QWidget):
         self._history: list[FeedbackResponse] = []
         self._history_idx: int = -1
         self._overlay_images: dict[int, PilImage.Image] = {}
+        self._thumb_paths: dict[int, Path] = {}
         self._zoom_factor: float = 1.0
+        self._store: FeedbackStore | None = None
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(8, 8, 8, 8)
@@ -93,6 +128,15 @@ class FeedbackPanel(QWidget):
         dismiss_btn.clicked.connect(self.hide)
         title_row.addWidget(dismiss_btn)
         layout.addLayout(title_row)
+
+        # Left sidebar: reverse-chronological history list
+        self._sidebar = QListWidget()
+        self._sidebar.setFixedWidth(SIDEBAR_WIDTH)
+
+        # Right-hand container: everything the panel already had, unchanged
+        right_container = QWidget()
+        right_layout = QVBoxLayout(right_container)
+        right_layout.setContentsMargins(0, 0, 0, 0)
 
         # Mode selector + request trigger
         mode_row = QHBoxLayout()
@@ -111,13 +155,13 @@ class FeedbackPanel(QWidget):
             lambda: self.feedback_requested.emit(self.current_mode())
         )
         mode_row.addWidget(self._request_btn)
-        layout.addLayout(mode_row)
+        right_layout.addLayout(mode_row)
 
         # Loading indicator
         self._loading_label = QLabel("Thinking…")
         self._loading_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._loading_label.hide()
-        layout.addWidget(self._loading_label)
+        right_layout.addWidget(self._loading_label)
 
         # Overlay (top) / feedback text (bottom) split
         self._splitter = QSplitter(Qt.Orientation.Vertical)
@@ -152,11 +196,30 @@ class FeedbackPanel(QWidget):
         image_pane_layout.addWidget(self._image_scroll)
         self._splitter.addWidget(self._image_pane)
 
+        # Mode-appropriate thumbnail preview (non-overlay entries)
+        self._thumb_label = _ClickableThumbnail()
+        self._thumb_label.setFixedSize(THUMBNAIL_SIZE, THUMBNAIL_SIZE)
+        thumb_pane_layout = QVBoxLayout()
+        thumb_pane_layout.addStretch()
+        thumb_pane_layout.addWidget(
+            self._thumb_label, 0, Qt.AlignmentFlag.AlignCenter
+        )
+        thumb_pane_layout.addWidget(
+            MutedLabel("Click to open full image", dim=True, small=True),
+            0,
+            Qt.AlignmentFlag.AlignCenter,
+        )
+        thumb_pane_layout.addStretch()
+        self._thumb_pane = QWidget()
+        self._thumb_pane.setLayout(thumb_pane_layout)
+        self._thumb_pane.hide()
+        self._splitter.addWidget(self._thumb_pane)
+
         self._text_edit = QTextEdit()
         self._text_edit.setReadOnly(True)
         self._splitter.addWidget(self._text_edit)
 
-        layout.addWidget(self._splitter, 1)
+        right_layout.addWidget(self._splitter, 1)
 
         # Overlay save row
         self._save_row = QHBoxLayout()
@@ -165,7 +228,7 @@ class FeedbackPanel(QWidget):
         self._save_btn.clicked.connect(self._save_overlay)
         self._save_btn.hide()
         self._save_row.addWidget(self._save_btn)
-        layout.addLayout(self._save_row)
+        right_layout.addLayout(self._save_row)
 
         # History navigation
         hist_row = QHBoxLayout()
@@ -178,7 +241,12 @@ class FeedbackPanel(QWidget):
         hist_row.addWidget(self._hist_label)
         hist_row.addStretch()
         hist_row.addWidget(self._next_btn)
-        layout.addLayout(hist_row)
+        right_layout.addLayout(hist_row)
+
+        self._outer_splitter = QSplitter(Qt.Orientation.Horizontal)
+        self._outer_splitter.addWidget(self._sidebar)
+        self._outer_splitter.addWidget(right_container)
+        layout.addWidget(self._outer_splitter, 1)
 
     # ------------------------------------------------------------------
     # Public API
