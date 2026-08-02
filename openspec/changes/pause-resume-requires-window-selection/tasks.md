@@ -16,4 +16,4 @@
 - [x] 3.1 Update `README.md` to note that the Pause/Resume control is disabled until a drawing window is selected.
 - [x] 3.2 Review `.claude/CLAUDE.md` for any memory.md implications from this change; no update expected since this is a UI-state fix with no new architecture, config, or tooling surface. (Confirmed: no update needed.)
 - [x] 3.3 Review `openspec/config.yaml` for a recurring gap surfaced by this spec; no change expected unless a clear, recurring pattern is found. (Confirmed: no update needed — this is a one-off UI-state bug fix, not a recurring pattern.)
-- [ ] 3.4 Run `uv run pytest` and confirm all tests pass.
+- [x] 3.4 Run `uv run pytest` and confirm all tests pass. (196/199 pass; 3 pre-existing failures in `test_stuck_detector.py::test_cooldown_blocks_retrigger`, `test_manual_trigger_bypasses_cooldown`, and `test_diagnostics.py::test_dialog_llm_fail_row` reproduce in isolation on unmodified files, unrelated to this change.)
