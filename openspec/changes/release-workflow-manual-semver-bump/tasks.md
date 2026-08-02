@@ -22,7 +22,7 @@
 ## 3. Verification
 
 - [ ] 3.1 Dry-run the updated workflow (e.g. on a fork, or as a real `patch` release if appropriate) to confirm the build → release → bump-and-commit sequence behaves as designed and `main` ends up with the previewed next version.
-- [ ] 3.2 Confirm the About dialog and startup log show the correct embedded version for a binary built via the updated `build_version.py`, and separately confirm an unbuilt run from source shows `<pyproject-version>-prerelease` in the tray menu's About entry and About dialog.
+- [x] 3.2 Confirm the About dialog and startup log show the correct embedded version for a binary built via the updated `build_version.py`, and separately confirm an unbuilt run from source shows `<pyproject-version>-prerelease` in the tray menu's About entry and About dialog.
 - [ ] 3.3 Confirm the release-notes branching: a dry run with no merged PRs in range produces a commit-log bullet list body; if feasible, also confirm a release with at least one merged PR in range produces the normal `--generate-notes` PR-grouped body.
 
 ## 4. Documentation
