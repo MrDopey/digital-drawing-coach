@@ -4,9 +4,9 @@
 
 ## 2. macOS backend implementation
 
-- [ ] 2.1 In `_backend_macos.py`, implement `MacOSBackend.capture_image` using `Quartz.CGWindowListCreateImage(Quartz.CGRectNull, Quartz.kCGWindowListOptionIncludingWindow, wid, imageOption)` scoped to the target window
-- [ ] 2.2 Convert the returned `CGImage` to a `PIL.Image` (read via `CGDataProvider`/`CFData`, strip row padding using bytes-per-row vs width, matching the approach `mss.darwin.MSSImplDarwin.grab` already uses)
-- [ ] 2.3 Return `None` when CoreGraphics yields no image (window closed, fully occluded by protected system UI, or minimized) so callers treat it the same as "window lost"
+- [x] 2.1 In `_backend_macos.py`, implement `MacOSBackend.capture_image` using `Quartz.CGWindowListCreateImage(Quartz.CGRectNull, Quartz.kCGWindowListOptionIncludingWindow, wid, imageOption)` scoped to the target window
+- [x] 2.2 Convert the returned `CGImage` to a `PIL.Image` (read via `CGDataProvider`/`CFData`, strip row padding using bytes-per-row vs width, matching the approach `mss.darwin.MSSImplDarwin.grab` already uses)
+- [x] 2.3 Return `None` when CoreGraphics yields no image (window closed, fully occluded by protected system UI, or minimized) so callers treat it the same as "window lost"
 
 ## 3. Windows/Linux backends (no behavior change)
 

@@ -1,6 +1,11 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from drawing_coach.window_manager import WindowInfo
+
+if TYPE_CHECKING:
+    from PIL import Image
 
 
 def has_screen_recording_permission() -> bool:
@@ -82,3 +87,49 @@ class MacOSBackend:
         w = int(bounds["Width"])
         h = int(bounds["Height"])
         return x, y, w, h
+
+    def capture_image(self, window_id: int | str) -> Image.Image | None:
+        """Capture just this window's own content via CoreGraphics.
+
+        Uses CGRectNull + kCGWindowListOptionIncludingWindow so the render is
+        scoped to the window itself, unlike a screen-rect grab (e.g. mss on
+        macOS), which composites whatever is on-screen in that rectangle —
+        including any overlapping windows.
+        """
+        import Quartz  # type: ignore[import-not-found]
+        from PIL import Image
+
+        wid = int(window_id)
+        image_options = (
+            Quartz.kCGWindowImageBoundsIgnoreFraming
+            | Quartz.kCGWindowImageShouldBeOpaque
+            | Quartz.kCGWindowImageNominalResolution
+        )
+        image_ref = Quartz.CGWindowListCreateImage(
+            Quartz.CGRectNull,
+            Quartz.kCGWindowListOptionIncludingWindow,
+            wid,
+            image_options,
+        )
+        if image_ref is None:
+            return None
+
+        width = Quartz.CGImageGetWidth(image_ref)
+        height = Quartz.CGImageGetHeight(image_ref)
+        if width <= 0 or height <= 0:
+            return None
+
+        provider = Quartz.CGImageGetDataProvider(image_ref)
+        data = bytes(Quartz.CGDataProviderCopyData(provider))
+
+        bytes_per_row = Quartz.CGImageGetBytesPerRow(image_ref)
+        bytes_per_pixel = (Quartz.CGImageGetBitsPerPixel(image_ref) + 7) // 8
+        if bytes_per_pixel * width != bytes_per_row:
+            cropped = bytearray()
+            for row in range(height):
+                start = row * bytes_per_row
+                end = start + width * bytes_per_pixel
+                cropped.extend(data[start:end])
+            data = bytes(cropped)
+
+        return Image.frombytes("RGB", (width, height), data, "raw", "BGRX")
