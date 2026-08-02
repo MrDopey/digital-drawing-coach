@@ -308,6 +308,7 @@ class FeedbackPanel(QWidget):
         self._loading_label.hide()
         self._splitter.show()
         self._image_pane.hide()
+        self._thumb_pane.hide()
         self._save_btn.hide()
         self._text_edit.setMarkdown(f"**Error:** {message}")
         self.show()
@@ -399,12 +400,14 @@ class FeedbackPanel(QWidget):
         overlay_img = self._overlay_images.get(self._history_idx)
         if overlay_img is not None:
             self._image_pane.show()
+            self._thumb_pane.hide()
             self._render_overlay_image()
             self._save_btn.show()
-            self._splitter.setSizes([3, 2])
+            self._splitter.setSizes([3, 0, 2])
         else:
             self._image_pane.hide()
             self._save_btn.hide()
+            self._show_thumbnail(self._history_idx)
 
     def _save_overlay(self) -> None:
         overlay_img = self._overlay_images.get(self._history_idx)
@@ -433,6 +436,22 @@ class FeedbackPanel(QWidget):
         self._zoom_factor = max(MIN_ZOOM, min(MAX_ZOOM, factor))
         self._zoom_label.setText(f"{round(self._zoom_factor * 100)}%")
         self._render_overlay_image()
+
+    def _show_thumbnail(self, idx: int) -> None:
+        thumb_path = self._thumb_paths.get(idx)
+        if thumb_path is None:
+            self._thumb_pane.hide()
+            return
+        pixmap = _pil_to_pixmap(PilImage.open(thumb_path)).scaled(
+            THUMBNAIL_SIZE,
+            THUMBNAIL_SIZE,
+            Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.TransformationMode.SmoothTransformation,
+        )
+        self._thumb_label.setPixmap(pixmap)
+        self._thumb_label.set_path(thumb_path)
+        self._thumb_pane.show()
+        self._splitter.setSizes([0, 3, 2])
 
     def _render_overlay_image(self) -> None:
         overlay_img = self._overlay_images.get(self._history_idx)
