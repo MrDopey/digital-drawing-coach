@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Callable
+
 from PIL import Image as PilImage
 from PyQt6.QtCore import QPoint, Qt
 from PyQt6.QtGui import QImage, QKeyEvent, QMouseEvent, QPixmap, QResizeEvent
@@ -56,6 +58,7 @@ class FeedbackPanel(QWidget):
         self._history: list[FeedbackResponse] = []
         self._history_idx: int = -1
         self._overlay_images: dict[int, PilImage.Image] = {}
+        self.on_trigger_requested: Callable[[], None] | None = None
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(8, 8, 8, 8)
@@ -85,6 +88,7 @@ class FeedbackPanel(QWidget):
             mode_row.addWidget(radio)
         mode_row.addStretch()
         self._trigger_btn = QPushButton("Get Feedback")
+        self._trigger_btn.clicked.connect(self._on_trigger_clicked)
         mode_row.addWidget(self._trigger_btn)
         layout.addLayout(mode_row)
 
@@ -139,6 +143,10 @@ class FeedbackPanel(QWidget):
     def current_mode(self) -> str:
         checked = self._mode_group.checkedButton()
         return checked.property("mode_key") if checked else None
+
+    def _on_trigger_clicked(self) -> None:
+        if self.on_trigger_requested is not None:
+            self.on_trigger_requested()
 
     def show_loading(self) -> None:
         self._loading_label.show()
