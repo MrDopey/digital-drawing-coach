@@ -19,7 +19,7 @@
 
 ## 4. Tests
 
-- [ ] 4.1 Add `tests/test_feedback_panel.py` (pytest-qt, following the pattern in `tests/test_history_panel.py`) covering: default size is larger than the old minimum, `current_mode()` returns the correct key after selecting each radio button, the trigger button invokes `on_trigger_requested`, and resizing the panel while an overlay image is shown rescales the pixmap without changing its aspect ratio.
+- [x] 4.1 Add `tests/test_feedback_panel.py` (pytest-qt, following the pattern in `tests/test_history_panel.py`) covering: default size is larger than the old minimum, `current_mode()` returns the correct key after selecting each radio button, the trigger button invokes `on_trigger_requested`, and resizing the panel while an overlay image is shown rescales the pixmap without changing its aspect ratio.
 
 ## 5. Documentation
 
