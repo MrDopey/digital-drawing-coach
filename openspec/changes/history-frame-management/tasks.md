@@ -1,7 +1,7 @@
 ## 1. CaptureEngine — buffer mutation API
 
-- [ ] 1.1 Add `frames_changed = pyqtSignal()` to `CaptureEngine`; emit after every `_buffer` append and after `remove_frame`
-- [ ] 1.2 Implement `remove_frame(frame: CapturedFrame)` — rebuild `_buffer` deque excluding the target frame (by identity); emit `frames_changed`
+- [x] 1.1 Add `frames_changed = pyqtSignal()` to `CaptureEngine`; emit after every `_buffer` append and after `remove_frame`
+- [x] 1.2 Implement `remove_frame(frame: CapturedFrame)` — rebuild `_buffer` deque excluding the target frame (by identity); emit `frames_changed`
 
 ## 2. HistoryPanel — live updates & delete buttons
 

@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Callable
 import mss
 import numpy as np
 from PIL import Image
+from PyQt6.QtCore import QObject, pyqtSignal
 
 from drawing_coach.paths import sessions_dir
 from drawing_coach.session_manager import default_session_name
@@ -33,13 +34,16 @@ class CapturedFrame:
     path: Path | None = None  # disk path, None for in-memory only
 
 
-class CaptureEngine:
+class CaptureEngine(QObject):
     """Captures the drawing window periodically; stores frames to disk with dedup."""
 
     DEFAULT_INTERVAL = 30
     BUFFER_SIZE = 50
 
+    frames_changed = pyqtSignal()
+
     def __init__(self, manager: WindowManager, config: LLMConfig | None = None) -> None:
+        super().__init__()
         self._manager = manager
         self._config = config  # LLMConfig reference for live thresholds
         self._target: WindowInfo | None = None
@@ -94,6 +98,18 @@ class CaptureEngine:
     def get_frames(self) -> list[CapturedFrame]:
         with self._lock:
             return list(self._buffer)
+
+    def remove_frame(self, frame: CapturedFrame) -> None:
+        """Remove a frame from the in-memory buffer. Does not delete its file from disk."""
+        with self._lock:
+            try:
+                idx = next(i for i, f in enumerate(self._buffer) if f is frame)
+            except StopIteration:
+                return
+            remaining = list(self._buffer)
+            del remaining[idx]
+            self._buffer = deque(remaining, maxlen=self.BUFFER_SIZE)
+        self.frames_changed.emit()
 
     def start(self) -> None:
         if self._running:
@@ -321,6 +337,7 @@ class CaptureEngine:
 
         with self._lock:
             self._buffer.append(frame)
+        self.frames_changed.emit()
 
         if self.on_frame_captured:
             self.on_frame_captured(frame)
