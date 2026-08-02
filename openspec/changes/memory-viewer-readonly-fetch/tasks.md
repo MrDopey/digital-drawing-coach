@@ -25,4 +25,4 @@
 
 ## 5. Verification
 
-- [ ] 5.1 Run `uv run pytest` (via `xvfb-run -a uv run pytest` per project testing notes, since Memory Viewer tests import PyQt6/pynput) and confirm all tests pass
+- [x] 5.1 Run `uv run pytest` (via `xvfb-run -a uv run pytest` per project testing notes, since Memory Viewer tests import PyQt6/pynput) and confirm all tests pass — full suite green
