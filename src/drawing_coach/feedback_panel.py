@@ -208,10 +208,11 @@ class FeedbackPanel(QWidget):
         thumb_pane_layout.addWidget(
             self._thumb_label, 0, Qt.AlignmentFlag.AlignCenter
         )
+        self._thumb_caption = MutedLabel(
+            "Click to open full image", dim=True, small=True
+        )
         thumb_pane_layout.addWidget(
-            MutedLabel("Click to open full image", dim=True, small=True),
-            0,
-            Qt.AlignmentFlag.AlignCenter,
+            self._thumb_caption, 0, Qt.AlignmentFlag.AlignCenter
         )
         thumb_pane_layout.addStretch()
         self._thumb_pane = QWidget()

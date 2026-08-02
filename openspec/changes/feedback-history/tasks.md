@@ -37,7 +37,7 @@
 - [x] 6.2 Unit test for `FeedbackStore.last_entry_for` — match found, no match, empty history
 - [x] 6.3 Unit test for `FeedbackEngine` — `FeedbackResponse.frame_hashes` populated with correct SHA-256 values, covering both the structured (`_call_structured`) and prose (`_call_prose`) paths, and both overlay (single-frame) and lookback-window (multi-frame) selection
 - [x] 6.4 pytest-qt test: Request Feedback button disabled when hashes+mode match; re-enabled on mode change
-- [ ] 6.5 pytest-qt test: clicking a sidebar row navigates to that entry and stays in sync with Previous/Next; new sidebar rows and the thumbnail label are design-system components (extending the existing `test_feedback_panel.py` pattern of asserting `isinstance(..., PrimaryButton/MutedLabel)`)
+- [x] 6.5 pytest-qt test: clicking a sidebar row navigates to that entry and stays in sync with Previous/Next; new sidebar rows and the thumbnail label are design-system components (extending the existing `test_feedback_panel.py` pattern of asserting `isinstance(..., PrimaryButton/MutedLabel)`)
 - [ ] 6.6 pytest-qt test: `FeedbackPanel.set_store()` loads an existing session's history into the sidebar and clears a previously-bound session's entries when called again
 
 ## 7. Documentation

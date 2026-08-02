@@ -244,3 +244,46 @@ def test_update_request_state_enabled_with_no_history(qtbot):
     panel.update_request_state(["anything"])
 
     assert panel._request_btn.isEnabled()
+
+
+# ---------------------------------------------------------------------------
+# Sidebar navigation
+# ---------------------------------------------------------------------------
+
+
+def test_sidebar_row_click_navigates_and_stays_synced_with_prev_next(qtbot):
+    panel = FeedbackPanel()
+    qtbot.addWidget(panel)
+
+    panel.show_feedback(
+        FeedbackResponse(
+            mode="quick_hint", text="first", timestamp=datetime(2024, 1, 1, 10, 0, 0)
+        )
+    )
+    panel.show_feedback(
+        FeedbackResponse(
+            mode="full_critique",
+            text="second",
+            timestamp=datetime(2024, 1, 1, 10, 5, 0),
+        )
+    )
+    assert panel._sidebar.count() == 2
+
+    # row 0 is the newest ("second"); click row 1 ("first")
+    panel._sidebar.setCurrentRow(1)
+
+    assert panel._history_idx == 0
+    assert panel._text_edit.toPlainText().strip() == "first"
+
+    panel._show_next()
+
+    assert panel._history_idx == 1
+    assert panel._sidebar.currentRow() == 0
+    assert panel._text_edit.toPlainText().strip() == "second"
+
+
+def test_thumbnail_caption_is_muted_label(qtbot):
+    panel = FeedbackPanel()
+    qtbot.addWidget(panel)
+
+    assert isinstance(panel._thumb_caption, MutedLabel)
