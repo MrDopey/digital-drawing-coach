@@ -258,6 +258,21 @@ class FeedbackPanel(QWidget):
         checked = self._mode_group.checkedButton()
         return checked.property("mode_key") if checked else None
 
+    def update_request_state(self, frame_hashes: list[str]) -> None:
+        """Disable Request Feedback when frame_hashes+mode already match the
+        last saved entry for that mode; re-enable it otherwise."""
+        match = (
+            self._store.last_entry_for(self.current_mode(), frame_hashes)
+            if self._store is not None
+            else None
+        )
+        if match is not None:
+            self._request_btn.setEnabled(False)
+            self._request_btn.setToolTip("Already generated for this drawing and mode")
+        else:
+            self._request_btn.setEnabled(True)
+            self._request_btn.setToolTip("")
+
     def show_loading(self) -> None:
         self._loading_label.show()
         self._splitter.hide()
