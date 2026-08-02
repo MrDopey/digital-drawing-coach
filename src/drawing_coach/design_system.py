@@ -107,3 +107,11 @@ class MutedLabel(QLabel):
         if extra_style:
             style += " " + extra_style
         self.setStyleSheet(style)
+
+
+class SectionHeader(QLabel):
+    """A bold section/title label."""
+
+    def __init__(self, text: str = "", parent: QWidget | None = None) -> None:
+        super().__init__(text, parent)
+        self.setStyleSheet("font-weight: bold;")
