@@ -23,6 +23,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from drawing_coach.design_system import MutedLabel, PillBadge
 from drawing_coach.llm_config import LLMConfig
 from drawing_coach.paths import config_path, sessions_dir
 
@@ -134,6 +135,7 @@ def check_llm(config: LLMConfig) -> CheckResult:
         kwargs: dict = {
             "model": config.model,
             "messages": [{"role": "user", "content": "hi"}],
+            "metadata": {"debug_label": "diagnostics_check_llm"},
         }
         if config.api_key:
             kwargs["api_key"] = config.api_key
@@ -301,21 +303,22 @@ class DiagnosticsDialog(QDialog):
 
         for row_idx, (name, _) in enumerate(self._checks):
             grid_row = row_idx * 2
-            status_lbl = QLabel("⏳")
+            status_lbl = PillBadge("⏳")
             status_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignTop)
             name_lbl = QLabel(f"<b>{name}</b>")
             name_lbl.setAlignment(Qt.AlignmentFlag.AlignTop)
-            msg_lbl = QLabel("checking…")
+            msg_lbl = PillBadge("checking…")
             msg_lbl.setWordWrap(True)
             msg_lbl.setTextFormat(Qt.TextFormat.RichText)
             msg_lbl.setAlignment(Qt.AlignmentFlag.AlignTop)
             msg_lbl.setMinimumWidth(1)
             msg_lbl.setTextInteractionFlags(_selectable)
 
-            hint_lbl = QLabel("")
+            hint_lbl = MutedLabel(
+                "", extra_style="padding-left: 2px; padding-bottom: 6px;"
+            )
             hint_lbl.setWordWrap(True)
             hint_lbl.setTextFormat(Qt.TextFormat.RichText)
-            hint_lbl.setStyleSheet("color: #888; padding-left: 2px; padding-bottom: 6px;")
             hint_lbl.setMinimumWidth(1)
             hint_lbl.setTextInteractionFlags(_selectable)
             hint_lbl.setVisible(False)
@@ -359,9 +362,9 @@ class DiagnosticsDialog(QDialog):
 
         for name in self._status_labels:
             self._status_labels[name].setText("⏳")
-            self._status_labels[name].setStyleSheet("")
+            self._status_labels[name].set_variant("neutral")
             self._msg_labels[name].setText("checking…")
-            self._msg_labels[name].setStyleSheet("")
+            self._msg_labels[name].set_variant("neutral")
             self._hint_labels[name].setText("")
             self._hint_labels[name].setVisible(False)
 
@@ -389,16 +392,16 @@ class DiagnosticsDialog(QDialog):
             return
         if result.passed:
             status_lbl.setText("✓")
-            status_lbl.setStyleSheet("color: green;")
+            status_lbl.set_variant("success")
             msg_lbl.setText(result.message)
-            msg_lbl.setStyleSheet("")
+            msg_lbl.set_variant("neutral")
             if hint_lbl:
                 hint_lbl.setVisible(False)
         else:
             status_lbl.setText("✗")
-            status_lbl.setStyleSheet("color: red;")
+            status_lbl.set_variant("danger")
             msg_lbl.setText(result.message)
-            msg_lbl.setStyleSheet("color: red;")
+            msg_lbl.set_variant("danger")
             if hint_lbl and result.hint:
                 hint_lbl.setText(result.hint)
                 hint_lbl.setVisible(True)

@@ -47,6 +47,7 @@ Each platform's `WindowBackend` (`window_manager.py`) implements `capture_image(
 - **Feedback Management** panel: opening it (toolbar button, tray menu) just shows the panel — no LLM request is sent until you click **Request Feedback** inside it (the hotkey and automatic stuck-detection still request feedback directly, as before). The overlay image (top) and feedback text (bottom) are shown together in a resizable split with a draggable divider; feedback text always scrolls to show the full response, and the overlay image can be zoomed in/out (`+`/`−`/**Reset** buttons, or `Ctrl+Wheel`) and panned to see annotation detail
 - Drawing style and focus selector — choose from presets (Line Drawing, Realistic, Anime/Manga, Chibi, Concept Art, Portrait) or enter free text (e.g. `gothic pokemon`) to tailor every LLM prompt
 - Works with any vision-capable LLM via [LiteLLM][litellm] — OpenAI, Anthropic, Ollama, and more
+- Feedback requests prefer structured JSON output (one schema-validated response carrying the visible feedback, memory observations, and overlay annotations together) and only try it once per app launch — if the configured provider doesn't support it, the app falls back to prose parsing for the rest of the session, with a one-time warning that memory notes and overlay annotations will be less reliable until restart
 - Session history persisted to disk with duplicate-frame dropping and configurable session retention; double-click any thumbnail in the history panel to open it in the system default image viewer, or hover over one — which highlights the row's background — to reveal a themed delete button that removes it from the buffer (without deleting the file) so it's excluded from the next LLM request — a blue border highlights the frames the next request will actually use, based on `lookback_frames` (note: this indicator isn't mode-aware, so it over-highlights when Overlay mode is selected, since overlay requests always use only the single latest frame)
 - Session management: a picker on launch lets you resume, rename, or delete a saved session (skipped when none exist); sessions can also be renamed or switched in-app via the **Sessions** menu, with the active session name shown in the window title bar
 - Long-term memory: the coach remembers recurring observations across sessions (e.g. "struggles with vanishing points") and works them into every subsequent prompt, so feedback improves with use instead of repeating the same generic advice — viewable, deletable, and exportable from the **Memory** and **Progress** windows
@@ -117,8 +118,20 @@ The app follows the [XDG Base Directory Specification](https://specifications.fr
 | Sessions | `$XDG_DATA_HOME/drawing-coach/sessions/` → `~/.local/share/drawing-coach/sessions/` |
 | Memory (observations) | `$XDG_DATA_HOME/drawing-coach/memory.json` → `~/.local/share/drawing-coach/memory.json` |
 | Memory (summary history) | `$XDG_DATA_HOME/drawing-coach/memory_summaries.json` → `~/.local/share/drawing-coach/memory_summaries.json` |
+| Debug logs (LLM input/output) | `$XDG_DATA_HOME/drawing-coach/debug_logs/` → `~/.local/share/drawing-coach/debug_logs/` |
 
-On **Windows** the legacy paths are used instead (`~/.drawing-coach/config.json`, `~/.drawing-coach/sessions/`, `~/.drawing-coach/memory.json`, `~/.drawing-coach/memory_summaries.json`).
+On **Windows** the legacy paths are used instead (`~/.drawing-coach/config.json`, `~/.drawing-coach/sessions/`, `~/.drawing-coach/memory.json`, `~/.drawing-coach/memory_summaries.json`, `~/.drawing-coach/debug_logs/`).
+
+### Debug logging of LLM input/output
+
+**Settings → LLM → "Debug logging of LLM input/output"** (off by default) persists the request and response of *every* LLM call the app makes — not just feedback requests, but also the Diagnostics dialog's connectivity check, Settings' "Test Connection" button, and periodic memory re-summarisation. It's implemented as a LiteLLM logging callback, so it covers any call site uniformly, including both `FeedbackEngine`'s structured-output attempt and its prose fallback as two separately labeled entries when a request falls back.
+
+Each call gets its own timestamped subdirectory under `debug_logs/`, named `<timestamp>_<debug_label>` (e.g. `20260802T143022123456_feedback_overlay_structured`), containing:
+- `frame_00.png`, `frame_01.png`, ... — one PNG per image actually sent, in the order sent (only present for feedback calls)
+- `request.txt` — the full text content sent (system + user messages, role-prefixed)
+- `response.txt` — the complete raw response text, **or** `error.txt` if the call failed
+
+This is a manually-enabled diagnostic tool: it is **off by default**, persists raw prompts and drawing screenshots to disk unredacted, and is **not automatically pruned** — remember to periodically delete `debug_logs/` yourself, or disable the setting once you're done debugging.
 
 ### Long-term memory
 
@@ -259,6 +272,25 @@ uv run pyright src/
 ```
 
 The test suite covers the capture engine (ring buffer, dedup), stuck detector, feedback engine (LiteLLM mocked), LLM config persistence, overlay renderer, drawing style injection, and version embedding.
+
+---
+
+## Design System (contributing UI code)
+
+All widget styling goes through two modules instead of one-off `setStyleSheet()` calls:
+
+- **`src/drawing_coach/theme.py`** — the single source of truth for colors, spacing, and font sizes. `Theme.overlay` holds tokens for the feedback panel's dark OSD surface; `Theme.dialog` holds tokens for every other (native, system-palette) dialog; a few semantic tokens (`Theme.success`, `Theme.danger`, `Theme.warning`, `Theme.muted_text`) are shared across both.
+- **`src/drawing_coach/design_system.py`** — reusable styled widgets built on those tokens: `Card` (bordered/filled containers), `PillBadge` (semantic status text), `MutedLabel` (secondary text), `SectionHeader` (bold titles), `PrimaryButton` and `IconButton` (the feedback panel's button styling). Import and compose these instead of writing a new `setStyleSheet()` call.
+
+A test (`tests/test_design_system_compliance.py`) scans `src/drawing_coach/` for hex color literals and raw `setStyleSheet()` calls outside those two files, and fails the build if it finds any without a trailing `# theme-exempt` comment (for a genuinely unavoidable case — a runtime-varying value, or a color that isn't a UI theme value at all, like an icon's decorative colors).
+
+This is enforced two ways:
+- **CI** (`.github/workflows/test.yml`) runs the full test suite, including the compliance check, on every push and pull request — this is the authoritative gate.
+- **A local pre-commit hook** (optional, but recommended) gives the same feedback immediately, before the commit is even created:
+  ```bash
+  ./scripts/install_git_hooks.sh   # one-time per clone
+  ```
+  This points git at the repo's tracked `hooks/` directory (`git config core.hooksPath hooks`) so `hooks/pre-commit` runs automatically. It can be skipped for a specific commit with `git commit --no-verify` — CI will still catch a violation either way.
 
 ---
 
