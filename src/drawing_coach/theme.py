@@ -61,3 +61,10 @@ class Theme:
     # Muted secondary-text color; identical on both surfaces today, so kept
     # as one shared token rather than duplicated in `_Overlay`/`_Dialog`.
     muted_text = "#888"
+
+    # Spacing / font-size tokens for values currently hardcoded inline.
+    font_size_small = "11px"
+    border_radius = "4px"
+    button_padding = "4px 10px"
+    border_width_thin = "1px"
+    border_width_thick = "2px"
