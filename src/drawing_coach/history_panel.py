@@ -3,9 +3,10 @@ from __future__ import annotations
 import os
 import tempfile
 from pathlib import Path
+from typing import Callable
 
-from PyQt6.QtCore import QSize, Qt, QUrl
-from PyQt6.QtGui import QDesktopServices, QIcon, QImage, QPixmap
+from PyQt6.QtCore import QEvent, QSize, Qt, QUrl
+from PyQt6.QtGui import QDesktopServices, QImage, QPixmap
 from PyQt6.QtWidgets import (
     QDialog,
     QHBoxLayout,
@@ -18,7 +19,10 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from drawing_coach.capture_engine import CapturedFrame
+from drawing_coach.capture_engine import CapturedFrame, CaptureEngine
+from drawing_coach.llm_config import LLMConfig
+
+_LOOKBACK_BORDER_STYLE = "border-left: 3px solid #4A90D9;"
 
 
 def _pil_to_pixmap(frame: CapturedFrame, max_size: int = 48) -> QPixmap:
@@ -31,45 +35,89 @@ def _pil_to_pixmap(frame: CapturedFrame, max_size: int = 48) -> QPixmap:
     return QPixmap.fromImage(qimg)
 
 
-class HistoryPanel(QDialog):
+class _FrameRowWidget(QWidget):
+    """A single history-panel row: thumbnail + timestamp + hover-visible delete button."""
+
     def __init__(
-        self, frames: list[CapturedFrame], parent: QWidget | None = None
+        self,
+        frame: CapturedFrame,
+        on_delete: Callable[[CapturedFrame], None],
+        on_open: Callable[[CapturedFrame], None],
+        parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
+        self._frame = frame
+        self._on_delete = on_delete
+        self._on_open = on_open
+
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(4, 2, 4, 2)
+
+        thumb = QLabel()
+        thumb.setPixmap(
+            _pil_to_pixmap(frame).scaled(
+                48,
+                48,
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation,
+            )
+        )
+        layout.addWidget(thumb)
+
+        ts_label = QLabel(frame.timestamp.strftime("%Y-%m-%d %H:%M:%S"))
+        layout.addWidget(ts_label, 1)
+
+        self.delete_button = QPushButton("×")
+        self.delete_button.setFixedSize(20, 20)
+        self.delete_button.setVisible(False)
+        self.delete_button.clicked.connect(lambda: self._on_delete(self._frame))
+        layout.addWidget(self.delete_button)
+
+        self.installEventFilter(self)
+
+    def eventFilter(self, obj, event):  # noqa: N802 - Qt override
+        if obj is self:
+            if event.type() == QEvent.Type.Enter:
+                self.delete_button.setVisible(True)
+            elif event.type() == QEvent.Type.Leave:
+                self.delete_button.setVisible(False)
+        return super().eventFilter(obj, event)
+
+    def mouseDoubleClickEvent(self, event) -> None:  # noqa: N802 - Qt override
+        self._on_open(self._frame)
+        super().mouseDoubleClickEvent(event)
+
+    def set_highlighted(self, highlighted: bool) -> None:
+        self.setStyleSheet(_LOOKBACK_BORDER_STYLE if highlighted else "")
+
+
+class HistoryPanel(QDialog):
+    def __init__(
+        self,
+        engine: CaptureEngine,
+        config: LLMConfig,
+        parent: QWidget | None = None,
+    ) -> None:
+        super().__init__(parent)
+        self._engine = engine
+        self._config = config
         self.setWindowTitle("Session History")
         self.setMinimumSize(500, 400)
 
         layout = QVBoxLayout(self)
 
-        if not frames:
-            layout.addWidget(QLabel("No captures yet — wait for the first screenshot."))
-        else:
-            label = QLabel(f"{len(frames)} frames captured this session:")
-            layout.addWidget(label)
+        self._info_label = QLabel()
+        layout.addWidget(self._info_label)
 
-            list_widget = QListWidget()
-            list_widget.setIconSize(QSize(48, 48))
+        self._list_widget = QListWidget()
+        self._list_widget.setIconSize(QSize(48, 48))
+        layout.addWidget(self._list_widget, 1)
 
-            for frame in reversed(frames):
-                ts = frame.timestamp.strftime("%Y-%m-%d %H:%M:%S")
-                item = QListWidgetItem(ts)
-                item.setIcon(
-                    QIcon(_pil_to_pixmap(frame).scaled(
-                        48,
-                        48,
-                        Qt.AspectRatioMode.KeepAspectRatio,
-                        Qt.TransformationMode.SmoothTransformation,
-                    ))
-                )
-                item.setData(Qt.ItemDataRole.UserRole, frame)
-                list_widget.addItem(item)
-
-            list_widget.itemDoubleClicked.connect(self._open_frame)
-            layout.addWidget(list_widget)
-
-            hint = QLabel("Double-click a thumbnail to open it in the default viewer.")
-            hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            layout.addWidget(hint)
+        self._hint_label = QLabel(
+            "Double-click a thumbnail to open it in the default viewer."
+        )
+        self._hint_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(self._hint_label)
 
         close_btn = QPushButton("Close")
         close_btn.clicked.connect(self.accept)
@@ -78,9 +126,53 @@ class HistoryPanel(QDialog):
         row.addWidget(close_btn)
         layout.addLayout(row)
 
-    def _open_frame(self, item: QListWidgetItem) -> None:
-        frame: CapturedFrame = item.data(Qt.ItemDataRole.UserRole)
+        self._engine.frames_changed.connect(self._render)
+        self._render()
 
+    def _render(self) -> None:
+        self._list_widget.clear()
+        frames = self._engine.get_frames()
+
+        has_frames = bool(frames)
+        self._list_widget.setVisible(has_frames)
+        self._hint_label.setVisible(has_frames)
+        if not has_frames:
+            self._info_label.setText(
+                "No captures yet — wait for the first screenshot."
+            )
+        else:
+            self._info_label.setText(f"{len(frames)} frames captured this session:")
+            for frame in reversed(frames):
+                self._add_row(frame)
+
+        self._update_lookback_indicator()
+
+    def _add_row(self, frame: CapturedFrame) -> None:
+        item = QListWidgetItem()
+        item.setData(Qt.ItemDataRole.UserRole, frame)
+        row_widget = _FrameRowWidget(frame, self._delete_frame, self._open_frame)
+        item.setSizeHint(row_widget.sizeHint())
+        self._list_widget.addItem(item)
+        self._list_widget.setItemWidget(item, row_widget)
+
+    def _delete_frame(self, frame: CapturedFrame) -> None:
+        self._engine.remove_frame(frame)
+
+    def _update_lookback_indicator(self) -> None:
+        frames = self._engine.get_frames()
+        if not frames:
+            return
+        lookback = max(0, self._config.lookback_frames)
+        window = frames[-(lookback + 1) :]
+
+        for i in range(self._list_widget.count()):
+            item = self._list_widget.item(i)
+            frame: CapturedFrame = item.data(Qt.ItemDataRole.UserRole)
+            widget = self._list_widget.itemWidget(item)
+            if isinstance(widget, _FrameRowWidget):
+                widget.set_highlighted(any(f is frame for f in window))
+
+    def _open_frame(self, frame: CapturedFrame) -> None:
         if frame.path is not None:
             path = frame.path
         else:

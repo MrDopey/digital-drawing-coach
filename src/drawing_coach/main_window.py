@@ -562,7 +562,7 @@ class MainWindow(QMainWindow):
         threading.Thread(target=_run, daemon=True).start()
 
     def _open_history(self) -> None:
-        dlg = HistoryPanel(self._capture.get_frames(), self)
+        dlg = HistoryPanel(self._capture, self._config, self)
         dlg.exec()
 
     def _open_memory_viewer(self) -> None:

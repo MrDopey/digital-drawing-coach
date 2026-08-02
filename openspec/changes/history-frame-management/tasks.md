@@ -5,19 +5,19 @@
 
 ## 2. HistoryPanel — live updates & delete buttons
 
-- [ ] 2.1 Refactor `HistoryPanel` to accept a live `CaptureEngine` reference instead of a snapshot list; connect to `frames_changed` signal to re-render
-- [ ] 2.2 Replace `QListWidget` rows with custom item widgets (`QWidget` containing thumbnail `QLabel` + hidden `QPushButton("×")`)
-- [ ] 2.3 Install event filter on each item widget to show the delete button on `Enter` and hide on `Leave`
-- [ ] 2.4 Connect delete button `clicked` to `CaptureEngine.remove_frame(frame)` for the corresponding frame
+- [x] 2.1 Refactor `HistoryPanel` to accept a live `CaptureEngine` reference instead of a snapshot list; connect to `frames_changed` signal to re-render
+- [x] 2.2 Replace `QListWidget` rows with custom item widgets (`QWidget` containing thumbnail `QLabel` + hidden `QPushButton("×")`)
+- [x] 2.3 Install event filter on each item widget to show the delete button on `Enter` and hide on `Leave`
+- [x] 2.4 Connect delete button `clicked` to `CaptureEngine.remove_frame(frame)` for the corresponding frame
 
 ## 3. HistoryPanel — lookback indicator
 
-- [ ] 3.1 Add `_update_lookback_indicator()` method: determines the lookback window (`frames[-(lookback+1):]`) using `config.lookback_frames` and applies a blue left border stylesheet to those item widgets; clears the border on all others
-- [ ] 3.2 Call `_update_lookback_indicator()` on initial render and on every `frames_changed` signal
+- [x] 3.1 Add `_update_lookback_indicator()` method: determines the lookback window (`frames[-(lookback+1):]`) using `config.lookback_frames` and applies a blue left border stylesheet to those item widgets; clears the border on all others
+- [x] 3.2 Call `_update_lookback_indicator()` on initial render and on every `frames_changed` signal
 
 ## 4. MainWindow wiring
 
-- [ ] 4.1 Update `MainWindow` to pass `CaptureEngine` (not a snapshot list) when opening `HistoryPanel`
+- [x] 4.1 Update `MainWindow` to pass `CaptureEngine` (not a snapshot list) when opening `HistoryPanel`
 - [ ] 4.2 Verify the history panel opens correctly from the menu/toolbar action
 
 ## 5. Tests
