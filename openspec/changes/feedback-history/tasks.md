@@ -21,7 +21,7 @@
 ## 4. Request Feedback button deduplication
 
 - [x] 4.1 Add a method on `FeedbackPanel` (e.g. `update_request_state(frame_hashes: list[str])`) that calls `store.last_entry_for(current_mode, frame_hashes)` and disables the existing "Request Feedback" button with tooltip "Already generated for this drawing and mode" if a match is found, re-enabling it otherwise
-- [ ] 4.2 In `MainWindow`, compute the current frame hashes using the same `_select_frames`/hashing helper `FeedbackEngine` uses (not a duplicate implementation) and call `feedback_panel.update_request_state(...)` on: mode radio selection change, `CaptureEngine.frames_changed`, and after each successful generation
+- [x] 4.2 In `MainWindow`, compute the current frame hashes using the same `_select_frames`/hashing helper `FeedbackEngine` uses (not a duplicate implementation) and call `feedback_panel.update_request_state(...)` on: mode radio selection change, `CaptureEngine.frames_changed`, and after each successful generation
 
 ## 5. FeedbackPanel UI redesign
 

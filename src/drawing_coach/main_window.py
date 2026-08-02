@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import platform
 import threading
 from pathlib import Path
@@ -213,6 +214,10 @@ class MainWindow(QMainWindow):
         self._signals.feedback_ready.connect(self._on_feedback_ready)
         self._signals.feedback_error.connect(self._feedback_panel.show_error)
         self._feedback_panel.feedback_requested.connect(self._request_feedback)
+        self._feedback_panel.mode_changed.connect(
+            lambda _mode: self._update_request_dedup_state()
+        )
+        self._capture.frames_changed.connect(self._update_request_dedup_state)
         self._signals.window_lost.connect(self._on_window_lost)
         self._signals.frame_captured.connect(self._update_status)
         self._signals.write_error.connect(self._on_write_error_main)
@@ -461,6 +466,18 @@ class MainWindow(QMainWindow):
         last_frame: CapturedFrame | None,
     ) -> None:
         self._feedback_panel.show_feedback(response, overlay_image, last_frame)
+        self._update_request_dedup_state()
+
+    def _current_frame_hashes(self, mode: str) -> list[str]:
+        frames = self._capture.get_frames()
+        if not frames:
+            return []
+        selected = self._feedback_engine._select_frames(frames, mode)
+        return [hashlib.sha256(frame.image.tobytes()).hexdigest() for frame in selected]
+
+    def _update_request_dedup_state(self) -> None:
+        mode = self._feedback_panel.current_mode()
+        self._feedback_panel.update_request_state(self._current_frame_hashes(mode))
 
     def _on_window_lost(self) -> None:
         self._capture.pause()

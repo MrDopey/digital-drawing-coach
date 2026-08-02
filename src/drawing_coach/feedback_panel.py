@@ -99,6 +99,7 @@ class FeedbackPanel(QWidget):
     """Floating, draggable panel that shows LLM feedback."""
 
     feedback_requested = pyqtSignal(str)
+    mode_changed = pyqtSignal(str)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent, Qt.WindowType.Tool | Qt.WindowType.FramelessWindowHint)
@@ -151,6 +152,7 @@ class FeedbackPanel(QWidget):
                 radio.setChecked(True)
             self._mode_group.addButton(radio)
             mode_row.addWidget(radio)
+        self._mode_group.buttonToggled.connect(self._on_mode_toggled)
         mode_row.addStretch()
         self._request_btn = PrimaryButton("Request Feedback")
         self._request_btn.clicked.connect(
@@ -257,6 +259,10 @@ class FeedbackPanel(QWidget):
     def current_mode(self) -> str:
         checked = self._mode_group.checkedButton()
         return checked.property("mode_key") if checked else None
+
+    def _on_mode_toggled(self, button: QRadioButton, checked: bool) -> None:
+        if checked:
+            self.mode_changed.emit(self.current_mode())
 
     def update_request_state(self, frame_hashes: list[str]) -> None:
         """Disable Request Feedback when frame_hashes+mode already match the
