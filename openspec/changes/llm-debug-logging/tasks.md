@@ -18,12 +18,12 @@
 
 ## 4. Attach debug labels at each call site
 
-- [ ] 4.1 `feedback_engine.py`: add a `label: str` parameter to `_base_kwargs()`, setting `kwargs["metadata"] = {"debug_label": label}`
-- [ ] 4.2 `feedback_engine.py`: `_call_structured()` calls `self._base_kwargs(f"feedback_{mode}_structured")`
-- [ ] 4.3 `feedback_engine.py`: `_call_prose()` calls `self._base_kwargs(f"feedback_{mode}_prose")`
-- [ ] 4.4 `diagnostics.py check_llm()`: add `kwargs["metadata"] = {"debug_label": "diagnostics_check_llm"}`
-- [ ] 4.5 `settings_dialog.py _test_connection()`: add `kwargs["metadata"] = {"debug_label": "settings_test_connection"}`
-- [ ] 4.6 `memory_store.py _try_resummarize()`: add `kwargs["metadata"] = {"debug_label": "memory_resummarize"}`
+- [x] 4.1 `feedback_engine.py`: add a `label: str` parameter to `_base_kwargs()`, setting `kwargs["metadata"] = {"debug_label": label}`
+- [x] 4.2 `feedback_engine.py`: `_call_structured()` calls `self._base_kwargs(f"feedback_{mode}_structured")`
+- [x] 4.3 `feedback_engine.py`: `_call_prose()` calls `self._base_kwargs(f"feedback_{mode}_prose")`
+- [x] 4.4 `diagnostics.py check_llm()`: add `kwargs["metadata"] = {"debug_label": "diagnostics_check_llm"}`
+- [x] 4.5 `settings_dialog.py _test_connection()`: add `kwargs["metadata"] = {"debug_label": "settings_test_connection"}`
+- [x] 4.6 `memory_store.py _try_resummarize()`: add `kwargs["metadata"] = {"debug_label": "memory_resummarize"}`
 
 ## 5. Tests
 

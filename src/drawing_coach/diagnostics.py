@@ -135,6 +135,7 @@ def check_llm(config: LLMConfig) -> CheckResult:
         kwargs: dict = {
             "model": config.model,
             "messages": [{"role": "user", "content": "hi"}],
+            "metadata": {"debug_label": "diagnostics_check_llm"},
         }
         if config.api_key:
             kwargs["api_key"] = config.api_key

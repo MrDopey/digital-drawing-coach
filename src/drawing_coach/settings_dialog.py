@@ -269,6 +269,7 @@ class SettingsDialog(QDialog):
             kwargs: dict = {
                 "model": model,
                 "messages": [{"role": "user", "content": "hi"}],
+                "metadata": {"debug_label": "settings_test_connection"},
             }
             if key:
                 kwargs["api_key"] = key
