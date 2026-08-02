@@ -180,6 +180,7 @@ class MainWindow(QMainWindow):
         self._feedback_engine = FeedbackEngine(self._config)
         self._memory_store = MemoryStore(self._config)
         self._feedback_panel = FeedbackPanel()
+        self._feedback_panel.on_trigger_requested = self._trigger_feedback
         self._signals = _Signals()
 
         self._setup_callbacks()

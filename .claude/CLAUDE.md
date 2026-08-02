@@ -16,6 +16,7 @@ Dialogs must be resizable: content reflows correctly when the user drags the win
 - Selectable `QLabel`s need `setTextInteractionFlags(TextSelectableByMouse | TextSelectableByKeyboard)` — without it users cannot copy displayed text
 - Scrollable content: `QScrollArea(setWidgetResizable=True, frameShape=NoFrame)`; no hardcoded dialog heights
 - Child dialogs opened from a modal parent must use `exec()` not `show()` — `show()` inside an `exec()` loop cannot receive focus
+- A scaled pixmap in a stretch-factored widget needs a `resizeEvent` override to re-scale it — without one, the image only updates on its next content change, not on window resize
 
 ## Tech Stack
 

@@ -1,8 +1,5 @@
-# feedback-modes Specification
+## MODIFIED Requirements
 
-## Purpose
-TBD - created by archiving change digital-drawing-coach. Update Purpose after archive.
-## Requirements
 ### Requirement: Three selectable feedback modes
 The system SHALL support four feedback modes that determine the depth and format of LLM coaching output. The active mode SHALL be presented as a horizontal strip of radio buttons — one per mode, all visible simultaneously — in the feedback panel, and SHALL persist across the session. The same row SHALL include a right-aligned button that triggers a feedback request using the currently selected mode.
 
