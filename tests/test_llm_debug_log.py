@@ -57,7 +57,12 @@ def debug_dir(tmp_path):
 
 def test_disabled_config_writes_no_files(debug_dir):
     logger = DebugIOLogger(LLMConfig(debug_log_llm_io=False))
-    logger.log_success_event(_kwargs("feedback_overlay_structured", n_images=1), _mock_response("ok"), None, None)
+    logger.log_success_event(
+        _kwargs("feedback_overlay_structured", n_images=1),
+        _mock_response("ok"),
+        None,
+        None,
+    )
     assert not debug_dir.exists()
 
 
