@@ -31,4 +31,4 @@
 - [x] 6.1 Update `README.md` to mention per-frame deletion and the lookback indicator in the history panel
 - [x] 6.2 Review `.claude/CLAUDE.md` — no new UI conventions beyond existing guidelines; no changes needed
 - [x] 6.3 Review `openspec/config.yaml` — no recurring gap identified; no changes needed
-- [ ] 6.4 Run `uv run pytest` and confirm all tests pass
+- [x] 6.4 Run `uv run pytest` and confirm all tests pass (3 pre-existing failures in test_diagnostics.py / test_stuck_detector.py confirmed present on main, unrelated to this change; all history-frame-management tests pass)
