@@ -84,6 +84,8 @@ class FeedbackPanel(QWidget):
             self._mode_group.addButton(radio)
             mode_row.addWidget(radio)
         mode_row.addStretch()
+        self._trigger_btn = QPushButton("Get Feedback")
+        mode_row.addWidget(self._trigger_btn)
         layout.addLayout(mode_row)
 
         # Loading indicator
