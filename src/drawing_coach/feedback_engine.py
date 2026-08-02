@@ -187,12 +187,18 @@ class FeedbackEngine:
     def _build_messages(
         self, system: str, frames: list[CapturedFrame], mode: str
     ) -> list[dict[str, object]]:
-        lookback = max(0, self._config.lookback_frames)
-        # latest frame + up to `lookback` prior frames
-        if lookback == 0:
+        if mode == "overlay":
+            # Annotation coordinates are normalised relative to a single image;
+            # sending lookback frames would leave the LLM's coordinates
+            # ambiguous about which image they describe.
             selected = [frames[-1]]
         else:
-            selected = frames[-(lookback + 1) :]
+            lookback = max(0, self._config.lookback_frames)
+            # latest frame + up to `lookback` prior frames
+            if lookback == 0:
+                selected = [frames[-1]]
+            else:
+                selected = frames[-(lookback + 1) :]
 
         content: list[dict[str, object]] = [
             {"type": "text", "text": "Please review my drawing:"}

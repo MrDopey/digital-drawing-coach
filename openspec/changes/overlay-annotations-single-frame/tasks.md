@@ -1,7 +1,7 @@
 ## 1. Frame selection fix
 
-- [ ] 1.1 In `src/drawing_coach/feedback_engine.py`, update `_build_messages` (or `request_feedback`) so that when `mode == "overlay"`, `selected = [frames[-1]]` regardless of `self._config.lookback_frames`
-- [ ] 1.2 Confirm other modes (`quick_hint`, `full_critique`, `practice_exercise`) still apply the existing `lookback_frames` selection logic unchanged
+- [x] 1.1 In `src/drawing_coach/feedback_engine.py`, update `_build_messages` (or `request_feedback`) so that when `mode == "overlay"`, `selected = [frames[-1]]` regardless of `self._config.lookback_frames`
+- [x] 1.2 Confirm other modes (`quick_hint`, `full_critique`, `practice_exercise`) still apply the existing `lookback_frames` selection logic unchanged
 
 ## 2. Label legibility
 
