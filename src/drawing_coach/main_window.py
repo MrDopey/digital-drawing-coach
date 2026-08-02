@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import platform
 import threading
 from pathlib import Path
@@ -7,7 +8,16 @@ from pathlib import Path
 import litellm
 from PIL import Image as PilImage
 from PyQt6.QtCore import QObject, QPoint, Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import QAction, QCloseEvent, QColor, QIcon, QPainter, QPen, QPixmap, QPolygon
+from PyQt6.QtGui import (
+    QAction,
+    QCloseEvent,
+    QColor,
+    QIcon,
+    QPainter,
+    QPen,
+    QPixmap,
+    QPolygon,
+)
 from PyQt6.QtWidgets import (
     QApplication,
     QComboBox,
@@ -33,6 +43,7 @@ from drawing_coach.design_system import Card, MutedLabel, PillBadge
 from drawing_coach.editable_name_label import EditableNameLabel
 from drawing_coach.feedback_engine import FeedbackEngine, FeedbackResponse
 from drawing_coach.feedback_panel import FeedbackPanel
+from drawing_coach.feedback_store import FeedbackStore
 from drawing_coach.history_panel import HistoryPanel
 from drawing_coach.hotkey_manager import HotkeyManager
 from drawing_coach.config_manager import ConfigManager
@@ -42,7 +53,11 @@ from drawing_coach.memory_store import MemoryStore
 from drawing_coach.memory_viewer import MemoryViewerDialog
 from drawing_coach.overlay_renderer import render as render_overlay
 from drawing_coach.progress_panel import ProgressPanel
-from drawing_coach.session_manager import list_sessions, read_session_name, write_session_name
+from drawing_coach.session_manager import (
+    list_sessions,
+    read_session_name,
+    write_session_name,
+)
 from drawing_coach.settings_dialog import SettingsDialog
 from drawing_coach.stuck_detector import StuckDetector
 from drawing_coach.theme import Theme
@@ -154,7 +169,9 @@ class _WriteErrorLabel(PillBadge):
 
 
 class _Signals(QObject):
-    feedback_ready = pyqtSignal(object, object)  # FeedbackResponse, overlay_image|None
+    feedback_ready = pyqtSignal(
+        object, object, object
+    )  # FeedbackResponse, overlay_image|None, last_frame|None
     feedback_error = pyqtSignal(str)
     window_lost = pyqtSignal()
     frame_captured = pyqtSignal()
@@ -203,11 +220,17 @@ class MainWindow(QMainWindow):
             self._capture.load_session(session_dir)
         self._capture.interval = self._config.capture_interval
         self._capture.start()
+        if self._capture.session_dir is not None:
+            self._feedback_panel.set_store(FeedbackStore(self._capture.session_dir))
         self._update_window_title()
 
         self._signals.feedback_ready.connect(self._on_feedback_ready)
         self._signals.feedback_error.connect(self._feedback_panel.show_error)
         self._feedback_panel.feedback_requested.connect(self._request_feedback)
+        self._feedback_panel.mode_changed.connect(
+            lambda _mode: self._update_request_dedup_state()
+        )
+        self._capture.frames_changed.connect(self._update_request_dedup_state)
         self._signals.window_lost.connect(self._on_window_lost)
         self._signals.frame_captured.connect(self._update_status)
         self._signals.write_error.connect(self._on_write_error_main)
@@ -342,9 +365,7 @@ class MainWindow(QMainWindow):
         self._tray.activated.connect(self._on_tray_activated)
         self._tray.show()
 
-    def _on_tray_activated(
-        self, reason: QSystemTrayIcon.ActivationReason
-    ) -> None:
+    def _on_tray_activated(self, reason: QSystemTrayIcon.ActivationReason) -> None:
         if reason == QSystemTrayIcon.ActivationReason.DoubleClick:
             self._restore_main_window()
 
@@ -377,7 +398,9 @@ class MainWindow(QMainWindow):
         # Wood taper — decorative icon-drawing color, not a UI theme value
         p.setBrush(QColor("#DEB887"))  # theme-exempt
         p.setPen(QPen(QColor("#A0522D"), 0.5))  # theme-exempt
-        p.drawPolygon(QPolygon([QPoint(-3, 5), QPoint(3, 5), QPoint(2, 8), QPoint(-2, 8)]))
+        p.drawPolygon(
+            QPolygon([QPoint(-3, 5), QPoint(3, 5), QPoint(2, 8), QPoint(-2, 8)])
+        )
 
         # Graphite tip — decorative icon-drawing color, not a UI theme value
         p.setBrush(QColor("#444444"))  # theme-exempt
@@ -450,9 +473,24 @@ class MainWindow(QMainWindow):
         self._write_error_label.set_error(Path(path_str), Exception(exc_str))
 
     def _on_feedback_ready(
-        self, response: FeedbackResponse, overlay_image: PilImage.Image | None
+        self,
+        response: FeedbackResponse,
+        overlay_image: PilImage.Image | None,
+        last_frame: CapturedFrame | None,
     ) -> None:
-        self._feedback_panel.show_feedback(response, overlay_image)
+        self._feedback_panel.show_feedback(response, overlay_image, last_frame)
+        self._update_request_dedup_state()
+
+    def _current_frame_hashes(self, mode: str) -> list[str]:
+        frames = self._capture.get_frames()
+        if not frames:
+            return []
+        selected = self._feedback_engine._select_frames(frames, mode)
+        return [hashlib.sha256(frame.image.tobytes()).hexdigest() for frame in selected]
+
+    def _update_request_dedup_state(self) -> None:
+        mode = self._feedback_panel.current_mode()
+        self._feedback_panel.update_request_state(self._current_frame_hashes(mode))
 
     def _on_window_lost(self) -> None:
         self._capture.pause()
@@ -517,11 +555,13 @@ class MainWindow(QMainWindow):
 
     def _switch_session(self, session_dir: Path) -> None:
         self._capture.load_session(session_dir)
+        self._feedback_panel.set_store(FeedbackStore(self._capture.session_dir))
         self._update_window_title()
         self._update_status()
 
     def _new_session(self) -> None:
         self._capture.new_session()
+        self._feedback_panel.set_store(FeedbackStore(self._capture.session_dir))
         self._update_window_title()
         self._update_status()
 
@@ -567,6 +607,7 @@ class MainWindow(QMainWindow):
             mode = self._feedback_panel.current_mode()
         frames = self._capture.get_frames()
         latest_image = frames[-1].image if frames else None
+        last_frame = frames[-1] if frames else None
 
         coach_notes = self._memory_store.summarise()
 
@@ -586,6 +627,7 @@ class MainWindow(QMainWindow):
                             mode=result.mode,
                             text=stripped_text,
                             annotation_json=result.annotation_json,
+                            frame_hashes=result.frame_hashes,
                         )
                 overlay_image = None
                 if mode == "overlay" and result.annotation_json and latest_image:
@@ -596,8 +638,9 @@ class MainWindow(QMainWindow):
                             mode=result.mode,
                             text=result.text + f"\n\n*{err}*",
                             annotation_json=None,
+                            frame_hashes=result.frame_hashes,
                         )
-                self._signals.feedback_ready.emit(result, overlay_image)
+                self._signals.feedback_ready.emit(result, overlay_image, last_frame)
             else:
                 self._signals.feedback_error.emit(result)
 

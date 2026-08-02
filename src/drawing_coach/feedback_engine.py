@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import hashlib
 import io
 import json
 import logging
@@ -196,6 +197,7 @@ class FeedbackResponse:
     annotation_json: str | None = None  # raw JSON string for overlay mode
     observations: list[dict] = field(default_factory=list)
     used_structured_output: bool = False
+    frame_hashes: list[str] = field(default_factory=list)
 
 
 class FeedbackEngine:
@@ -238,10 +240,18 @@ class FeedbackEngine:
             len(frames),
         )
 
+        selected_frames = self._select_frames(frames, mode)
+        frame_hashes = [
+            hashlib.sha256(frame.image.tobytes()).hexdigest()
+            for frame in selected_frames
+        ]
+
         try:
             if not _structured_output_disabled:
                 try:
-                    result = self._call_structured(frames, mode, coach_notes)
+                    result = self._call_structured(
+                        frames, mode, coach_notes, frame_hashes
+                    )
                 except (
                     litellm.exceptions.AuthenticationError,
                     litellm.exceptions.RateLimitError,
@@ -259,9 +269,9 @@ class FeedbackEngine:
                         self.on_structured_output_unavailable(
                             _STRUCTURED_UNAVAILABLE_MESSAGE
                         )
-                    result = self._call_prose(frames, mode, coach_notes)
+                    result = self._call_prose(frames, mode, coach_notes, frame_hashes)
             else:
-                result = self._call_prose(frames, mode, coach_notes)
+                result = self._call_prose(frames, mode, coach_notes, frame_hashes)
 
         except litellm.exceptions.AuthenticationError:
             _log.error("LLM call failed: authentication error")
@@ -294,7 +304,11 @@ class FeedbackEngine:
     # ------------------------------------------------------------------
 
     def _call_structured(
-        self, frames: list[CapturedFrame], mode: str, coach_notes: str
+        self,
+        frames: list[CapturedFrame],
+        mode: str,
+        coach_notes: str,
+        frame_hashes: list[str],
     ) -> FeedbackResponse | str:
         system = self._build_system_prompt(mode, coach_notes, structured=True)
         messages = self._build_messages(system, frames, mode)
@@ -321,9 +335,7 @@ class FeedbackEngine:
 
         annotation_json = None
         if mode == "overlay":
-            annotation_json = json.dumps(
-                {"annotations": parsed.get("annotations", [])}
-            )
+            annotation_json = json.dumps({"annotations": parsed.get("annotations", [])})
 
         return FeedbackResponse(
             mode=mode,
@@ -331,10 +343,15 @@ class FeedbackEngine:
             annotation_json=annotation_json,
             observations=parsed.get("observations", []),
             used_structured_output=True,
+            frame_hashes=frame_hashes,
         )
 
     def _call_prose(
-        self, frames: list[CapturedFrame], mode: str, coach_notes: str
+        self,
+        frames: list[CapturedFrame],
+        mode: str,
+        coach_notes: str,
+        frame_hashes: list[str],
     ) -> FeedbackResponse | str:
         system = self._build_system_prompt(mode, coach_notes, structured=False)
         messages = self._build_messages(system, frames, mode)
@@ -361,7 +378,12 @@ class FeedbackEngine:
             annotation_json = _extract_json_block(text)
             text = _strip_json_block(text)
 
-        return FeedbackResponse(mode=mode, text=text, annotation_json=annotation_json)
+        return FeedbackResponse(
+            mode=mode,
+            text=text,
+            annotation_json=annotation_json,
+            frame_hashes=frame_hashes,
+        )
 
     # ------------------------------------------------------------------
 
@@ -396,21 +418,24 @@ class FeedbackEngine:
             parts.append(coach_notes)
         return "\n\n".join(parts)
 
-    def _build_messages(
-        self, system: str, frames: list[CapturedFrame], mode: str
-    ) -> list[dict[str, object]]:
+    def _select_frames(
+        self, frames: list[CapturedFrame], mode: str
+    ) -> list[CapturedFrame]:
         if mode == "overlay":
             # Annotation coordinates are normalised relative to a single image;
             # sending lookback frames would leave the LLM's coordinates
             # ambiguous about which image they describe.
-            selected = [frames[-1]]
-        else:
-            lookback = max(0, self._config.lookback_frames)
-            # latest frame + up to `lookback` prior frames
-            if lookback == 0:
-                selected = [frames[-1]]
-            else:
-                selected = frames[-(lookback + 1) :]
+            return [frames[-1]]
+        lookback = max(0, self._config.lookback_frames)
+        # latest frame + up to `lookback` prior frames
+        if lookback == 0:
+            return [frames[-1]]
+        return frames[-(lookback + 1) :]
+
+    def _build_messages(
+        self, system: str, frames: list[CapturedFrame], mode: str
+    ) -> list[dict[str, object]]:
+        selected = self._select_frames(frames, mode)
 
         content: list[dict[str, object]] = [
             {"type": "text", "text": "Please review my drawing:"}
