@@ -12,9 +12,9 @@
 
 ## 3. Documentation
 
-- [ ] 3.1 Update `README.md` to mention the memory viewer's row hover-highlight if the README documents the memory viewer's UI at all (developer-facing note, not user-facing changelog).
-- [ ] 3.2 Update `.claude/CLAUDE.md`'s PyQt6 UI Conventions section if this change reveals a reusable convention (e.g. "native `QTreeWidget`/`QListWidget` rows needing OS-palette-derived hover highlight via `::item:hover` stylesheet, computed at construction time") that isn't already captured there.
-- [ ] 3.3 Review `openspec/config.yaml` and propose changes only if this spec reveals a clear, recurring gap in the current rules; otherwise leave it unchanged.
+- [x] 3.1 Update `README.md` to mention the memory viewer's row hover-highlight if the README documents the memory viewer's UI at all (developer-facing note, not user-facing changelog).
+- [x] 3.2 Update `.claude/CLAUDE.md`'s PyQt6 UI Conventions section if this change reveals a reusable convention (e.g. "native `QTreeWidget`/`QListWidget` rows needing OS-palette-derived hover highlight via `::item:hover` stylesheet, computed at construction time") that isn't already captured there.
+- [x] 3.3 Review `openspec/config.yaml` and propose changes only if this spec reveals a clear, recurring gap in the current rules; otherwise leave it unchanged.
 
 ## 4. Final Verification
 
