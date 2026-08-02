@@ -44,4 +44,4 @@
 
 ## 7. Verification
 
-- [ ] 7.1 Run `uv run pytest` and confirm all tests pass
+- [x] 7.1 Run `uv run pytest` and confirm all tests pass
