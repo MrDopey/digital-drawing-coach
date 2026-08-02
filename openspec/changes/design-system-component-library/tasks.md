@@ -1,6 +1,6 @@
 ## 1. Theme Module
 
-- [ ] 1.1 Create `src/drawing_coach/theme.py` with `Theme.overlay` and `Theme.dialog` namespaces, populated with color values copied verbatim from current `setStyleSheet()` call sites (no new colors introduced)
+- [x] 1.1 Create `src/drawing_coach/theme.py` with `Theme.overlay` and `Theme.dialog` namespaces, populated with color values copied verbatim from current `setStyleSheet()` call sites (no new colors introduced)
 - [ ] 1.2 Add shared semantic status tokens (`success`, `danger`, `warning`) to `theme.py`, matching the existing `"green"` / `"red"` / `"orange"` values used in `diagnostics.py` and `settings_dialog.py`
 - [ ] 1.3 Add spacing and font-size tokens to `theme.py` for values currently hardcoded inline (e.g. `padding: 4px 10px`, `font-size: 11px`)
 
