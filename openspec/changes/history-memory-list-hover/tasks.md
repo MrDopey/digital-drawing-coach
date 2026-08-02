@@ -1,8 +1,8 @@
 ## 1. Memory Viewer Hover Highlight
 
-- [ ] 1.1 In `MemoryViewerDialog.__init__` (`src/drawing_coach/memory_viewer.py`), after creating `self._tree`, compute the hover background/text colors from `self.palette()` (`QPalette.ColorRole.Highlight` / `HighlightedText`), same pattern as `_FrameRowWidget._apply_style()` in `history_panel.py`.
-- [ ] 1.2 Apply a `QTreeWidget::item:hover { background: ...; color: ...; }` stylesheet to `self._tree` using those colors, tagged `# theme-exempt` (runtime palette-derived, not a static design-system token).
-- [ ] 1.3 Confirm the rule visibly highlights observation (child) rows without needing changes to the delete button's own styling or to category header rows.
+- [x] 1.1 In `MemoryViewerDialog.__init__` (`src/drawing_coach/memory_viewer.py`), after creating `self._tree`, compute the hover background/text colors from `self.palette()` (`QPalette.ColorRole.Highlight` / `HighlightedText`), same pattern as `_FrameRowWidget._apply_style()` in `history_panel.py`.
+- [x] 1.2 Apply a `QTreeWidget::item:hover { background: ...; color: ...; }` stylesheet to `self._tree` using those colors, tagged `# theme-exempt` (runtime palette-derived, not a static design-system token).
+- [x] 1.3 Confirm the rule visibly highlights observation (child) rows without needing changes to the delete button's own styling or to category header rows.
 
 ## 2. Verification
 
