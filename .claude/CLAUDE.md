@@ -34,5 +34,5 @@ Dialogs must be resizable: content reflows correctly when the user drags the win
 | Config | `ConfigManager` (`config_manager.py`) — single load/save owner; merges `config.json`, `.env`, and env vars with explicit precedence |
 | Secrets | python-dotenv (`.env` in XDG config dir) — API key only; written by `ConfigManager.save()` |
 | Long-term memory | `MemoryStore` (`memory_store.py`) — `memory.json` (raw cross-session drawing observations) and `memory_summaries.json` (their periodic re-summarisation history); this is app data feeding the coaching LLM's prompt, unrelated to and separate from Claude Code's own memory/auto-memory system |
-| Tests | pytest, pytest-qt |
+| Tests | pytest, pytest-qt — on Linux/headless, `pynput` (imported by `hotkey_manager.py`) probes for a real X connection at import time even under `QT_QPA_PLATFORM=offscreen`, so any test importing it (directly or via `main_window.py`) needs a real or virtual display: `xvfb-run -a uv run pytest`. PyQt6 itself is an optional extra (`uv sync --extra gui`), not installed by a bare `uv sync` |
 | Build | hatchling, PyInstaller |

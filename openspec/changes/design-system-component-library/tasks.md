@@ -51,5 +51,5 @@
 
 - [x] 8.1 Update `README.md` from a developer's perspective to document the `theme.py` module, shared component classes, the compliance test, and the one-time `scripts/install_git_hooks.sh` setup step (including that `git commit --no-verify` skips the local hook, and that CI enforces regardless)
 - [x] 8.2 Update `.claude/CLAUDE.md`'s "UI Conventions (PyQt6)" section to reference the design-system module and shared components as the preferred way to style new widgets
-- [ ] 8.3 Review `openspec/config.yaml` for a clear, recurring gap this change reveals in current rules; propose changes only if one is evident (high bar — skip if none)
+- [x] 8.3 Review `openspec/config.yaml` for a clear, recurring gap this change reveals in current rules; propose changes only if one is evident (high bar — skip if none). **Outcome: no changes** — nothing in this change reveals a gap in how proposals/tasks should be *structured* (the existing rules' concern). The one genuine environmental gotcha found (pynput needs a real/virtual X display even under offscreen Qt, PyQt6 is an opt-in extra) is a project fact, not a proposal-authoring rule, so it was added to `.claude/CLAUDE.md`'s Tech Stack table instead
 - [ ] 8.4 Run `uv run pytest` and confirm all tests pass
