@@ -32,3 +32,7 @@ def memory_summaries_path() -> Path:
 
 def debug_log_dir() -> Path:
     return sessions_dir().parent / "debug_logs"
+
+
+def feedback_dir(session_dir: Path) -> Path:
+    return session_dir / "feedback"
