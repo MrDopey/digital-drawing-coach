@@ -118,8 +118,20 @@ The app follows the [XDG Base Directory Specification](https://specifications.fr
 | Sessions | `$XDG_DATA_HOME/drawing-coach/sessions/` → `~/.local/share/drawing-coach/sessions/` |
 | Memory (observations) | `$XDG_DATA_HOME/drawing-coach/memory.json` → `~/.local/share/drawing-coach/memory.json` |
 | Memory (summary history) | `$XDG_DATA_HOME/drawing-coach/memory_summaries.json` → `~/.local/share/drawing-coach/memory_summaries.json` |
+| Debug logs (LLM input/output) | `$XDG_DATA_HOME/drawing-coach/debug_logs/` → `~/.local/share/drawing-coach/debug_logs/` |
 
-On **Windows** the legacy paths are used instead (`~/.drawing-coach/config.json`, `~/.drawing-coach/sessions/`, `~/.drawing-coach/memory.json`, `~/.drawing-coach/memory_summaries.json`).
+On **Windows** the legacy paths are used instead (`~/.drawing-coach/config.json`, `~/.drawing-coach/sessions/`, `~/.drawing-coach/memory.json`, `~/.drawing-coach/memory_summaries.json`, `~/.drawing-coach/debug_logs/`).
+
+### Debug logging of LLM input/output
+
+**Settings → LLM → "Debug logging of LLM input/output"** (off by default) persists the request and response of *every* LLM call the app makes — not just feedback requests, but also the Diagnostics dialog's connectivity check, Settings' "Test Connection" button, and periodic memory re-summarisation. It's implemented as a LiteLLM logging callback, so it covers any call site uniformly, including both `FeedbackEngine`'s structured-output attempt and its prose fallback as two separately labeled entries when a request falls back.
+
+Each call gets its own timestamped subdirectory under `debug_logs/`, named `<timestamp>_<debug_label>` (e.g. `20260802T143022123456_feedback_overlay_structured`), containing:
+- `frame_00.png`, `frame_01.png`, ... — one PNG per image actually sent, in the order sent (only present for feedback calls)
+- `request.txt` — the full text content sent (system + user messages, role-prefixed)
+- `response.txt` — the complete raw response text, **or** `error.txt` if the call failed
+
+This is a manually-enabled diagnostic tool: it is **off by default**, persists raw prompts and drawing screenshots to disk unredacted, and is **not automatically pruned** — remember to periodically delete `debug_logs/` yourself, or disable the setting once you're done debugging.
 
 ### Long-term memory
 

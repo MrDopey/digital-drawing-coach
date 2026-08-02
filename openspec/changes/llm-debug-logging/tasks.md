@@ -34,5 +34,5 @@
 
 ## 6. Documentation
 
-- [ ] 6.1 Document the debug log directory location, per-call subdirectory naming, and that it covers every LLM call site — including both the structured and prose-fallback feedback paths — via a LiteLLM logging callback, in `README.md`
-- [ ] 6.2 Note in `README.md` that the setting is off by default, persists raw prompts/screenshots, and is not auto-pruned
+- [x] 6.1 Document the debug log directory location, per-call subdirectory naming, and that it covers every LLM call site — including both the structured and prose-fallback feedback paths — via a LiteLLM logging callback, in `README.md`
+- [x] 6.2 Note in `README.md` that the setting is off by default, persists raw prompts/screenshots, and is not auto-pruned
