@@ -1,6 +1,6 @@
 ## 1. Backend protocol
 
-- [ ] 1.1 Add `capture_image(window_id: int | str) -> PIL.Image.Image | None` to the `WindowBackend` protocol in `window_manager.py`, and expose it on `WindowManager` as a thin passthrough (mirroring `get_window_rect`)
+- [x] 1.1 Add `capture_image(window_id: int | str) -> PIL.Image.Image | None` to the `WindowBackend` protocol in `window_manager.py`, and expose it on `WindowManager` as a thin passthrough (mirroring `get_window_rect`)
 
 ## 2. macOS backend implementation
 
