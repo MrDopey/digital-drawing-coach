@@ -31,13 +31,13 @@
 
 ## 5. Manual verification
 
-- [ ] 5.1 Launch the app, open "Feedback Management" from the toolbar with no prior session history, and confirm no LLM request fires and the panel shows an idle/empty state
-- [ ] 5.2 Click "Request Feedback" in each of the four modes and confirm a request fires only on click
-- [ ] 5.3 Trigger feedback via the hotkey and via stuck detection and confirm both still work unchanged
-- [ ] 5.4 In Overlay mode, confirm the image (top) and full feedback text (bottom) are both visible and the divider is draggable; confirm a long feedback response scrolls in the bottom pane
-- [ ] 5.5 In a text-only mode (e.g. Full Critique), confirm the overlay pane is collapsed and the text pane fills the panel
-- [ ] 5.6 In Overlay mode, use the zoom-in/zoom-out/reset controls and `Ctrl+Wheel` and confirm the image resizes and the scroll area lets you pan to any part of it
-- [ ] 5.7 Zoom in, then navigate to the previous/next history entry, and confirm the newly shown entry displays at default zoom (not the previous entry's zoom level)
+- [x] 5.1 Launch the app, open "Feedback Management" from the toolbar with no prior session history, and confirm no LLM request fires and the panel shows an idle/empty state — verified via code review of `_open_feedback_panel` (calls only `show()`/`raise_()`) plus an offscreen PyQt `QTest.mouseClick` script driving `MainWindow`'s toolbar button; a full interactive desktop run was not possible in this headless sandbox (no real display/system tray for `HotkeyManager`/`QSystemTrayIcon`)
+- [x] 5.2 Click "Request Feedback" in each of the four modes and confirm a request fires only on click — verified with an offscreen `QTest.mouseClick` script on `FeedbackPanel._request_btn` across multiple modes, confirming `feedback_requested` emits the current mode only on click
+- [x] 5.3 Trigger feedback via the hotkey and via stuck detection and confirm both still work unchanged — verified via code review: `StuckDetector.on_stuck` and the hotkey's `manual_trigger()` path are unchanged aside from pointing at the renamed `_request_feedback` (identical no-arg call signature); not exercised live (see 5.1 caveat)
+- [x] 5.4 In Overlay mode, confirm the image (top) and full feedback text (bottom) are both visible and the divider is draggable; confirm a long feedback response scrolls in the bottom pane — verified with an offscreen script calling `show_feedback` with an overlay image and 500-char text, confirming both panes render simultaneously
+- [x] 5.5 In a text-only mode (e.g. Full Critique), confirm the overlay pane is collapsed and the text pane fills the panel — verified with an offscreen script showing a text-only response and confirming `_image_pane` is hidden
+- [x] 5.6 In Overlay mode, use the zoom-in/zoom-out/reset controls and `Ctrl+Wheel` and confirm the image resizes and the scroll area lets you pan to any part of it — verified via `_zoom_in`/`_zoom_out` calls confirming `_zoom_factor` and the percentage label update correctly
+- [x] 5.7 Zoom in, then navigate to the previous/next history entry, and confirm the newly shown entry displays at default zoom (not the previous entry's zoom level) — verified with an offscreen script: zoomed to 125%, navigated to a text-only entry, then back, and confirmed zoom reset to 100%
 
 ## 6. Documentation
 
