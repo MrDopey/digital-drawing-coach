@@ -18,7 +18,7 @@
 ## 4. MainWindow wiring
 
 - [x] 4.1 Update `MainWindow` to pass `CaptureEngine` (not a snapshot list) when opening `HistoryPanel`
-- [ ] 4.2 Verify the history panel opens correctly from the menu/toolbar action
+- [x] 4.2 Verify the history panel opens correctly from the menu/toolbar action
 
 ## 5. Tests
 
