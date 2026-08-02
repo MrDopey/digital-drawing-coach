@@ -27,7 +27,7 @@ The system SHALL capture a screenshot of the selected drawing window at a user-c
 - **THEN** the system applies the new interval on the next tick without restarting the session
 
 ### Requirement: Session history is persisted to disk
-The system SHALL write each accepted frame immediately to disk so that session history survives application restarts. On startup, when no session has been explicitly selected via the session picker, the system SHALL load the most recent session's frames back into the history view if the session was started within the last 24 hours. `meta.json` SHALL include a `name` field (string); if absent the system derives a display label from `start_time`.
+The system SHALL write each accepted frame immediately to disk so that session history survives application restarts. On startup, when no session has been explicitly selected via the session picker, the system SHALL load the most recent session's frames back into the history view if the session was started within the last 24 hours. `meta.json` SHALL include a `name` field (string); if absent the system derives a display label from `start_time`. The engine SHALL expose a `remove_frame(frame: CapturedFrame)` method that removes a frame from the in-memory buffer without deleting its file from disk. After any buffer mutation the engine SHALL emit a `frames_changed` signal so subscribers (e.g. the history panel) can update.
 
 #### Scenario: Application is restarted mid-session
 - **WHEN** the application is closed and reopened within 24 hours of the last session start
@@ -40,6 +40,14 @@ The system SHALL write each accepted frame immediately to disk so that session h
 #### Scenario: meta.json written with name on session create
 - **WHEN** a new session directory is created
 - **THEN** `meta.json` is written with `start_time` and `name` fields; `name` is the timestamp-derived default label
+
+#### Scenario: Frame removed from buffer via remove_frame
+- **WHEN** `CaptureEngine.remove_frame(frame)` is called with a frame that is in the buffer
+- **THEN** the frame is removed from `_buffer`, its PNG file on disk is NOT deleted, and `frames_changed` is emitted
+
+#### Scenario: frames_changed emitted on new capture
+- **WHEN** a new frame is appended to `_buffer`
+- **THEN** the `frames_changed` signal is emitted
 
 ### Requirement: Session history auto-cleans to retain last N sessions
 The system SHALL delete the oldest session directories on startup until only the configured number of sessions remain (default: 10, range: 1–100). Deletion is permanent with no recycle bin.
