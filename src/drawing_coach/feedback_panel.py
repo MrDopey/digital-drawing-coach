@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from PIL import Image as PilImage
 from PyQt6.QtCore import QPoint, Qt
-from PyQt6.QtGui import QImage, QKeyEvent, QMouseEvent, QPixmap
+from PyQt6.QtGui import QImage, QKeyEvent, QMouseEvent, QPixmap, QResizeEvent
 from PyQt6.QtWidgets import (
     QComboBox,
     QFileDialog,
@@ -249,3 +249,7 @@ class FeedbackPanel(QWidget):
         if event.key() == Qt.Key.Key_Escape:
             self.hide()
         super().keyPressEvent(event)
+
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        super().resizeEvent(event)
+        self._rescale_overlay()
