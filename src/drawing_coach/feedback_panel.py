@@ -97,7 +97,7 @@ class FeedbackPanel(QWidget):
         self._image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._image_label.setScaledContents(False)
         self._stack.addWidget(self._image_label)  # index 1
-        layout.addWidget(self._stack)
+        layout.addWidget(self._stack, 1)
 
         # Overlay save row (shown only in overlay mode)
         self._save_row = QHBoxLayout()
