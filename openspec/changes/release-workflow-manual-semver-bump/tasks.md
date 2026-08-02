@@ -1,11 +1,11 @@
 ## 1. Version source & bump tooling
 
-- [ ] 1.1 Update `scripts/build_version.py` to read the version from `pyproject.toml`'s `[project].version` (via `tomllib`) instead of the `GITHUB_REF_NAME` env var, and write it to `src/drawing_coach/_version.py` as before.
-- [ ] 1.2 Add `scripts/bump_version.py <patch|minor|major>`: parses the current `MAJOR.MINOR.PATCH` from `pyproject.toml`, applies the bump (resetting lower components to `0`), rewrites `pyproject.toml` in place, and prints the new version. Fail fast with a clear error if the current version isn't valid semver.
-- [ ] 1.3 Remove the `GITHUB_REF_NAME`-based version derivation from `scripts/package.sh` and `scripts/package.ps1` now that `build_version.py` is the single place version is resolved; have them just invoke `build_version.py` and read its output (or re-read `pyproject.toml`) for the zip filename.
-- [ ] 1.4 Add/update a unit test covering `bump_version.py`'s patch/minor/major arithmetic (including the reset-lower-components behavior) and its failure on non-semver input.
-- [ ] 1.5 Change `src/drawing_coach/_version.py` from a static `__version__ = "dev"` constant to logic that reads the current version out of `pyproject.toml` (resolved relative to `_version.py`'s own path) and sets `__version__` to `f"{version}-prerelease"`, falling back to the literal `"dev"` if `pyproject.toml` can't be found.
-- [ ] 1.6 Add/update a unit test covering `_version.py`'s new behavior: reads `pyproject.toml` and appends `-prerelease` when present; falls back to `"dev"` when it isn't.
+- [x] 1.1 Update `scripts/build_version.py` to read the version from `pyproject.toml`'s `[project].version` (via `tomllib`) instead of the `GITHUB_REF_NAME` env var, and write it to `src/drawing_coach/_version.py` as before.
+- [x] 1.2 Add `scripts/bump_version.py <patch|minor|major>`: parses the current `MAJOR.MINOR.PATCH` from `pyproject.toml`, applies the bump (resetting lower components to `0`), rewrites `pyproject.toml` in place, and prints the new version. Fail fast with a clear error if the current version isn't valid semver.
+- [x] 1.3 Remove the `GITHUB_REF_NAME`-based version derivation from `scripts/package.sh` and `scripts/package.ps1` now that `build_version.py` is the single place version is resolved; have them just invoke `build_version.py` and read its output (or re-read `pyproject.toml`) for the zip filename.
+- [x] 1.4 Add/update a unit test covering `bump_version.py`'s patch/minor/major arithmetic (including the reset-lower-components behavior) and its failure on non-semver input.
+- [x] 1.5 Change `src/drawing_coach/_version.py` from a static `__version__ = "dev"` constant to logic that reads the current version out of `pyproject.toml` (resolved relative to `_version.py`'s own path) and sets `__version__` to `f"{version}-prerelease"`, falling back to the literal `"dev"` if `pyproject.toml` can't be found.
+- [x] 1.6 Add/update a unit test covering `_version.py`'s new behavior: reads `pyproject.toml` and appends `-prerelease` when present; falls back to `"dev"` when it isn't.
 
 ## 2. Release workflow
 
