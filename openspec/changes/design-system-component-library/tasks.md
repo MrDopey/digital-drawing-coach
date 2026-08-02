@@ -42,8 +42,8 @@
 
 ## 7. Verification
 
-- [ ] 7.1 Grep `src/drawing_coach/` for `setStyleSheet` and hex literals (`#[0-9a-fA-F]{3,6}`); confirm no matches remain outside `theme.py` except explicitly commented runtime-varying exceptions
-- [ ] 7.2 Manually run the app and visually compare the feedback panel, history panel, session picker, settings dialog, and diagnostics dialog against their pre-migration appearance
+- [x] 7.1 Grep `src/drawing_coach/` for `setStyleSheet` and hex literals (`#[0-9a-fA-F]{3,6}`); confirm no matches remain outside `theme.py` except explicitly commented runtime-varying exceptions
+- [x] 7.2 Manually run the app and visually compare the feedback panel, history panel, session picker, settings dialog, and diagnostics dialog against their pre-migration appearance
 - [ ] 7.3 Verify `tests/test_design_system_compliance.py` fails when a hex literal is temporarily reintroduced without the escape-hatch comment, then passes once removed (confirms the check has teeth)
 - [ ] 7.4 After running `scripts/install_git_hooks.sh` locally, verify `git commit` is actually blocked by `hooks/pre-commit` on a violating change, and succeeds once fixed
 
