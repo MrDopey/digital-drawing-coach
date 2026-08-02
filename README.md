@@ -125,7 +125,7 @@ After each feedback response, the coach may record short structured observations
 
 To keep that notes block compact as the store grows, it's periodically condensed by an LLM call every `memory_resummarize_interval` observations (default 20; set to `0` to keep notes raw forever). Each condensation is appended — not overwritten — to a running history in `memory_summaries.json`, capped independently at `memory_summary_history_max` entries (default 200), so you keep a record of how the coach's understanding evolved even though only the most recent summary is ever sent to the LLM.
 
-Both caps and the re-summarisation interval are editable from **Settings → Memory**. Use the **Memory** window (from the main window or tray menu) to review observations grouped by category, delete individual entries, clear everything, or export both memory files to a folder of your choice. The **Progress** window shows recurring themes and a timeline of past sessions.
+Both caps and the re-summarisation interval are editable from **Settings → Memory**. Use the **Memory** window (from the main window's button row) to review observations grouped by category, delete individual entries, clear everything, or export both memory files to a folder of your choice. The **Progress** window shows recurring themes and a timeline of past sessions.
 
 ### .env file
 

@@ -18,7 +18,7 @@
 
 ## 4. Documentation
 
-- [ ] 4.1 Update `README.md` (developer-facing) to reflect the trimmed tray menu and the new "Show Drawing Coach" restore action, if the tray menu is documented there.
-- [ ] 4.2 Update `.claude/CLAUDE.md` if this change implies any plausible update to its UI Conventions or feature description (review only — apply if a clear gap exists).
-- [ ] 4.3 Review `openspec/config.yaml` and propose changes only if this spec reveals a clear, recurring gap in the current rules (high threshold — skip if nothing stands out).
-- [ ] 4.4 Run `uv run pytest` and confirm all tests pass.
+- [x] 4.1 Update `README.md` (developer-facing) to reflect the trimmed tray menu and the new "Show Drawing Coach" restore action, if the tray menu is documented there.
+- [x] 4.2 Update `.claude/CLAUDE.md` if this change implies any plausible update to its UI Conventions or feature description (review only — apply if a clear gap exists).
+- [x] 4.3 Review `openspec/config.yaml` and propose changes only if this spec reveals a clear, recurring gap in the current rules (high threshold — skip if nothing stands out).
+- [x] 4.4 Run `uv run pytest` and confirm all tests pass.
