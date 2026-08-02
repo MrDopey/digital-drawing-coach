@@ -1,5 +1,6 @@
 """Integration test for FeedbackEngine using a mocked LiteLLM response."""
 
+import hashlib
 import json
 import logging
 from unittest.mock import MagicMock, patch
@@ -23,8 +24,8 @@ def _reset_structured_output_flag():
     fe_module._reset_structured_output_state()
 
 
-def _frame() -> CapturedFrame:
-    return CapturedFrame(image=Image.new("RGB", (100, 100)))
+def _frame(color=(0, 0, 0)) -> CapturedFrame:
+    return CapturedFrame(image=Image.new("RGB", (100, 100), color))
 
 
 def _configured_engine() -> FeedbackEngine:
@@ -485,3 +486,73 @@ def test_overlay_structured_and_prose_fallback_render_identically():
     assert structured_err is None
     assert prose_err is None
     assert structured_rendered.tobytes() == prose_rendered.tobytes()
+
+
+# ---------------------------------------------------------------------------
+# frame_hashes
+# ---------------------------------------------------------------------------
+
+
+def test_structured_path_frame_hashes_match_selected_frames():
+    engine = _configured_engine()
+    engine._last_call = 0
+
+    frames = [_frame((10, 10, 10)), _frame((20, 20, 20)), _frame((30, 30, 30))]
+    with patch(
+        "litellm.completion", return_value=_mock_structured_response("Great work!")
+    ):
+        result = engine.request_feedback(frames, mode="full_critique")
+
+    assert isinstance(result, FeedbackResponse)
+    expected = [hashlib.sha256(f.image.tobytes()).hexdigest() for f in frames]
+    assert result.frame_hashes == expected
+
+
+def test_prose_path_frame_hashes_match_selected_frames():
+    fe_module._structured_output_disabled = True
+    engine = _configured_engine()
+    engine._last_call = 0
+
+    frames = [_frame((10, 10, 10)), _frame((20, 20, 20))]
+    with patch("litellm.completion", return_value=_mock_response("ok")):
+        result = engine.request_feedback(frames, mode="full_critique")
+
+    assert isinstance(result, FeedbackResponse)
+    expected = [hashlib.sha256(f.image.tobytes()).hexdigest() for f in frames]
+    assert result.frame_hashes == expected
+
+
+def test_overlay_mode_frame_hashes_contain_single_frame_hash():
+    engine = _configured_engine()
+    engine._last_call = 0
+
+    frames = [_frame((10, 10, 10)), _frame((20, 20, 20)), _frame((30, 30, 30))]
+    with patch(
+        "litellm.completion",
+        return_value=_mock_response('Looks good.\n```json\n{"annotations": []}\n```'),
+    ):
+        result = engine.request_feedback(frames, mode="overlay")
+
+    assert isinstance(result, FeedbackResponse)
+    assert result.frame_hashes == [
+        hashlib.sha256(frames[-1].image.tobytes()).hexdigest()
+    ]
+
+
+def test_lookback_window_frame_hashes_include_multiple_frames():
+    cfg = LLMConfig(model="gpt-4o", lookback_frames=2)
+    engine = FeedbackEngine(cfg)
+    engine._last_call = 0
+
+    frames = [
+        _frame((1, 1, 1)),
+        _frame((2, 2, 2)),
+        _frame((3, 3, 3)),
+        _frame((4, 4, 4)),
+    ]
+    with patch("litellm.completion", return_value=_mock_response("ok")):
+        result = engine.request_feedback(frames, mode="full_critique")
+
+    assert isinstance(result, FeedbackResponse)
+    expected = [hashlib.sha256(f.image.tobytes()).hexdigest() for f in frames[-3:]]
+    assert result.frame_hashes == expected
