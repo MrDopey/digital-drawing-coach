@@ -7,6 +7,7 @@ from PyQt6.QtWidgets import (
     QDialog,
     QFileDialog,
     QHBoxLayout,
+    QHeaderView,
     QLabel,
     QMessageBox,
     QPushButton,
@@ -35,13 +36,19 @@ class MemoryViewerDialog(QDialog):
         layout.addWidget(QLabel("Current coach's notes:"))
         self._notes_view = QTextEdit()
         self._notes_view.setReadOnly(True)
-        self._notes_view.setMaximumHeight(120)
-        layout.addWidget(self._notes_view)
+        layout.addWidget(self._notes_view, 1)
 
         self._tree = QTreeWidget()
         self._tree.setHeaderLabels(["Category / Date", "Note", ""])
         self._tree.setColumnWidth(0, 160)
-        layout.addWidget(self._tree, 1)
+        self._tree.setColumnWidth(2, 70)
+        self._tree.header().setStretchLastSection(False)
+        self._tree.header().setSectionResizeMode(
+            1, QHeaderView.ResizeMode.Stretch
+        )
+        self._tree.setWordWrap(True)
+        self._tree.setUniformRowHeights(False)
+        layout.addWidget(self._tree, 3)
 
         btn_row = QHBoxLayout()
         clear_btn = QPushButton("Clear All Memory")
