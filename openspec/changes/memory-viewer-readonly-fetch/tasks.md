@@ -7,8 +7,8 @@
 
 ## 2. Memory Viewer: use the read-only accessor
 
-- [ ] 2.1 Change `MemoryViewerDialog._refresh()` (`memory_viewer.py`) to call `self._store.current_notes()` instead of `self._store.summarise()`
-- [ ] 2.2 Confirm no other call site in the viewer (delete/clear-all/export) depends on `summarise()`'s side effects
+- [x] 2.1 Change `MemoryViewerDialog._refresh()` (`memory_viewer.py`) to call `self._store.current_notes()` instead of `self._store.summarise()`
+- [x] 2.2 Confirm no other call site in the viewer (delete/clear-all/export) depends on `summarise()`'s side effects
 
 ## 3. Tests
 
