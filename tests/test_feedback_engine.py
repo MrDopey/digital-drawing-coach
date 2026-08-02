@@ -156,6 +156,65 @@ def test_coach_notes_sent_to_llm_in_request():
     assert "Recurring theme: perspective." in system_content
 
 
+def _image_count(messages) -> int:
+    content = messages[1]["content"]
+    return sum(1 for item in content if item.get("type") == "image_url")
+
+
+def test_overlay_mode_sends_only_latest_frame_despite_lookback():
+    cfg = LLMConfig(model="gpt-4o", lookback_frames=2)
+    engine = FeedbackEngine(cfg)
+    engine._last_call = 0
+
+    captured_messages = []
+
+    def _capture(**kwargs):
+        captured_messages.extend(kwargs["messages"])
+        return _mock_response('Looks good.\n```json\n{"annotations": []}\n```')
+
+    frames = [_frame(), _frame(), _frame()]
+    with patch("litellm.completion", side_effect=_capture):
+        engine.request_feedback(frames, mode="overlay")
+
+    assert _image_count(captured_messages) == 1
+
+
+def test_non_overlay_mode_still_sends_lookback_frames():
+    cfg = LLMConfig(model="gpt-4o", lookback_frames=2)
+    engine = FeedbackEngine(cfg)
+    engine._last_call = 0
+
+    captured_messages = []
+
+    def _capture(**kwargs):
+        captured_messages.extend(kwargs["messages"])
+        return _mock_response("ok")
+
+    frames = [_frame(), _frame(), _frame()]
+    with patch("litellm.completion", side_effect=_capture):
+        engine.request_feedback(frames, mode="full_critique")
+
+    assert _image_count(captured_messages) == 3
+
+
+def test_overlay_mode_with_zero_lookback_still_sends_one_frame():
+    cfg = LLMConfig(model="gpt-4o", lookback_frames=0)
+    engine = FeedbackEngine(cfg)
+    engine._last_call = 0
+
+    captured_messages = []
+
+    def _capture(**kwargs):
+        captured_messages.extend(kwargs["messages"])
+        return _mock_response('Looks good.\n```json\n{"annotations": []}\n```')
+
+    frames = [_frame(), _frame()]
+    with patch("litellm.completion", side_effect=_capture):
+        engine.request_feedback(frames, mode="overlay")
+
+    assert _image_count(captured_messages) == 1
+
+
 def test_history_accumulates():
     engine = _configured_engine()
     engine._last_call = 0

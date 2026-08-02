@@ -11,11 +11,11 @@
 
 ## 3. Tests
 
-- [ ] 3.1 Add a test asserting that an overlay-mode request sends exactly one image regardless of `lookback_frames` (e.g. configured to 2 with 3+ frames available)
-- [ ] 3.2 Add/confirm a test asserting non-overlay modes still send `lookback_frames + 1` images (regression guard for existing behavior)
-- [ ] 3.3 Add a test covering `lookback_frames == 0` with `mode == "overlay"` still sends exactly one image (no change from current behavior, but guards the branch)
-- [ ] 3.4 Add a test asserting a label rendered on annotations of each of the supported `_COLOR_MAP` colors (including "white" and "black") always uses the same fixed text/background color pair, regardless of the annotation's own color
-- [ ] 3.5 Add a test asserting the background rectangle is sized to the label's actual text bounding box, not a fixed arbitrary size
+- [x] 3.1 Add a test asserting that an overlay-mode request sends exactly one image regardless of `lookback_frames` (e.g. configured to 2 with 3+ frames available)
+- [x] 3.2 Add/confirm a test asserting non-overlay modes still send `lookback_frames + 1` images (regression guard for existing behavior)
+- [x] 3.3 Add a test covering `lookback_frames == 0` with `mode == "overlay"` still sends exactly one image (no change from current behavior, but guards the branch)
+- [x] 3.4 Add a test asserting a label rendered on annotations of each of the supported `_COLOR_MAP` colors (including "white" and "black") always uses the same fixed text/background color pair, regardless of the annotation's own color
+- [x] 3.5 Add a test asserting the background rectangle is sized to the label's actual text bounding box, not a fixed arbitrary size
 
 ## 4. Documentation
 
