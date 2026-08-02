@@ -2,16 +2,10 @@
 param()
 $ErrorActionPreference = 'Stop'
 
-$Env_Ref = $env:GITHUB_REF_NAME
-if ($Env_Ref) {
-    $Version = $Env_Ref.TrimStart('v')
-} else {
-    $Version = 'dev'
-}
+$BuildOutput = python scripts/build_version.py
+$Version = ($BuildOutput | Select-String -Pattern '^Version set to: (.+)$').Matches.Groups[1].Value
 
 Write-Host "Building Drawing Coach $Version for windows..."
-
-python scripts/build_version.py
 
 pyinstaller --clean --noconfirm drawing_coach.spec
 

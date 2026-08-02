@@ -3,12 +3,9 @@
 set -euo pipefail
 
 PLATFORM="$(uname -s | tr '[:upper:]' '[:lower:]')"
-VERSION="${GITHUB_REF_NAME:-dev}"
-VERSION="${VERSION#v}"   # strip leading 'v'
+VERSION="$(python scripts/build_version.py | sed -n 's/^Version set to: //p')"
 
 echo "Building Drawing Coach ${VERSION} for ${PLATFORM}..."
-
-python scripts/build_version.py
 
 pyinstaller --clean --noconfirm drawing_coach.spec
 

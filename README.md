@@ -295,6 +295,18 @@ This is enforced two ways:
   ```
   This points git at the repo's tracked `hooks/` directory (`git config core.hooksPath hooks`) so `hooks/pre-commit` runs automatically. It can be skipped for a specific commit with `git commit --no-verify` — CI will still catch a violation either way.
 
+## Cutting a Release
+
+The app's version lives in `pyproject.toml`'s `[project] version` field — a plain semver string (`MAJOR.MINOR.PATCH`) that's always a preview of the *next* release. There's nothing to hand-edit before releasing.
+
+To cut a release, dispatch the **Release** workflow from the Actions tab (or `gh workflow run release.yml -f bump=patch`), choosing a `bump` size of `patch`, `minor`, or `major`. The workflow then, in order:
+
+1. Builds the Windows/macOS/Linux binaries embedding the version currently committed in `pyproject.toml`.
+2. Creates a GitHub Release tagged `v<current-version>` with those binaries attached.
+3. Applies the chosen bump to `pyproject.toml` and commits + pushes that change directly to `main`, so `main`'s version once again previews the next release.
+
+Pushing a `v*` tag no longer starts a release on its own — dispatch is the only trigger. Binaries are only distributed as GitHub Release assets; the previous GHCR/OCI (`oras`) publishing has been removed.
+
 ---
 
 ---
