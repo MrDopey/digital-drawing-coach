@@ -205,9 +205,7 @@ class FeedbackPanel(QWidget):
         self._thumb_label.setFixedSize(THUMBNAIL_SIZE, THUMBNAIL_SIZE)
         thumb_pane_layout = QVBoxLayout()
         thumb_pane_layout.addStretch()
-        thumb_pane_layout.addWidget(
-            self._thumb_label, 0, Qt.AlignmentFlag.AlignCenter
-        )
+        thumb_pane_layout.addWidget(self._thumb_label, 0, Qt.AlignmentFlag.AlignCenter)
         self._thumb_caption = MutedLabel(
             "Click to open full image", dim=True, small=True
         )

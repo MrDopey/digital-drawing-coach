@@ -335,9 +335,7 @@ class FeedbackEngine:
 
         annotation_json = None
         if mode == "overlay":
-            annotation_json = json.dumps(
-                {"annotations": parsed.get("annotations", [])}
-            )
+            annotation_json = json.dumps({"annotations": parsed.get("annotations", [])})
 
         return FeedbackResponse(
             mode=mode,

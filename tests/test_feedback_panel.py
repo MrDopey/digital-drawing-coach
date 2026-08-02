@@ -24,6 +24,7 @@ def _overlay_response() -> FeedbackResponse:
 # Default size
 # ---------------------------------------------------------------------------
 
+
 def test_default_size_is_larger_than_old_minimum(qtbot):
     panel = FeedbackPanel()
     qtbot.addWidget(panel)
@@ -35,6 +36,7 @@ def test_default_size_is_larger_than_old_minimum(qtbot):
 # ---------------------------------------------------------------------------
 # Mode selection
 # ---------------------------------------------------------------------------
+
 
 def test_quick_hint_is_selected_by_default(qtbot):
     panel = FeedbackPanel()
@@ -58,6 +60,7 @@ def test_current_mode_reflects_selected_radio_button(qtbot):
 # In-panel trigger button
 # ---------------------------------------------------------------------------
 
+
 def test_request_button_emits_feedback_requested(qtbot):
     panel = FeedbackPanel()
     qtbot.addWidget(panel)
@@ -80,6 +83,7 @@ def test_request_button_without_listener_does_not_raise(qtbot):
 # ---------------------------------------------------------------------------
 # Overlay resizing and zoom
 # ---------------------------------------------------------------------------
+
 
 def test_overlay_image_keeps_zoom_level_on_panel_resize(qtbot):
     panel = FeedbackPanel()
@@ -202,9 +206,7 @@ def test_update_request_state_disables_button_on_match(tmp_path, qtbot):
     panel.update_request_state(["abc"])
 
     assert not panel._request_btn.isEnabled()
-    assert (
-        panel._request_btn.toolTip() == "Already generated for this drawing and mode"
-    )
+    assert panel._request_btn.toolTip() == "Already generated for this drawing and mode"
 
 
 def test_update_request_state_reenables_on_new_frame(tmp_path, qtbot):
@@ -228,9 +230,7 @@ def test_update_request_state_reenables_on_mode_change(tmp_path, qtbot):
     assert not panel._request_btn.isEnabled()
 
     radios = panel.findChildren(QRadioButton)
-    other_mode = next(
-        r for r in radios if r.property("mode_key") == "full_critique"
-    )
+    other_mode = next(r for r in radios if r.property("mode_key") == "full_critique")
     other_mode.setChecked(True)
     panel.update_request_state(["abc"])
 

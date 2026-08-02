@@ -8,7 +8,16 @@ from pathlib import Path
 import litellm
 from PIL import Image as PilImage
 from PyQt6.QtCore import QObject, QPoint, Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import QAction, QCloseEvent, QColor, QIcon, QPainter, QPen, QPixmap, QPolygon
+from PyQt6.QtGui import (
+    QAction,
+    QCloseEvent,
+    QColor,
+    QIcon,
+    QPainter,
+    QPen,
+    QPixmap,
+    QPolygon,
+)
 from PyQt6.QtWidgets import (
     QApplication,
     QComboBox,
@@ -44,7 +53,11 @@ from drawing_coach.memory_store import MemoryStore
 from drawing_coach.memory_viewer import MemoryViewerDialog
 from drawing_coach.overlay_renderer import render as render_overlay
 from drawing_coach.progress_panel import ProgressPanel
-from drawing_coach.session_manager import list_sessions, read_session_name, write_session_name
+from drawing_coach.session_manager import (
+    list_sessions,
+    read_session_name,
+    write_session_name,
+)
 from drawing_coach.settings_dialog import SettingsDialog
 from drawing_coach.stuck_detector import StuckDetector
 from drawing_coach.theme import Theme
@@ -352,9 +365,7 @@ class MainWindow(QMainWindow):
         self._tray.activated.connect(self._on_tray_activated)
         self._tray.show()
 
-    def _on_tray_activated(
-        self, reason: QSystemTrayIcon.ActivationReason
-    ) -> None:
+    def _on_tray_activated(self, reason: QSystemTrayIcon.ActivationReason) -> None:
         if reason == QSystemTrayIcon.ActivationReason.DoubleClick:
             self._restore_main_window()
 
@@ -387,7 +398,9 @@ class MainWindow(QMainWindow):
         # Wood taper — decorative icon-drawing color, not a UI theme value
         p.setBrush(QColor("#DEB887"))  # theme-exempt
         p.setPen(QPen(QColor("#A0522D"), 0.5))  # theme-exempt
-        p.drawPolygon(QPolygon([QPoint(-3, 5), QPoint(3, 5), QPoint(2, 8), QPoint(-2, 8)]))
+        p.drawPolygon(
+            QPolygon([QPoint(-3, 5), QPoint(3, 5), QPoint(2, 8), QPoint(-2, 8)])
+        )
 
         # Graphite tip — decorative icon-drawing color, not a UI theme value
         p.setBrush(QColor("#444444"))  # theme-exempt

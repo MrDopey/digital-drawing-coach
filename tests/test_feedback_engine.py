@@ -326,9 +326,7 @@ def test_structured_output_invalid_json_falls_back(caplog):
     assert result.used_structured_output is False
     assert call_count["n"] == 2
     assert fe_module._structured_output_disabled is True
-    assert any(
-        "Structured output unavailable" in rec.message for rec in caplog.records
-    )
+    assert any("Structured output unavailable" in rec.message for rec in caplog.records)
 
 
 def test_structured_output_skipped_when_already_disabled():
