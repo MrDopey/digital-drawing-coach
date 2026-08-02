@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import logging
 import sys
 from typing import Callable
 
 from pynput import keyboard
+
+_log = logging.getLogger("drawing_coach.hotkey_manager")
 
 
 def _patch_macos_keycode_context() -> None:
@@ -34,6 +37,23 @@ def _patch_macos_keycode_context() -> None:
         self._context = _DarwinListener._main_thread_keycode_context
         try:
             super(_DarwinListener, self)._run()
+        except Exception:
+            # A mismatch between the installed pyobjc-core and
+            # pyobjc-framework-* versions makes objc's lazy symbol lookup
+            # raise KeyError (e.g. for HIServices.AXIsProcessTrusted)
+            # instead of resolving the accessibility-trust check. That
+            # would otherwise surface as an uncaught exception dump on
+            # this background thread with no indication of the cause.
+            _log.error(
+                "Global hotkey listener failed to start, likely due to "
+                "mismatched pyobjc package versions. Reinstall matching "
+                "versions with: pip install -U --force-reinstall "
+                "pyobjc-core pyobjc-framework-Quartz pyobjc-framework-Cocoa "
+                "pyobjc-framework-ApplicationServices. The hotkey is "
+                "disabled for this session.",
+                exc_info=True,
+            )
+            self._mark_ready()
         finally:
             self._context = None
 

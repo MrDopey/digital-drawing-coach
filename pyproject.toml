@@ -20,7 +20,8 @@ gui = ["PyQt6>=6.6", "pynput>=1.7"]
 windows = ["pywin32>=306 ; sys_platform == 'win32'"]
 macos = [
     "pyobjc-framework-Quartz>=9.0 ; sys_platform == 'darwin'",
-    "pyobjc-framework-AppKit>=9.0 ; sys_platform == 'darwin'",
+    "pyobjc-framework-Cocoa>=9.0 ; sys_platform == 'darwin'",
+    "pyobjc-framework-ApplicationServices>=9.0 ; sys_platform == 'darwin'",
 ]
 
 [dependency-groups]
