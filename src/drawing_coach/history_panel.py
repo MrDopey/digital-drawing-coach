@@ -77,23 +77,14 @@ class _FrameRowWidget(QWidget):
         self._is_hovered = False
         self._is_lookback = False
 
-        self.installEventFilter(self)
-
-    def eventFilter(self, obj, event):  # noqa: N802 - Qt override
-        if obj is self:
-            if event.type() == QEvent.Type.Enter:
-                self.delete_button.setVisible(True)
-                self._is_hovered = True
-                self._apply_style()
-            elif event.type() == QEvent.Type.Leave:
-                self.delete_button.setVisible(False)
-                self._is_hovered = False
-                self._apply_style()
-        return super().eventFilter(obj, event)
-
     def mouseDoubleClickEvent(self, event) -> None:  # noqa: N802 - Qt override
         self._on_open(self._frame)
         super().mouseDoubleClickEvent(event)
+
+    def set_hovered(self, hovered: bool) -> None:
+        self.delete_button.setVisible(hovered)
+        self._is_hovered = hovered
+        self._apply_style()
 
     def set_highlighted(self, highlighted: bool) -> None:
         self._is_lookback = highlighted
@@ -137,6 +128,14 @@ class HistoryPanel(QDialog):
 
         self._list_widget = QListWidget()
         self._list_widget.setIconSize(QSize(48, 48))
+        # Row hover is driven by the viewport's own mouse-move tracking rather
+        # than Enter/Leave events on the embedded row widget — Enter/Leave
+        # delivery to a setItemWidget() child is unreliable on macOS (the
+        # viewport intercepts hover crossings for hit-testing first).
+        self._list_widget.setMouseTracking(True)
+        self._list_widget.viewport().setMouseTracking(True)
+        self._list_widget.viewport().installEventFilter(self)
+        self._hovered_row: _FrameRowWidget | None = None
         layout.addWidget(self._list_widget, 1)
 
         self._hint_label = QLabel(
@@ -155,7 +154,29 @@ class HistoryPanel(QDialog):
         self._engine.frames_changed.connect(self._render)
         self._render()
 
+    def eventFilter(self, obj, event):  # noqa: N802 - Qt override
+        if obj is self._list_widget.viewport():
+            if event.type() == QEvent.Type.MouseMove:
+                item = self._list_widget.itemAt(event.pos())
+                widget = self._list_widget.itemWidget(item) if item is not None else None
+                self._set_hovered_row(
+                    widget if isinstance(widget, _FrameRowWidget) else None
+                )
+            elif event.type() == QEvent.Type.Leave:
+                self._set_hovered_row(None)
+        return super().eventFilter(obj, event)
+
+    def _set_hovered_row(self, widget: _FrameRowWidget | None) -> None:
+        if widget is self._hovered_row:
+            return
+        if self._hovered_row is not None:
+            self._hovered_row.set_hovered(False)
+        self._hovered_row = widget
+        if widget is not None:
+            widget.set_hovered(True)
+
     def _render(self) -> None:
+        self._hovered_row = None
         self._list_widget.clear()
         frames = self._engine.get_frames()
 

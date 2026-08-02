@@ -6,8 +6,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from PIL import Image
-from PyQt6.QtCore import QEvent, Qt
-from PyQt6.QtGui import QColor, QPalette
+from PyQt6.QtCore import QEvent, QPointF, Qt
+from PyQt6.QtGui import QColor, QMouseEvent, QPalette
 from PyQt6.QtWidgets import QApplication
 
 from drawing_coach.capture_engine import CapturedFrame, CaptureEngine
@@ -138,10 +138,10 @@ def test_delete_button_visible_on_hover_and_hidden_on_leave(qtbot):
 
     row_widget = panel._list_widget.itemWidget(panel._list_widget.item(0))
 
-    row_widget.eventFilter(row_widget, QEvent(QEvent.Type.Enter))
+    row_widget.set_hovered(True)
     assert row_widget.delete_button.isVisible() is True
 
-    row_widget.eventFilter(row_widget, QEvent(QEvent.Type.Leave))
+    row_widget.set_hovered(False)
     assert row_widget.delete_button.isVisible() is False
 
 
@@ -227,11 +227,53 @@ def test_row_background_highlighted_on_hover_and_cleared_on_leave(qtbot):
     row_widget = panel._list_widget.itemWidget(panel._list_widget.item(0))
     assert "background" not in row_widget.styleSheet()
 
-    row_widget.eventFilter(row_widget, QEvent(QEvent.Type.Enter))
+    row_widget.set_hovered(True)
     assert "background" in row_widget.styleSheet()
 
-    row_widget.eventFilter(row_widget, QEvent(QEvent.Type.Leave))
+    row_widget.set_hovered(False)
     assert "background" not in row_widget.styleSheet()
+
+
+def test_mouse_move_over_viewport_drives_row_hover(qtbot):
+    # Regression: hover was previously driven by Enter/Leave events delivered
+    # directly to the row widget embedded via setItemWidget(), which is
+    # unreliable on macOS. This sends real QMouseEvents through the viewport's
+    # eventFilter (the actual code path a mouse move dispatches through)
+    # rather than calling the widget's hover hook directly, so a delivery
+    # regression like that would be caught here. QTest/qtbot's mouseMove
+    # warps the real OS cursor, which isn't reliable under Xvfb/offscreen —
+    # constructing the QMouseEvent directly keeps this deterministic.
+    older = _frame("2024-01-01T10:00:00")
+    newer = _frame("2024-01-01T10:05:00")
+    engine = _make_engine(older, newer)
+    panel = HistoryPanel(engine, LLMConfig())
+    qtbot.addWidget(panel)
+    panel.show()
+
+    lw = panel._list_widget
+    first_row = lw.itemWidget(lw.item(0))
+    second_row = lw.itemWidget(lw.item(1))
+
+    def _move_to(pos):
+        event = QMouseEvent(
+            QEvent.Type.MouseMove,
+            QPointF(pos),
+            Qt.MouseButton.NoButton,
+            Qt.MouseButton.NoButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        QApplication.sendEvent(lw.viewport(), event)
+
+    _move_to(lw.visualItemRect(lw.item(0)).center())
+    assert first_row.delete_button.isVisible() is True
+    assert second_row.delete_button.isVisible() is False
+
+    _move_to(lw.visualItemRect(lw.item(1)).center())
+    assert first_row.delete_button.isVisible() is False
+    assert second_row.delete_button.isVisible() is True
+
+    QApplication.sendEvent(lw.viewport(), QEvent(QEvent.Type.Leave))
+    assert second_row.delete_button.isVisible() is False
 
 
 def test_hover_text_color_contrasts_with_hover_background_on_dark_theme(qtbot):
@@ -248,7 +290,7 @@ def test_hover_text_color_contrasts_with_hover_background_on_dark_theme(qtbot):
         panel.show()
 
         row_widget = panel._list_widget.itemWidget(panel._list_widget.item(0))
-        row_widget.eventFilter(row_widget, QEvent(QEvent.Type.Enter))
+        row_widget.set_hovered(True)
 
         style = row_widget.styleSheet()
         background = row_widget.palette().color(QPalette.ColorRole.Highlight).name()
@@ -275,10 +317,10 @@ def test_lookback_border_survives_hover_enter_and_leave(qtbot):
     row_widget = panel._list_widget.itemWidget(panel._list_widget.item(0))
     assert Theme.dialog.lookback_border in row_widget.styleSheet()
 
-    row_widget.eventFilter(row_widget, QEvent(QEvent.Type.Enter))
+    row_widget.set_hovered(True)
     assert Theme.dialog.lookback_border in row_widget.styleSheet()
     assert "background" in row_widget.styleSheet()
 
-    row_widget.eventFilter(row_widget, QEvent(QEvent.Type.Leave))
+    row_widget.set_hovered(False)
     assert Theme.dialog.lookback_border in row_widget.styleSheet()
     assert "background" not in row_widget.styleSheet()
