@@ -24,7 +24,8 @@ Dialogs must be resizable: content reflows correctly when the user drags the win
 | Language | Python 3.11+ |
 | GUI | PyQt6, pynput |
 | LLM | LiteLLM (supports OpenAI, Anthropic, Ollama, etc.) |
-| Image processing | Pillow, mss, numpy |
+| Image processing | Pillow, mss (Windows/Linux window capture), numpy |
+| Window capture | `WindowBackend.capture_image()` (`window_manager.py`) — Windows/Linux use `mss.grab()` on the window rect; **macOS uses direct CoreGraphics** (`_backend_macos.py`, `CGWindowListCreateImage` scoped to the window ID) instead of `mss`, because `mss`'s macOS backend captures a screen *region* (compositing whatever else is on-screen there) rather than one window's content |
 | Config | `ConfigManager` (`config_manager.py`) — single load/save owner; merges `config.json`, `.env`, and env vars with explicit precedence |
 | Secrets | python-dotenv (`.env` in XDG config dir) — API key only; written by `ConfigManager.save()` |
 | Long-term memory | `MemoryStore` (`memory_store.py`) — `memory.json` (raw cross-session drawing observations) and `memory_summaries.json` (their periodic re-summarisation history); this is app data feeding the coaching LLM's prompt, unrelated to and separate from Claude Code's own memory/auto-memory system |

@@ -28,9 +28,9 @@
 
 ## 6. Documentation
 
-- [ ] 6.1 Update README.md with a developer-facing note that macOS window capture uses a direct CoreGraphics window-ID capture (not a screen-region grab), and why
-- [ ] 6.2 Update `.claude/CLAUDE.md` — add `MacOSBackend.capture_image` and its CoreGraphics/window-ID-scoped approach to the notes on the capture backend, if the memory/context notes there describe capture mechanics
-- [ ] 6.3 Review `openspec/config.yaml` for a recurring gap this spec reveals (e.g. platform-specific behavior requirements); propose changes only if a clear, recurring gap exists — high threshold, since this governs all future specs
+- [x] 6.1 Update README.md with a developer-facing note that macOS window capture uses a direct CoreGraphics window-ID capture (not a screen-region grab), and why
+- [x] 6.2 Update `.claude/CLAUDE.md` — add `MacOSBackend.capture_image` and its CoreGraphics/window-ID-scoped approach to the notes on the capture backend, if the memory/context notes there describe capture mechanics
+- [x] 6.3 Review `openspec/config.yaml` for a recurring gap this spec reveals (e.g. platform-specific behavior requirements); propose changes only if a clear, recurring gap exists — high threshold, since this governs all future specs — reviewed, no recurring gap evident, no change made
 
 ## 7. Verification
 
