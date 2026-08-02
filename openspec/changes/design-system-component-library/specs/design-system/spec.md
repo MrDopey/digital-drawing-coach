@@ -16,7 +16,7 @@ The system SHALL provide a single `theme` module exposing named color, spacing, 
 - **THEN** it SHALL reference the shared `success`, `danger`, or `warning` token rather than hardcoding `"green"`, `"red"`, or `"orange"`
 
 ### Requirement: Reusable styled widget components
-The system SHALL provide a small set of reusable widget classes — at minimum `Card`, `PillBadge`, `SectionHeader`, and `PrimaryButton` — that encapsulate their own styling internally, sourced from the `theme` module, so that callers compose them without writing their own `setStyleSheet()` calls or hex literals.
+The system SHALL provide a small set of reusable widget classes — at minimum `Card`, `PillBadge`, `SectionHeader`, and `PrimaryButton` — that encapsulate their own styling internally, sourced from the `theme` module, so that callers compose them without writing their own `setStyleSheet()` calls or hex literals. Additional narrowly-scoped components MAY be added (e.g. `MutedLabel` for recurring secondary-text coloring, `IconButton` for small fixed-size icon-only buttons) when an existing call site's pattern doesn't fit any of the four named components and doesn't warrant a one-off exemption.
 
 #### Scenario: A panel needs a bordered container
 - **WHEN** a panel needs a visually distinct bordered/background container (e.g. a card-like grouping of controls)

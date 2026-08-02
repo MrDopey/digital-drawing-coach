@@ -7,7 +7,7 @@ so a token change in `theme.py` propagates to every call site automatically.
 from __future__ import annotations
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QFrame, QWidget
+from PyQt6.QtWidgets import QFrame, QLabel, QWidget
 
 from drawing_coach.theme import Theme
 
@@ -50,3 +50,60 @@ class Card(QFrame):
         if self._radius:
             rules.append(f"border-radius: {self._radius};")
         self.setStyleSheet(f"{type(self).__name__} {{ {' '.join(rules)} }}")
+
+
+class PillBadge(QLabel):
+    """A label whose text color reflects a semantic status. Covers both the
+    success/danger/warning check-result pattern (diagnostics, settings) and
+    one-off status colors that don't fit the three named variants (`color=`)."""
+
+    _VARIANTS = {
+        "success": Theme.success,
+        "danger": Theme.danger,
+        "warning": Theme.warning,
+        "neutral": "",
+    }
+
+    def __init__(
+        self,
+        text: str = "",
+        parent: QWidget | None = None,
+        *,
+        variant: str = "neutral",
+        color: str | None = None,
+    ) -> None:
+        super().__init__(text, parent)
+        if color is not None:
+            self.set_color(color)
+        else:
+            self.set_variant(variant)
+
+    def set_variant(self, variant: str) -> None:
+        self.set_color(self._VARIANTS.get(variant, ""))
+
+    def set_color(self, color: str | None) -> None:
+        self.setStyleSheet(f"color: {color};" if color else "")
+
+
+class MutedLabel(QLabel):
+    """Secondary/muted text label. `dim=True` selects the overlay's slightly
+    lighter muted variant; `small=True` adds the app's small font size;
+    `extra_style` appends any additional QSS a specific call site needs."""
+
+    def __init__(
+        self,
+        text: str = "",
+        parent: QWidget | None = None,
+        *,
+        dim: bool = False,
+        small: bool = False,
+        extra_style: str = "",
+    ) -> None:
+        super().__init__(text, parent)
+        color = Theme.overlay.muted_text_dim if dim else Theme.muted_text
+        style = f"color: {color};"
+        if small:
+            style += f" font-size: {Theme.font_size_small};"
+        if extra_style:
+            style += " " + extra_style
+        self.setStyleSheet(style)
