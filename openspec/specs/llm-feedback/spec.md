@@ -4,7 +4,7 @@
 TBD - created by archiving change digital-drawing-coach. Update Purpose after archive.
 ## Requirements
 ### Requirement: Send drawing screenshot to LLM for feedback
-The system SHALL send the most recent screenshot and a configurable number of prior history frames (default: 2, range: 0–10, set in LLM settings) to the configured vision LLM and return structured drawing feedback. Images SHALL be encoded as base64 and sent via the LiteLLM `completion()` API.
+The system SHALL send the most recent screenshot and a configurable number of prior history frames (default: 2, range: 0–10, set in LLM settings) to the configured vision LLM and return structured drawing feedback. Images SHALL be encoded as base64 and sent via the LiteLLM `completion()` API. When the feedback mode is `overlay`, the system SHALL send only the single most recent screenshot, ignoring the configured look-back count, so that annotation coordinates returned by the LLM are unambiguously relative to the one image the app will render them onto.
 
 #### Scenario: Feedback is triggered with a captured screenshot
 - **WHEN** a feedback request is triggered (automatic or manual) and at least one screenshot is in the buffer
@@ -25,6 +25,10 @@ The system SHALL send the most recent screenshot and a configurable number of pr
 #### Scenario: Look-back count exceeds available history
 - **WHEN** the look-back count is greater than the number of stored frames
 - **THEN** the system sends all available frames without error
+
+#### Scenario: Overlay mode ignores the configured look-back count
+- **WHEN** a feedback request is triggered with mode `overlay` and the configured look-back count is greater than 0
+- **THEN** the system sends only the single most recent screenshot to the LLM, not any prior history frames
 
 ### Requirement: LLM feedback uses art-coaching persona
 The system SHALL include a system prompt that establishes the LLM as a knowledgeable digital art coach with expertise in perspective, anatomy, color theory, and technique. The persona SHALL remain consistent across all feedback modes. When a non-empty coach's notes block is provided (from the memory store), it SHALL be appended to the *end* of the system prompt, after the base persona, style fragment, custom instructions, and mode template, so that stable prefix is unaffected by per-session note changes and remains eligible for provider-side prompt caching. The system prompt SHALL also instruct the LLM to optionally append a `<!-- observations: [...] -->` HTML comment containing a JSON array of `{category, note}` objects derived from the current response, to enable future memory accumulation.
