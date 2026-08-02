@@ -52,6 +52,10 @@ The system SHALL display feedback in a panel titled "Feedback Management" that d
 - **WHEN** the feedback panel is first shown
 - **THEN** its default size SHALL be large enough to read a Full Critique response or view an overlay image without the user manually resizing the window first
 
+#### Scenario: Overlay image keeps its zoom level when the panel is resized
+- **WHEN** an overlay image is currently displayed at a given zoom level and the user resizes the feedback panel or drags the overlay/feedback splitter
+- **THEN** the image SHALL keep rendering at its current zoom level (per the overlay-feedback spec) rather than being automatically rescaled to fit the new pane size; the overlay section's scrollbars adjust to show as much of the image as now fits
+
 #### Scenario: Long feedback text is scrollable
 - **WHEN** a feedback response's text is longer than the visible height of the feedback text area
 - **THEN** the text area SHALL show a scrollbar allowing the user to scroll through and read the full response
