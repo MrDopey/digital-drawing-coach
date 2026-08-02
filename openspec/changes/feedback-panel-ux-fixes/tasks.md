@@ -7,27 +7,27 @@
 
 ## 2. In-panel request trigger
 
-- [ ] 2.1 In `feedback_panel.py`, add a `feedback_requested = pyqtSignal(str)` signal to `FeedbackPanel`
-- [ ] 2.2 Add a "Request Feedback" `QPushButton` to the mode row (`feedback_panel.py:74-81`), connected to emit `feedback_requested` with `self.current_mode()`
-- [ ] 2.3 In `main_window.py`, connect `self._feedback_panel.feedback_requested` to `_request_feedback`
-- [ ] 2.4 Rename the panel's window title (`feedback_panel.py:43`) and title-bar label (`feedback_panel.py:63`) from "Drawing Coach — Feedback" / "Drawing Coach" to "Feedback Management"
+- [x] 2.1 In `feedback_panel.py`, add a `feedback_requested = pyqtSignal(str)` signal to `FeedbackPanel`
+- [x] 2.2 Add a "Request Feedback" `QPushButton` to the mode row (`feedback_panel.py:74-81`), connected to emit `feedback_requested` with `self.current_mode()`
+- [x] 2.3 In `main_window.py`, connect `self._feedback_panel.feedback_requested` to `_request_feedback`
+- [x] 2.4 Rename the panel's window title (`feedback_panel.py:43`) and title-bar label (`feedback_panel.py:63`) from "Drawing Coach — Feedback" / "Drawing Coach" to "Feedback Management"
 
 ## 3. Resizable overlay/feedback split view
 
-- [ ] 3.1 Replace the `QStackedWidget` (`feedback_panel.py:90-99`) with a `QSplitter(Qt.Orientation.Vertical)` containing a top pane (overlay image) and a bottom pane (`self._text_edit`)
-- [ ] 3.2 Wrap `self._image_label` in a `QScrollArea` (`setWidgetResizable=True`) as the splitter's top pane
-- [ ] 3.3 Update `_render_current` (`feedback_panel.py:177-212`) to show/hide the top pane based on whether the current history entry has an overlay image, instead of switching `QStackedWidget` index
-- [ ] 3.4 When an overlay image is present, always populate `self._text_edit` with the full `resp.text` (remove the 120-character `_overlay_notice` truncation at `feedback_panel.py:103-104, 202-207`)
-- [ ] 3.5 Render the overlay pixmap at native/full resolution inside the scroll area instead of downscaling with `pixmap.scaled(...)` (`feedback_panel.py:192-199`) to fit the pane
-- [ ] 3.6 Set sensible default splitter proportions (e.g. ~60/40 image/text) when an overlay is shown
+- [x] 3.1 Replace the `QStackedWidget` (`feedback_panel.py:90-99`) with a `QSplitter(Qt.Orientation.Vertical)` containing a top pane (overlay image) and a bottom pane (`self._text_edit`)
+- [x] 3.2 Wrap `self._image_label` in a `QScrollArea` (`setWidgetResizable=True`) as the splitter's top pane
+- [x] 3.3 Update `_render_current` (`feedback_panel.py:177-212`) to show/hide the top pane based on whether the current history entry has an overlay image, instead of switching `QStackedWidget` index
+- [x] 3.4 When an overlay image is present, always populate `self._text_edit` with the full `resp.text` (remove the 120-character `_overlay_notice` truncation at `feedback_panel.py:103-104, 202-207`)
+- [x] 3.5 Render the overlay pixmap at native/full resolution inside the scroll area instead of downscaling with `pixmap.scaled(...)` (`feedback_panel.py:192-199`) to fit the pane
+- [x] 3.6 Set sensible default splitter proportions (e.g. ~60/40 image/text) when an overlay is shown
 
 ## 4. Zoom controls for the overlay image
 
-- [ ] 4.1 Add `self._zoom_factor: float = 1.0` to `FeedbackPanel.__init__`
-- [ ] 4.2 Add a zoom control row (`QHBoxLayout` with "−" / "Reset" / "+" `QPushButton`s and a percentage `QLabel`) above the image scroll area
-- [ ] 4.3 Implement `_zoom_in`/`_zoom_out` (multiply/divide `_zoom_factor` by `1.25`, clamped to `0.25`–`4.0`) and `_zoom_reset` (`_zoom_factor = 1.0`), each re-rendering `self._image_label`'s pixmap from the stored PIL image at `native_size * _zoom_factor` and updating the percentage label
-- [ ] 4.4 Add `Ctrl+Wheel` handling (`wheelEvent` override, scoped to the image scroll area) that calls `_zoom_in`/`_zoom_out` per notch when `Qt.KeyboardModifier.ControlModifier` is held
-- [ ] 4.5 Reset `_zoom_factor` to `1.0` and re-render at default zoom whenever `_show_prev`/`_show_next` changes `self._history_idx`
+- [x] 4.1 Add `self._zoom_factor: float = 1.0` to `FeedbackPanel.__init__`
+- [x] 4.2 Add a zoom control row (`QHBoxLayout` with "−" / "Reset" / "+" `QPushButton`s and a percentage `QLabel`) above the image scroll area
+- [x] 4.3 Implement `_zoom_in`/`_zoom_out` (multiply/divide `_zoom_factor` by `1.25`, clamped to `0.25`–`4.0`) and `_zoom_reset` (`_zoom_factor = 1.0`), each re-rendering `self._image_label`'s pixmap from the stored PIL image at `native_size * _zoom_factor` and updating the percentage label
+- [x] 4.4 Add `Ctrl+Wheel` handling (`wheelEvent` override, scoped to the image scroll area) that calls `_zoom_in`/`_zoom_out` per notch when `Qt.KeyboardModifier.ControlModifier` is held
+- [x] 4.5 Reset `_zoom_factor` to `1.0` and re-render at default zoom whenever `_show_prev`/`_show_next` changes `self._history_idx`
 
 ## 5. Manual verification
 
