@@ -1,7 +1,7 @@
 ## 1. Config plumbing
 
-- [ ] 1.1 Add `debug_log_llm_io: bool = False` to `LLMConfig` in `llm_config.py`
-- [ ] 1.2 Add `debug_log_dir() -> Path` to `paths.py`, returning `sessions_dir().parent / "debug_logs"`
+- [x] 1.1 Add `debug_log_llm_io: bool = False` to `LLMConfig` in `llm_config.py`
+- [x] 1.2 Add `debug_log_dir() -> Path` to `paths.py`, returning `sessions_dir().parent / "debug_logs"`
 
 ## 2. Settings UI
 
