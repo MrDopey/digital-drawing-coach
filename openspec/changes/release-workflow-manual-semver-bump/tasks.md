@@ -9,15 +9,15 @@
 
 ## 2. Release workflow
 
-- [ ] 2.1 Change `.github/workflows/release.yml`'s trigger from `push: tags: ["v*"]` to `workflow_dispatch` with a required `bump` input (`type: choice`, options `patch`/`minor`/`major`).
-- [ ] 2.2 Add `concurrency: group: release, cancel-in-progress: false` at the workflow level so concurrent dispatches queue instead of racing on the version bump/commit.
-- [ ] 2.3 Update the `build-binaries` matrix job so each platform build reads the current `pyproject.toml` version (via task 1.1's updated `build_version.py`) rather than relying on a tag.
-- [ ] 2.4 Update `create-release` to compute `v<current-version>` from `pyproject.toml` and determine the previous release's tag/date (if any) via `gh release view --json tagName,createdAt` (or equivalent).
-- [ ] 2.5 Before creating the release, check for merged PRs since the previous release (`gh pr list --state merged --search "merged:>=<prev-release-date>" --json number --jq 'length'`, or since repo creation if there's no previous release). If the count is `> 0`, run `gh release create "v<current-version>" artifacts/*.zip --generate-notes`. Otherwise, build a notes file from `git log <prev-tag>..HEAD --pretty=format:"- %s (%h)"` (full history if no previous tag) and run `gh release create "v<current-version>" artifacts/*.zip --notes-file <file>`. Both paths authenticate via `env: GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}` and replace the `softprops/action-gh-release` step — no third-party action for this step.
-- [ ] 2.6 Remove the `publish-packages` job entirely, including the `oras-project/setup-oras` step and the GHCR login/push steps.
-- [ ] 2.7 Add a `bump-version` job (`needs: create-release`) that checks out `main`, runs `scripts/bump_version.py ${{ inputs.bump }}`, and commits + pushes the resulting `pyproject.toml` change directly to `main` using the workflow's own `GITHUB_TOKEN` (no third-party commit action).
+- [x] 2.1 Change `.github/workflows/release.yml`'s trigger from `push: tags: ["v*"]` to `workflow_dispatch` with a required `bump` input (`type: choice`, options `patch`/`minor`/`major`).
+- [x] 2.2 Add `concurrency: group: release, cancel-in-progress: false` at the workflow level so concurrent dispatches queue instead of racing on the version bump/commit.
+- [x] 2.3 Update the `build-binaries` matrix job so each platform build reads the current `pyproject.toml` version (via task 1.1's updated `build_version.py`) rather than relying on a tag.
+- [x] 2.4 Update `create-release` to compute `v<current-version>` from `pyproject.toml` and determine the previous release's tag/date (if any) via `gh release view --json tagName,createdAt` (or equivalent).
+- [x] 2.5 Before creating the release, check for merged PRs since the previous release (`gh pr list --state merged --search "merged:>=<prev-release-date>" --json number --jq 'length'`, or since repo creation if there's no previous release). If the count is `> 0`, run `gh release create "v<current-version>" artifacts/*.zip --generate-notes`. Otherwise, build a notes file from `git log <prev-tag>..HEAD --pretty=format:"- %s (%h)"` (full history if no previous tag) and run `gh release create "v<current-version>" artifacts/*.zip --notes-file <file>`. Both paths authenticate via `env: GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}` and replace the `softprops/action-gh-release` step — no third-party action for this step.
+- [x] 2.6 Remove the `publish-packages` job entirely, including the `oras-project/setup-oras` step and the GHCR login/push steps.
+- [x] 2.7 Add a `bump-version` job (`needs: create-release`) that checks out `main`, runs `scripts/bump_version.py ${{ inputs.bump }}`, and commits + pushes the resulting `pyproject.toml` change directly to `main` using the workflow's own `GITHUB_TOKEN` (no third-party commit action).
 - [ ] 2.8 Confirm `main`'s branch protection (if any) permits this direct push from the workflow's token; adjust the ruleset or use an appropriate bypass/exception if it currently blocks direct pushes.
-- [ ] 2.9 Have the `bump-version` job validate the current version is valid semver before bumping, failing the job with a clear message if not (rather than silently producing a malformed version).
+- [x] 2.9 Have the `bump-version` job validate the current version is valid semver before bumping, failing the job with a clear message if not (rather than silently producing a malformed version).
 
 ## 3. Verification
 
