@@ -372,6 +372,78 @@ def test_structured_output_overlay_annotations_from_schema():
     assert json.loads(result.annotation_json)["annotations"] == annotations
 
 
+def test_structured_and_prose_debug_labels_per_mode():
+    for mode in ("quick_hint", "full_critique", "practice_exercise", "overlay"):
+        engine = _configured_engine()
+        assert engine._base_kwargs(f"feedback_{mode}_structured")["metadata"] == {
+            "debug_label": f"feedback_{mode}_structured"
+        }
+        assert engine._base_kwargs(f"feedback_{mode}_prose")["metadata"] == {
+            "debug_label": f"feedback_{mode}_prose"
+        }
+
+
+def test_structured_output_call_uses_structured_debug_label():
+    engine = _configured_engine()
+    engine._last_call = 0
+
+    captured_kwargs = []
+
+    def _capture(**kwargs):
+        captured_kwargs.append(kwargs)
+        return _mock_structured_response("Great work!")
+
+    with patch("litellm.completion", side_effect=_capture):
+        engine.request_feedback([_frame()], mode="quick_hint")
+
+    assert captured_kwargs[0]["metadata"] == {
+        "debug_label": "feedback_quick_hint_structured"
+    }
+
+
+def test_prose_call_uses_prose_debug_label():
+    fe_module._structured_output_disabled = True
+    engine = _configured_engine()
+    engine._last_call = 0
+
+    captured_kwargs = []
+
+    def _capture(**kwargs):
+        captured_kwargs.append(kwargs)
+        return _mock_response("Prose feedback.")
+
+    with patch("litellm.completion", side_effect=_capture):
+        engine.request_feedback([_frame()], mode="quick_hint")
+
+    assert captured_kwargs[0]["metadata"] == {
+        "debug_label": "feedback_quick_hint_prose"
+    }
+
+
+def test_structured_failure_and_prose_fallback_produce_distinct_debug_labels():
+    engine = _configured_engine()
+    engine._last_call = 0
+
+    captured_kwargs = []
+
+    def _side_effect(**kwargs):
+        captured_kwargs.append(kwargs)
+        if "response_format" in kwargs:
+            raise TypeError("unexpected keyword argument 'response_format'")
+        return _mock_response("Prose feedback text.")
+
+    with patch("litellm.completion", side_effect=_side_effect):
+        engine.request_feedback([_frame()], mode="quick_hint")
+
+    assert len(captured_kwargs) == 2
+    assert captured_kwargs[0]["metadata"] == {
+        "debug_label": "feedback_quick_hint_structured"
+    }
+    assert captured_kwargs[1]["metadata"] == {
+        "debug_label": "feedback_quick_hint_prose"
+    }
+
+
 def test_overlay_structured_and_prose_fallback_render_identically():
     annotations = [{"type": "circle", "center": [0.5, 0.5], "radius": 0.1}]
 

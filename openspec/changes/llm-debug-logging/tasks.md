@@ -27,10 +27,10 @@
 
 ## 5. Tests
 
-- [ ] 5.1 Add `test_llm_debug_log.py`: construct a `DebugIOLogger` directly and call `log_success_event`/`log_failure_event` with representative `kwargs`/`response_obj` fixtures (mirroring the real LiteLLM shapes confirmed during design) — assert: disabled config writes no files; enabled writes `frame_NN.png` per image + `request.txt` + `response.txt` on success; enabled writes `request.txt` + `error.txt` on failure; a write failure (e.g. `debug_log_dir()` uncreatable) logs a WARNING and raises nothing
-- [ ] 5.2 Add a test confirming `_call_structured()` and `_call_prose()` each build `kwargs` with the expected `metadata.debug_label` (e.g. `feedback_overlay_structured`, `feedback_overlay_prose`) for each mode
-- [ ] 5.3 Add a test simulating a structured-output failure followed by prose fallback for the same request, asserting two distinct debug-labeled calls occur (one `_structured`, one `_prose`)
-- [ ] 5.4 Add equivalent `metadata.debug_label` assertions for `diagnostics.check_llm()`, `SettingsDialog._test_connection()`, and `MemoryStore._try_resummarize()`
+- [x] 5.1 Add `test_llm_debug_log.py`: construct a `DebugIOLogger` directly and call `log_success_event`/`log_failure_event` with representative `kwargs`/`response_obj` fixtures (mirroring the real LiteLLM shapes confirmed during design) — assert: disabled config writes no files; enabled writes `frame_NN.png` per image + `request.txt` + `response.txt` on success; enabled writes `request.txt` + `error.txt` on failure; a write failure (e.g. `debug_log_dir()` uncreatable) logs a WARNING and raises nothing
+- [x] 5.2 Add a test confirming `_call_structured()` and `_call_prose()` each build `kwargs` with the expected `metadata.debug_label` (e.g. `feedback_overlay_structured`, `feedback_overlay_prose`) for each mode
+- [x] 5.3 Add a test simulating a structured-output failure followed by prose fallback for the same request, asserting two distinct debug-labeled calls occur (one `_structured`, one `_prose`)
+- [x] 5.4 Add equivalent `metadata.debug_label` assertions for `diagnostics.check_llm()`, `SettingsDialog._test_connection()`, and `MemoryStore._try_resummarize()`
 
 ## 6. Documentation
 
