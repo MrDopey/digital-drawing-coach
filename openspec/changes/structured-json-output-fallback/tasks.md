@@ -38,9 +38,9 @@
 
 ## 6. Documentation
 
-- [ ] 6.1 Update `README.md` (developer-facing section covering the LLM integration / feedback flow) to describe the structured-output-first, prose-fallback request behavior
-- [ ] 6.2 Update `.claude/CLAUDE.md`'s Tech Stack / LLM row (or add a short note near it) to mention that feedback requests prefer LiteLLM structured JSON output with an automatic prose-parsing fallback for providers that don't support it
-- [ ] 6.3 Review `openspec/config.yaml` for a recurring gap this change might reveal (e.g. provider-capability-dependent fallback behavior as a recurring pattern needing its own rule); propose changes only if a clear, recurring gap exists — otherwise leave unchanged
+- [x] 6.1 Update `README.md` (developer-facing section covering the LLM integration / feedback flow) to describe the structured-output-first, prose-fallback request behavior
+- [x] 6.2 Update `.claude/CLAUDE.md`'s Tech Stack / LLM row (or add a short note near it) to mention that feedback requests prefer LiteLLM structured JSON output with an automatic prose-parsing fallback for providers that don't support it
+- [x] 6.3 Review `openspec/config.yaml` for a recurring gap this change might reveal (e.g. provider-capability-dependent fallback behavior as a recurring pattern needing its own rule); propose changes only if a clear, recurring gap exists — otherwise leave unchanged (no change made: this is a one-off pattern, not yet a demonstrated recurrence, so the high threshold isn't met)
 
 ## 7. Verification
 

@@ -24,7 +24,7 @@ Dialogs must be resizable: content reflows correctly when the user drags the win
 |-------|-----------|
 | Language | Python 3.11+ |
 | GUI | PyQt6, pynput |
-| LLM | LiteLLM (supports OpenAI, Anthropic, Ollama, etc.) |
+| LLM | LiteLLM (supports OpenAI, Anthropic, Ollama, etc.) — feedback requests prefer LiteLLM structured JSON output (`response_format` json-schema) and try it once per app launch; on failure, a process-lifetime flag in `feedback_engine.py` disables it for the rest of the run and the app falls back to prose-plus-regex parsing (with a one-time user warning) |
 | Image processing | Pillow, mss (Windows/Linux window capture), numpy |
 | Window capture | `WindowBackend.capture_image()` (`window_manager.py`) — Windows/Linux use `mss.grab()` on the window rect; **macOS uses direct CoreGraphics** (`_backend_macos.py`, `CGWindowListCreateImage` scoped to the window ID) instead of `mss`, because `mss`'s macOS backend captures a screen *region* (compositing whatever else is on-screen there) rather than one window's content |
 | Config | `ConfigManager` (`config_manager.py`) — single load/save owner; merges `config.json`, `.env`, and env vars with explicit precedence |
