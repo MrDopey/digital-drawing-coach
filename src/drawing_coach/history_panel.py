@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Callable
 
 from PyQt6.QtCore import QEvent, QSize, Qt, QUrl
-from PyQt6.QtGui import QDesktopServices, QImage, QPixmap
+from PyQt6.QtGui import QDesktopServices, QImage, QPalette, QPixmap
 from PyQt6.QtWidgets import (
     QDialog,
     QHBoxLayout,
@@ -23,7 +23,6 @@ from drawing_coach.capture_engine import CapturedFrame, CaptureEngine
 from drawing_coach.llm_config import LLMConfig
 
 _LOOKBACK_BORDER = "border-left: 3px solid #4A90D9;"
-_HOVER_BACKGROUND = "background: #e8f0fe;"
 _DELETE_BUTTON_STYLE = (
     "QPushButton { background: #333; color: #e0e0e0; border-radius: 4px; }"
     "QPushButton:hover { background: #444; }"
@@ -107,7 +106,13 @@ class _FrameRowWidget(QWidget):
     def _apply_style(self) -> None:
         style = ""
         if self._is_hovered:
-            style += _HOVER_BACKGROUND
+            palette = self.palette()
+            background = palette.color(QPalette.ColorRole.Highlight).name()
+            text_color = palette.color(QPalette.ColorRole.HighlightedText).name()
+            style += (
+                f"_FrameRowWidget {{ background: {background}; }}"
+                f"_FrameRowWidget QLabel {{ color: {text_color}; }}"
+            )
         if self._is_lookback:
             style += _LOOKBACK_BORDER
         self.setStyleSheet(style)

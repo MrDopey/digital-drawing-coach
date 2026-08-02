@@ -7,6 +7,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 from PIL import Image
 from PyQt6.QtCore import QEvent, Qt
+from PyQt6.QtGui import QColor, QPalette
+from PyQt6.QtWidgets import QApplication
 
 from drawing_coach.capture_engine import CapturedFrame, CaptureEngine
 from drawing_coach.history_panel import HistoryPanel
@@ -229,6 +231,35 @@ def test_row_background_highlighted_on_hover_and_cleared_on_leave(qtbot):
 
     row_widget.eventFilter(row_widget, QEvent(QEvent.Type.Leave))
     assert "background" not in row_widget.styleSheet()
+
+
+def test_hover_text_color_contrasts_with_hover_background_on_dark_theme(qtbot):
+    # Regression: a fixed light hover background paired with a dark-theme's
+    # default light label text produced unreadable white-on-white text.
+    dark_palette = QPalette()
+    dark_palette.setColor(QPalette.ColorRole.Window, QColor("#1e1e1e"))
+    dark_palette.setColor(QPalette.ColorRole.WindowText, QColor("#f0f0f0"))
+    QApplication.setPalette(dark_palette)
+    try:
+        engine = _make_engine(_frame("2024-01-01T10:00:00"))
+        panel = HistoryPanel(engine, LLMConfig())
+        qtbot.addWidget(panel)
+        panel.show()
+
+        row_widget = panel._list_widget.itemWidget(panel._list_widget.item(0))
+        row_widget.eventFilter(row_widget, QEvent(QEvent.Type.Enter))
+
+        style = row_widget.styleSheet()
+        background = row_widget.palette().color(QPalette.ColorRole.Highlight).name()
+        text_color = row_widget.palette().color(
+            QPalette.ColorRole.HighlightedText
+        ).name()
+
+        assert background.lower() in style.lower()
+        assert text_color.lower() in style.lower()
+        assert background.lower() != text_color.lower()
+    finally:
+        QApplication.setPalette(QApplication.style().standardPalette())
 
 
 def test_lookback_border_survives_hover_enter_and_leave(qtbot):
