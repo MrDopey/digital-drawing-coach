@@ -77,6 +77,44 @@ def test_get_frames_returns_copy():
 
 
 # ---------------------------------------------------------------------------
+# remove_frame
+# ---------------------------------------------------------------------------
+
+def test_remove_frame_removes_from_buffer_without_deleting_file(tmp_path):
+    engine = _make_engine()
+    frame_to_keep = _fake_frame(engine)
+    png = tmp_path / "frame.png"
+    Image.new("RGB", (10, 10)).save(png)
+    frame_to_delete = CapturedFrame(image=Image.new("RGB", (10, 10)), path=png)
+    with engine._lock:
+        engine._buffer.append(frame_to_delete)
+
+    received = MagicMock()
+    engine.frames_changed.connect(received)
+
+    engine.remove_frame(frame_to_delete)
+
+    frames = engine.get_frames()
+    assert frames == [frame_to_keep]
+    assert png.exists()
+    received.assert_called_once()
+
+
+def test_remove_frame_unknown_frame_is_noop():
+    engine = _make_engine()
+    kept = _fake_frame(engine)
+    unknown = CapturedFrame(image=Image.new("RGB", (10, 10)))
+
+    received = MagicMock()
+    engine.frames_changed.connect(received)
+
+    engine.remove_frame(unknown)
+
+    assert engine.get_frames() == [kept]
+    received.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
 # Write-error surfacing
 # ---------------------------------------------------------------------------
 

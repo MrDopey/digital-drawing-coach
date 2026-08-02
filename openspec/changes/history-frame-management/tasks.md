@@ -22,9 +22,9 @@
 
 ## 5. Tests
 
-- [ ] 5.1 Unit test `CaptureEngine.remove_frame`: frame removed from buffer, file not deleted, `frames_changed` emitted
-- [ ] 5.2 Unit test `CaptureEngine.remove_frame` with unknown frame: no error, buffer unchanged
-- [ ] 5.3 pytest-qt test: delete button visible on hover, hidden otherwise; clicking it removes the row from the panel
+- [x] 5.1 Unit test `CaptureEngine.remove_frame`: frame removed from buffer, file not deleted, `frames_changed` emitted
+- [x] 5.2 Unit test `CaptureEngine.remove_frame` with unknown frame: no error, buffer unchanged
+- [x] 5.3 pytest-qt test: delete button visible on hover, hidden otherwise; clicking it removes the row from the panel
 
 ## 6. Documentation
 
