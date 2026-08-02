@@ -93,8 +93,6 @@ class SettingsDialog(QDialog):
         )
         form.addRow("Custom Instructions:", self._custom_edit)
 
-        layout.addLayout(form)
-
         self._debug_log_checkbox = QCheckBox("Debug logging of LLM input/output")
         self._debug_log_checkbox.setChecked(self._config.debug_log_llm_io)
         self._debug_log_checkbox.setToolTip(
@@ -103,7 +101,9 @@ class SettingsDialog(QDialog):
             " enable only when you need to inspect what was actually sent"
             " to the LLM."
         )
-        layout.addWidget(self._debug_log_checkbox)
+        form.addRow("", self._debug_log_checkbox)
+
+        layout.addLayout(form)
 
         test_row = QHBoxLayout()
         self._test_label = PillBadge("")
