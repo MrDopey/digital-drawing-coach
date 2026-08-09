@@ -1,9 +1,5 @@
-# feedback-deduplication Specification
+## MODIFIED Requirements
 
-## Purpose
-TBD - created by archiving change feedback-history. Update Purpose after archive.
-
-## Requirements
 ### Requirement: Request Feedback button disabled for already-submitted image+mode combinations
 The system SHALL disable the **Request Feedback** button when the current set of frame hashes and selected feedback mode exactly matches those of the most recent saved feedback entry for that mode. The button SHALL display a tooltip explaining why it is disabled. The button SHALL be re-enabled when a new frame is captured that was not part of the previous request, or when the user switches to a feedback mode that has not been run against the current images.
 

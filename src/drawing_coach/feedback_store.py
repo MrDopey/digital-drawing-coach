@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 from datetime import datetime
@@ -19,6 +20,12 @@ class FeedbackStore:
 
     def __init__(self, session_dir: Path) -> None:
         self._dir = feedback_dir(session_dir)
+        # Hashes derived from frame images on disk, keyed by relative frame
+        # path. `load()` rebuilds its response objects on every call, so the
+        # derived value has to be cached here rather than on the response.
+        # Failures are cached as `[]` too, so a missing or corrupt frame is not
+        # reopened on every captured frame.
+        self._derived_hashes: dict[str, list[str]] = {}
 
     def _stem(self, response: FeedbackResponse) -> str:
         return f"{response.timestamp.strftime('%Y%m%d_%H%M%S')}_{response.mode}"
@@ -108,10 +115,50 @@ class FeedbackStore:
         frame_path = self._session_dir / response.frame_path
         return frame_path if frame_path.is_file() else None
 
+    def _hashes_for(self, response: FeedbackResponse) -> list[str]:
+        """`response`'s frame hashes, derived from its frame on disk if unrecorded.
+
+        Returns `[]` when the hashes are unknown — not recorded and not
+        recoverable — which callers must treat as "never matches" rather than as
+        a fingerprint. Derivation is in-memory; the entry's JSON is not rewritten.
+        """
+        if response.frame_hashes:
+            return response.frame_hashes
+        if not response.frame_path:
+            return []
+        cached = self._derived_hashes.get(response.frame_path)
+        if cached is not None:
+            return cached
+
+        derived: list[str] = []
+        frame_path = self.frame_path_for(response)
+        if frame_path is not None:
+            try:
+                # Decoded exactly as `CaptureEngine._load_frames_from_disk()`
+                # does — no `.convert("RGB")`, unlike `overlay_image_for()`.
+                # `tobytes()` is mode-dependent, so a derived hash only compares
+                # equal to a live one if both sides decode the file the same way.
+                image = PilImage.open(frame_path).copy()
+                derived = [hashlib.sha256(image.tobytes()).hexdigest()]
+            except Exception as exc:
+                _log.warning("Cannot hash frame %s: %s", frame_path, exc)
+
+        self._derived_hashes[response.frame_path] = derived
+        return derived
+
     def last_entry_for(
         self, mode: str, frame_hashes: list[str]
     ) -> FeedbackResponse | None:
+        # An empty hash list means "no fingerprint available" — for the caller,
+        # no frames captured yet; for an entry, hashes neither recorded nor
+        # recoverable from disk. It is never a value two sides can match on, so
+        # both empty cases bail rather than comparing equal to each other.
+        if not frame_hashes:
+            return None
         for response in reversed(self.load()):
-            if response.mode == mode and response.frame_hashes == frame_hashes:
+            if response.mode != mode:
+                continue
+            hashes = self._hashes_for(response)
+            if hashes and hashes == frame_hashes:
                 return response
         return None
