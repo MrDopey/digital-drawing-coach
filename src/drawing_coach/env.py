@@ -23,3 +23,11 @@ def log_file() -> str:
 
 def log_max_bytes() -> str:
     return os.environ.get("DRAWING_COACH_LOG_MAX_BYTES", "").strip()
+
+
+def perf_watchdog() -> str:
+    return os.environ.get("DRAWING_COACH_PERF_WATCHDOG", "").strip()
+
+
+def perf_stall_ms() -> str:
+    return os.environ.get("DRAWING_COACH_PERF_STALL_MS", "").strip()

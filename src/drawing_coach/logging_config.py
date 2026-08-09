@@ -70,3 +70,42 @@ def setup_logging() -> None:
                 print(f"Cannot write log file at {log_file}: {exc}", file=sys.stderr)
 
     root.debug("Log level=%s file=%s", raw_level or "WARNING", file_dest)
+
+    _setup_perf_logging(root, formatter, max_bytes, file_dest)
+
+
+def _setup_perf_logging(
+    root: logging.Logger,
+    formatter: logging.Formatter,
+    max_bytes: int,
+    file_dest: str,
+) -> None:
+    """Route perf output without raising the global log level.
+
+    Handlers are attached to `drawing_coach` with no handler level, and ancestor
+    logger levels are not re-checked during propagation — so setting only the
+    child logger to DEBUG emits perf records through the existing handlers while
+    litellm/urllib3 and the rest of the app stay at the configured level.
+    """
+    from drawing_coach import env, perf
+
+    if not perf.init(env.perf_watchdog(), env.perf_stall_ms()):
+        return
+
+    logging.getLogger("drawing_coach.perf").setLevel(logging.DEBUG)
+
+    if file_dest == "none":
+        from drawing_coach.paths import debug_log_dir
+
+        dest = debug_log_dir() / "perf.log"
+        try:
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            fh = RotatingFileHandler(str(dest), maxBytes=max_bytes, backupCount=0)
+            fh.setFormatter(formatter)
+            root.addHandler(fh)
+            file_dest = str(dest)
+        except OSError as exc:
+            print(f"Cannot write perf log at {dest}: {exc}", file=sys.stderr)
+
+    perf.set_log_destination(file_dest)
+    root.warning("Perf watchdog enabled — log: %s", file_dest)

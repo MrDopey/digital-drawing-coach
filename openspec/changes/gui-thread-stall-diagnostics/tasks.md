@@ -16,12 +16,12 @@
 
 ## 2. Environment and logging wiring
 
-- [ ] 2.1 Add `perf_watchdog()` and `perf_stall_ms()` readers to `src/drawing_coach/env.py`, matching the existing reader style.
-- [ ] 2.2 Add the corresponding cases to `tests/test_env.py`, mirroring the existing per-variable test pairs.
-- [ ] 2.3 Wire `perf.init()` into `setup_logging()` in `src/drawing_coach/logging_config.py` after handlers are attached; on enable, set only the `drawing_coach.perf` child logger to `DEBUG`.
-- [ ] 2.4 When enabled and `DRAWING_COACH_LOG_FILE` is unset, attach a rotating perf log handler under the XDG data dir honouring `DRAWING_COACH_LOG_MAX_BYTES`, and report the resolved path once at startup.
-- [ ] 2.5 Add logging-config tests: `drawing_coach.perf` at `DEBUG` while `drawing_coach` stays at `WARNING`; auto file handler appears only when no log file is configured; nothing changes when disabled.
-- [ ] 2.6 Install the watchdog in `src/drawing_coach/__main__.py` immediately after `QApplication` construction and before the session picker, and connect `perf.log_summary` to `app.aboutToQuit`.
+- [x] 2.1 Add `perf_watchdog()` and `perf_stall_ms()` readers to `src/drawing_coach/env.py`, matching the existing reader style.
+- [x] 2.2 Add the corresponding cases to `tests/test_env.py`, mirroring the existing per-variable test pairs.
+- [x] 2.3 Wire `perf.init()` into `setup_logging()` in `src/drawing_coach/logging_config.py` after handlers are attached; on enable, set only the `drawing_coach.perf` child logger to `DEBUG`.
+- [x] 2.4 When enabled and `DRAWING_COACH_LOG_FILE` is unset, attach a rotating perf log handler under the XDG data dir honouring `DRAWING_COACH_LOG_MAX_BYTES`, and report the resolved path once at startup.
+- [x] 2.5 Add logging-config tests: `drawing_coach.perf` at `DEBUG` while `drawing_coach` stays at `WARNING`; auto file handler appears only when no log file is configured; nothing changes when disabled.
+- [x] 2.6 Install the watchdog in `src/drawing_coach/__main__.py` immediately after `QApplication` construction and before the session picker, and connect `perf.log_summary` to `app.aboutToQuit`.
 
 ## 3. Probe call sites (no behaviour change)
 

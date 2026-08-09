@@ -20,6 +20,13 @@ def main() -> None:
     app = QApplication(sys.argv)
     app.setApplicationName("Drawing Coach")
 
+    # Installed before the session picker so a stall inside its nested exec()
+    # loop is caught too. No-op unless DRAWING_COACH_PERF_WATCHDOG is set.
+    from drawing_coach import perf
+
+    perf.install_watchdog()
+    app.aboutToQuit.connect(perf.log_summary)
+
     action, session_dir = SessionPickerDialog.choose_session()
     if action == "quit":
         sys.exit(0)
