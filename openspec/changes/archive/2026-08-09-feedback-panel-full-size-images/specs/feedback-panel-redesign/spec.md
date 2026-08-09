@@ -1,9 +1,5 @@
-# feedback-panel-redesign Specification
+## MODIFIED Requirements
 
-## Purpose
-TBD - created by archiving change feedback-history. Update Purpose after archive.
-
-## Requirements
 ### Requirement: Left sidebar lists all feedback entries
 The Feedback Management panel SHALL include a scrollable left sidebar (fixed width, adjustable via a splitter) listing all feedback entries for the current session — including entries persisted from before the app was last restarted — in reverse-chronological order. Each row SHALL be labelled `DD Mon  HH:MM: <mode label>` (e.g. `14 Jun  09:41: Quick Hint`). Rows SHALL be text only, with no per-entry image preview. Clicking a row SHALL jump directly to that entry, staying in sync with the existing Previous/Next navigation.
 
@@ -45,14 +41,3 @@ The main content area SHALL display one image for the selected entry followed by
 #### Scenario: Feedback text is selectable and scrollable
 - **WHEN** a feedback entry is displayed
 - **THEN** the feedback text can be selected with the mouse and scrolled if it exceeds the visible area
-
-### Requirement: Previous and Next buttons navigate sequentially
-The Feedback Management panel SHALL retain Previous and Next buttons for sequential navigation through feedback history, consistent with current behaviour, and SHALL keep the sidebar selection synchronized with whichever entry Previous/Next navigates to.
-
-#### Scenario: Next navigates to a newer entry
-- **WHEN** the user clicks Next and a newer entry exists
-- **THEN** the display advances to the next more-recent entry and the sidebar selection updates to match
-
-#### Scenario: Previous navigates to an older entry
-- **WHEN** the user clicks Previous and an older entry exists
-- **THEN** the display moves to the next older entry and the sidebar selection updates to match

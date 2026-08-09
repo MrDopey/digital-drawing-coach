@@ -1,9 +1,5 @@
-# feedback-persistence Specification
+## MODIFIED Requirements
 
-## Purpose
-TBD - created by archiving change feedback-history. Update Purpose after archive.
-
-## Requirements
 ### Requirement: Save feedback response to disk on arrival
 When a `FeedbackResponse` is received the system SHALL save it to disk as a JSON file at `feedback/<session-id>/YYYYMMDD_HHMMSS_<mode>.json`. The JSON SHALL include: `mode`, `text`, `timestamp` (ISO-8601), `frame_hashes` (list of SHA-256 hex strings), `annotation_json` (null if not overlay mode), `observations` (list of category/note objects), `used_structured_output` (boolean), and `frame_path` (path to the full-resolution captured frame the feedback was based on, or null when no frame was available). The `frame_path` SHALL reference the already-captured frame file under the session's `frames/` directory — no additional full-resolution copy is written. The system SHALL NOT write a downscaled thumbnail of the frame, and the JSON SHALL NOT carry a `thumbnail_path` field. When the response's mode is `overlay`, the composited annotated image SHALL additionally be saved alongside as `YYYYMMDD_HHMMSS_<mode>_overlay.png` at full resolution, so it can still be viewed, zoomed, and saved after the app restarts.
 

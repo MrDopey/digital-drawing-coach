@@ -3,9 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 
 from PIL import Image as PilImage
-from PyQt6.QtCore import QPoint, Qt, QUrl, pyqtSignal
+from PyQt6.QtCore import QPoint, Qt, pyqtSignal
 from PyQt6.QtGui import (
-    QDesktopServices,
     QImage,
     QKeyEvent,
     QMouseEvent,
@@ -79,7 +78,6 @@ MAX_ZOOM = 4.0
 ZOOM_STEP = 1.25
 
 SIDEBAR_WIDTH = 180
-THUMBNAIL_SIZE = 160
 
 
 def _pil_to_pixmap(img: PilImage.Image) -> QPixmap:
@@ -111,24 +109,6 @@ class _ZoomScrollArea(QScrollArea):
             super().wheelEvent(event)
 
 
-class _ClickableThumbnail(QLabel):
-    """Thumbnail label that opens its bound image path in the system viewer."""
-
-    def __init__(self, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
-        self._path: Path | None = None
-        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.setCursor(Qt.CursorShape.PointingHandCursor)
-
-    def set_path(self, path: Path | None) -> None:
-        self._path = path
-
-    def mousePressEvent(self, event: QMouseEvent) -> None:
-        if event.button() == Qt.MouseButton.LeftButton and self._path is not None:
-            QDesktopServices.openUrl(QUrl.fromLocalFile(str(self._path)))
-        super().mousePressEvent(event)
-
-
 class FeedbackPanel(QWidget):
     """Floating, draggable panel that shows LLM feedback."""
 
@@ -147,7 +127,10 @@ class FeedbackPanel(QWidget):
         self._history: list[FeedbackResponse] = []
         self._history_idx: int = -1
         self._overlay_images: dict[int, PilImage.Image] = {}
-        self._thumb_paths: dict[int, Path] = {}
+        self._frame_paths: dict[int, Path] = {}
+        # Source pixmap for the entry on screen, converted once per entry so
+        # zooming re-scales rather than re-decoding a full-resolution frame.
+        self._current_pixmap: QPixmap | None = None
         self._zoom_factor: float = 1.0
         self._store: FeedbackStore | None = None
 
@@ -234,24 +217,6 @@ class FeedbackPanel(QWidget):
         image_pane_layout.addWidget(self._image_scroll)
         self._splitter.addWidget(self._image_pane)
 
-        # Mode-appropriate thumbnail preview (non-overlay entries)
-        self._thumb_label = _ClickableThumbnail()
-        self._thumb_label.setFixedSize(THUMBNAIL_SIZE, THUMBNAIL_SIZE)
-        thumb_pane_layout = QVBoxLayout()
-        thumb_pane_layout.addStretch()
-        thumb_pane_layout.addWidget(self._thumb_label, 0, Qt.AlignmentFlag.AlignCenter)
-        self._thumb_caption = MutedLabel(
-            "Click to open full image", dim=True, small=True
-        )
-        thumb_pane_layout.addWidget(
-            self._thumb_caption, 0, Qt.AlignmentFlag.AlignCenter
-        )
-        thumb_pane_layout.addStretch()
-        self._thumb_pane = QWidget()
-        self._thumb_pane.setLayout(thumb_pane_layout)
-        self._thumb_pane.hide()
-        self._splitter.addWidget(self._thumb_pane)
-
         self._text_edit = QTextEdit()
         self._text_edit.setReadOnly(True)
         self._splitter.addWidget(self._text_edit)
@@ -331,9 +296,9 @@ class FeedbackPanel(QWidget):
             self._overlay_images[idx] = overlay_image
         if self._store is not None:
             self._store.save(response, last_frame, overlay_image)
-            thumb_path = self._store.thumbnail_path_for(response)
-            if thumb_path is not None:
-                self._thumb_paths[idx] = thumb_path
+            frame_path = self._store.frame_path_for(response)
+            if frame_path is not None:
+                self._frame_paths[idx] = frame_path
         self._sidebar.blockSignals(True)
         self._sidebar.insertItem(0, QListWidgetItem(self._sidebar_label(response)))
         self._sidebar.setCurrentRow(0)
@@ -347,8 +312,8 @@ class FeedbackPanel(QWidget):
     def show_error(self, message: str) -> None:
         self._loading_label.hide()
         self._splitter.show()
+        self._current_pixmap = None
         self._image_pane.hide()
-        self._thumb_pane.hide()
         self._save_btn.hide()
         self._text_edit.setMarkdown(f"**Error:** {message}")
         self.show()
@@ -359,19 +324,22 @@ class FeedbackPanel(QWidget):
         self._store = store
         self._history = store.load()
         self._overlay_images = {}
-        self._thumb_paths = {}
+        self._frame_paths = {}
         for idx, response in enumerate(self._history):
             overlay_img = store.overlay_image_for(response)
             if overlay_img is not None:
                 self._overlay_images[idx] = overlay_img
-            thumb_path = store.thumbnail_path_for(response)
-            if thumb_path is not None:
-                self._thumb_paths[idx] = thumb_path
+            frame_path = store.frame_path_for(response)
+            if frame_path is not None:
+                self._frame_paths[idx] = frame_path
         self._rebuild_sidebar()
+        # Reset first: _on_sidebar_row_changed short-circuits when the new row
+        # maps to the index already showing, which would leave the previous
+        # session's image on screen.
+        self._history_idx = -1
         if self._history:
             self._sidebar.setCurrentRow(0)
         else:
-            self._history_idx = -1
             self._clear_display()
 
     # ------------------------------------------------------------------
@@ -404,8 +372,8 @@ class FeedbackPanel(QWidget):
         self._prev_btn.setEnabled(False)
         self._next_btn.setEnabled(False)
         self._text_edit.clear()
+        self._current_pixmap = None
         self._image_pane.hide()
-        self._thumb_pane.hide()
         self._save_btn.hide()
 
     # ------------------------------------------------------------------
@@ -445,19 +413,16 @@ class FeedbackPanel(QWidget):
         else:
             markdown = resp.text
         self._text_edit.setMarkdown(markdown)
-        self._set_zoom(1.0)
 
-        overlay_img = self._overlay_images.get(self._history_idx)
-        if overlay_img is not None:
-            self._image_pane.show()
-            self._thumb_pane.hide()
-            self._render_overlay_image()
-            self._save_btn.show()
-            self._splitter.setSizes([3, 0, 2])
-        else:
+        self._current_pixmap = self._load_source_pixmap(self._history_idx)
+        self._save_btn.setVisible(self._history_idx in self._overlay_images)
+        if self._current_pixmap is None:
             self._image_pane.hide()
-            self._save_btn.hide()
-            self._show_thumbnail(self._history_idx)
+        else:
+            self._image_pane.show()
+            self._splitter.setSizes([3, 2])
+        # Re-renders the newly-selected image at the default zoom level.
+        self._set_zoom(1.0)
 
     def _save_overlay(self) -> None:
         overlay_img = self._overlay_images.get(self._history_idx)
@@ -485,29 +450,29 @@ class FeedbackPanel(QWidget):
     def _set_zoom(self, factor: float) -> None:
         self._zoom_factor = max(MIN_ZOOM, min(MAX_ZOOM, factor))
         self._zoom_label.setText(f"{round(self._zoom_factor * 100)}%")
-        self._render_overlay_image()
+        self._render_image()
 
-    def _show_thumbnail(self, idx: int) -> None:
-        thumb_path = self._thumb_paths.get(idx)
-        if thumb_path is None:
-            self._thumb_pane.hide()
-            return
-        pixmap = _pil_to_pixmap(PilImage.open(thumb_path)).scaled(
-            THUMBNAIL_SIZE,
-            THUMBNAIL_SIZE,
-            Qt.AspectRatioMode.KeepAspectRatio,
-            Qt.TransformationMode.SmoothTransformation,
-        )
-        self._thumb_label.setPixmap(pixmap)
-        self._thumb_label.set_path(thumb_path)
-        self._thumb_pane.show()
-        self._splitter.setSizes([0, 3, 2])
+    def _load_source_pixmap(self, idx: int) -> QPixmap | None:
+        """The image for entry `idx`: its overlay if any, else its captured frame.
 
-    def _render_overlay_image(self) -> None:
-        overlay_img = self._overlay_images.get(self._history_idx)
-        if overlay_img is None:
+        Returns None when neither is available — the entry predates frame paths,
+        or its frame has since been removed — and the image pane stays hidden.
+        """
+        overlay_img = self._overlay_images.get(idx)
+        if overlay_img is not None:
+            return _pil_to_pixmap(overlay_img)
+        frame_path = self._frame_paths.get(idx)
+        if frame_path is None:
+            return None
+        try:
+            return _pil_to_pixmap(PilImage.open(frame_path))
+        except OSError:
+            return None
+
+    def _render_image(self) -> None:
+        pixmap = self._current_pixmap
+        if pixmap is None:
             return
-        pixmap = _pil_to_pixmap(overlay_img)
         target_w = max(1, round(pixmap.width() * self._zoom_factor))
         target_h = max(1, round(pixmap.height() * self._zoom_factor))
         self._image_label.setPixmap(
