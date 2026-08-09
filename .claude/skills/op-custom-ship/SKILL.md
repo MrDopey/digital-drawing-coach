@@ -10,11 +10,11 @@ disable-model-invocation: true
    git add -A && git commit -m "chore: <change-name> — pre-apply spec changes\n\nCo-Authored-By: <model-name> <noreply@anthropic.com>"
    ```
    Skip if already clean.
-2. Invoke `opsx:apply` with the change name — work through all tasks until complete. After each task is marked complete (`- [ ]` → `- [x]`), commit that task's changes atomically before moving to the next task:
+2. Invoke `opsx:apply` with the change name — work through all tasks until complete. Once every task in a section is marked complete, commit that section's changes atomically before starting the next section:
    ```
-   git add -A && git commit -m "feat: <change-name> — <task-summary>\n\nCo-Authored-By: <model-name> <noreply@anthropic.com>"
+   git add -A && git commit -m "feat: <change-name> — <section-summary> (section <n>)\n\nCo-Authored-By: <model-name> <noreply@anthropic.com>"
    ```
-   Skip a task's commit only if it produced no file changes (e.g. a no-op verification task).
+   Skip a section's commit only if it produced no file changes (e.g. a section of no-op verification tasks).
 3. Invoke `opsx:archive` with the change name — sync delta specs and archive.
 4. Commit any changes left in the worktree (archive sync output, stray files):
    ```
@@ -48,5 +48,5 @@ disable-model-invocation: true
 **Guardrails:**
 - Always use `--no-ff`.
 - Do not merge before all tasks are complete and archive succeeds.
-- Each task gets its own atomic commit — don't batch multiple tasks into one commit.
+- Each section gets its own atomic commit — don't batch multiple sections into one commit, and don't commit mid-section.
 - Only pass `discard_changes: true` after step 9's ancestor check passes.
