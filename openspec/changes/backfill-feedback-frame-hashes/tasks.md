@@ -6,12 +6,12 @@
 
 ## 2. Derive missing hashes from the frame on disk
 
-- [ ] 2.1 Add a `FeedbackStore._derived_hashes: dict[str, list[str]]` instance cache, keyed by the entry's relative `frame_path`, initialised in `__init__`.
-- [ ] 2.2 Add `FeedbackStore._hashes_for(response) -> list[str]`: return `response.frame_hashes` unchanged when non-empty; otherwise resolve the frame via the existing `frame_path_for()`, decode it with `Image.open(path).copy()` — matching `CaptureEngine._load_frames_from_disk()`, **not** `overlay_image_for()`'s `.convert("RGB")` — and return `[hashlib.sha256(img.tobytes()).hexdigest()]`.
-- [ ] 2.3 Comment the decode line with a pointer to `CaptureEngine._load_frames_from_disk()`, since hash comparability depends on the two decoding identically.
-- [ ] 2.4 Return `[]` from `_hashes_for()` when there is no resolvable `frame_path`, and when decoding raises — log the decode failure at warning level via the module's `_log` and continue.
-- [ ] 2.5 Memoise both successes and failures in `_derived_hashes` so a missing or corrupt frame is not reopened on every captured frame; skip the cache entirely for entries that already carry recorded hashes.
-- [ ] 2.6 Route `last_entry_for()`'s comparison through `_hashes_for()`. Do not touch `load()` — derivation stays off the load path, and no derived value is written back to disk.
+- [x] 2.1 Add a `FeedbackStore._derived_hashes: dict[str, list[str]]` instance cache, keyed by the entry's relative `frame_path`, initialised in `__init__`.
+- [x] 2.2 Add `FeedbackStore._hashes_for(response) -> list[str]`: return `response.frame_hashes` unchanged when non-empty; otherwise resolve the frame via the existing `frame_path_for()`, decode it with `Image.open(path).copy()` — matching `CaptureEngine._load_frames_from_disk()`, **not** `overlay_image_for()`'s `.convert("RGB")` — and return `[hashlib.sha256(img.tobytes()).hexdigest()]`.
+- [x] 2.3 Comment the decode line with a pointer to `CaptureEngine._load_frames_from_disk()`, since hash comparability depends on the two decoding identically.
+- [x] 2.4 Return `[]` from `_hashes_for()` when there is no resolvable `frame_path`, and when decoding raises — log the decode failure at warning level via the module's `_log` and continue.
+- [x] 2.5 Memoise both successes and failures in `_derived_hashes` so a missing or corrupt frame is not reopened on every captured frame; skip the cache entirely for entries that already carry recorded hashes.
+- [x] 2.6 Route `last_entry_for()`'s comparison through `_hashes_for()`. Do not touch `load()` — derivation stays off the load path, and no derived value is written back to disk.
 
 ## 3. Tests — store (`tests/test_feedback_store.py`)
 
