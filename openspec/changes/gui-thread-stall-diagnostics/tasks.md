@@ -49,6 +49,13 @@
 
 - [x] 6.1 Run `xvfb-run -a uv run pytest` with the full suite green, plus one pass with `DRAWING_COACH_PERF_WATCHDOG=1` set to confirm instrumentation does not break existing tests.
 - [x] 6.2 Confirm the disabled path allocates nothing: assert no watchdog thread, no heartbeat timer, no GC callback, and no perf handler exist after `setup_logging()` with the variable unset.
-- [ ] 6.3 Hand the user the measurement protocol: run 1 with the history panel opened and exercised across at least two captures; run 2 with the panel never opened, held for several captures. Collect both logs and a Copy Perf Snapshot.
-- [ ] 6.4 Suggest the zero-code control alongside: check out `a80c520^` and check whether the sluggishness reproduces before the hover feature existed.
-- [ ] 6.5 Read the returned logs and write the follow-up change against them. Do not land any fix from the design's follow-up list before this step.
+- [x] 6.3 Hand the user the measurement protocol: run 1 with the history panel opened and exercised across at least two captures; run 2 with the panel never opened, held for several captures. Collect both logs and a Copy Perf Snapshot.
+- [x] 6.4 Suggest the zero-code control alongside: check out `a80c520^` and check whether the sluggishness reproduces before the hover feature existed.
+
+> **Not a task of this change:** reading the returned logs and writing the fix
+> belongs to the follow-up change — it cannot be done until the user has run the
+> instrumented build on their Mac. The measurement protocol is in `design.md`
+> ("Migration Plan"), and the confirmed defects awaiting prioritisation are in
+> its "Follow-up work" section. Do not land any of those fixes before the logs
+> are read: shipping a fix alongside the instrument makes the measurement
+> uninterpretable, which is the trap attempts 1–4 fell into.
