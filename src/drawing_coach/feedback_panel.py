@@ -333,10 +333,13 @@ class FeedbackPanel(QWidget):
             if frame_path is not None:
                 self._frame_paths[idx] = frame_path
         self._rebuild_sidebar()
+        # Reset first: _on_sidebar_row_changed short-circuits when the new row
+        # maps to the index already showing, which would leave the previous
+        # session's image on screen.
+        self._history_idx = -1
         if self._history:
             self._sidebar.setCurrentRow(0)
         else:
-            self._history_idx = -1
             self._clear_display()
 
     # ------------------------------------------------------------------

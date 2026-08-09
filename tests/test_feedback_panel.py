@@ -326,11 +326,125 @@ def test_show_feedback_with_no_observations_shows_only_text(qtbot):
     assert panel._text_edit.toPlainText().strip() == "Nice work"
 
 
-def test_thumbnail_caption_is_muted_label(qtbot):
+# ---------------------------------------------------------------------------
+# Full-resolution frame display (one image path for every mode)
+# ---------------------------------------------------------------------------
+
+
+def _frame_on_disk(session_dir, size=(640, 480)) -> CapturedFrame:
+    """A frame written to `<session>/frames/`, as `CaptureEngine` stores them."""
+    frames_dir = session_dir / "frames"
+    frames_dir.mkdir(parents=True, exist_ok=True)
+    path = frames_dir / "094132_0007.png"
+    image = Image.new("RGB", size, (10, 20, 30))
+    image.save(path, format="PNG")
+    return CapturedFrame(image=image, path=path)
+
+
+def _panel_with_store(tmp_path, qtbot) -> FeedbackPanel:
     panel = FeedbackPanel()
     qtbot.addWidget(panel)
+    panel.set_store(FeedbackStore(tmp_path))
+    return panel
 
-    assert isinstance(panel._thumb_caption, MutedLabel)
+
+def test_non_overlay_entry_shows_frame_at_full_resolution(tmp_path, qtbot):
+    panel = _panel_with_store(tmp_path, qtbot)
+
+    panel.show_feedback(
+        FeedbackResponse(mode="quick_hint", text="ok"),
+        last_frame=_frame_on_disk(tmp_path, size=(640, 480)),
+    )
+
+    assert not panel._image_pane.isHidden()
+    pixmap = panel._image_label.pixmap()
+    assert pixmap is not None
+    assert (pixmap.width(), pixmap.height()) == (640, 480)
+
+
+def test_non_overlay_entry_hides_save_overlay_button(tmp_path, qtbot):
+    panel = _panel_with_store(tmp_path, qtbot)
+
+    panel.show_feedback(
+        FeedbackResponse(mode="quick_hint", text="ok"),
+        last_frame=_frame_on_disk(tmp_path),
+    )
+
+    assert panel._save_btn.isHidden()
+
+
+def test_overlay_entry_shows_composited_image_and_save_button(tmp_path, qtbot):
+    panel = _panel_with_store(tmp_path, qtbot)
+
+    panel.show_feedback(
+        _overlay_response(),
+        overlay_image=Image.new("RGB", (400, 300), (10, 20, 30)),
+        last_frame=_frame_on_disk(tmp_path, size=(640, 480)),
+    )
+
+    assert not panel._image_pane.isHidden()
+    pixmap = panel._image_label.pixmap()
+    assert (pixmap.width(), pixmap.height()) == (400, 300)
+    assert not panel._save_btn.isHidden()
+
+
+def test_entry_without_frame_path_hides_image_pane(tmp_path, qtbot):
+    panel = _panel_with_store(tmp_path, qtbot)
+
+    panel.show_feedback(FeedbackResponse(mode="quick_hint", text="ok"))
+
+    assert panel._image_pane.isHidden()
+    assert panel._current_pixmap is None
+    assert "ok" in panel._text_edit.toPlainText()
+
+
+def test_entry_with_dangling_frame_path_hides_image_pane(tmp_path, qtbot):
+    panel = _panel_with_store(tmp_path, qtbot)
+    frame = _frame_on_disk(tmp_path)
+    panel.show_feedback(FeedbackResponse(mode="quick_hint", text="ok"), last_frame=frame)
+    frame.path.unlink()
+
+    panel.set_store(FeedbackStore(tmp_path))
+
+    assert panel._image_pane.isHidden()
+    assert panel._current_pixmap is None
+
+
+def test_zoom_changes_pixmap_size_for_non_overlay_frame(tmp_path, qtbot):
+    panel = _panel_with_store(tmp_path, qtbot)
+    panel.show_feedback(
+        FeedbackResponse(mode="quick_hint", text="ok"),
+        last_frame=_frame_on_disk(tmp_path, size=(640, 480)),
+    )
+    original_width = panel._image_label.pixmap().width()
+
+    panel._zoom_in()
+    assert panel._image_label.pixmap().width() > original_width
+
+    panel._zoom_out()
+    assert panel._image_label.pixmap().width() == original_width
+
+
+def test_zoom_resets_on_navigation_between_non_overlay_frames(tmp_path, qtbot):
+    panel = _panel_with_store(tmp_path, qtbot)
+    panel.show_feedback(
+        FeedbackResponse(
+            mode="quick_hint", text="first", timestamp=datetime(2024, 1, 1, 10, 0, 0)
+        ),
+        last_frame=_frame_on_disk(tmp_path),
+    )
+    panel._zoom_in()
+    assert panel._zoom_factor != 1.0
+
+    panel.show_feedback(
+        FeedbackResponse(
+            mode="quick_hint", text="second", timestamp=datetime(2024, 1, 1, 10, 1, 0)
+        ),
+        last_frame=_frame_on_disk(tmp_path),
+    )
+
+    assert panel._zoom_factor == 1.0
+    assert panel._zoom_label.text() == "100%"
 
 
 # ---------------------------------------------------------------------------

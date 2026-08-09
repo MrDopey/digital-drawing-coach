@@ -34,11 +34,11 @@
 
 ## 5. Test the panel
 
-- [ ] 5.1 In `tests/test_feedback_panel.py`, delete or rewrite any test covering the thumbnail pane, its click-to-open behaviour, or `THUMBNAIL_SIZE`
-- [ ] 5.2 Add a test that a non-overlay entry with a resolvable full-resolution frame shows `_image_pane` and that the displayed pixmap matches the frame's full resolution rather than 160px
-- [ ] 5.3 Add a test that an overlay entry still shows `_image_pane` with its composited image and that "Save Overlay" is visible only for that case
-- [ ] 5.4 Add a test that an entry with no `frame_path` (or a dangling one) hides the image pane entirely without error, leaving the feedback text visible
-- [ ] 5.5 Add a test that zooming while a non-overlay frame is displayed changes the rendered pixmap size, and that navigating to another entry resets the zoom to 100%
+- [x] 5.1 In `tests/test_feedback_panel.py`, delete or rewrite any test covering the thumbnail pane, its click-to-open behaviour, or `THUMBNAIL_SIZE`
+- [x] 5.2 Add a test that a non-overlay entry with a resolvable full-resolution frame shows `_image_pane` and that the displayed pixmap matches the frame's full resolution rather than 160px
+- [x] 5.3 Add a test that an overlay entry still shows `_image_pane` with its composited image and that "Save Overlay" is visible only for that case
+- [x] 5.4 Add a test that an entry with no `frame_path` (or a dangling one) hides the image pane entirely without error, leaving the feedback text visible
+- [x] 5.5 Add a test that zooming while a non-overlay frame is displayed changes the rendered pixmap size, and that navigating to another entry resets the zoom to 100%
 
 ## 6. Verify
 
