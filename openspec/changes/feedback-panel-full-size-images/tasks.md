@@ -1,9 +1,9 @@
 ## 1. Persist the full-resolution frame reference
 
-- [ ] 1.1 Add `frame_path: str | None = None` to the `FeedbackResponse` dataclass in `src/drawing_coach/feedback_engine.py` (after `frame_hashes`), keeping the default so every existing construction site is unaffected
-- [ ] 1.2 In `FeedbackStore.save()` (`src/drawing_coach/feedback_store.py`), derive the session-relative path of `last_frame.path` (relative to `self._dir.parent`) and write it into the entry JSON as `frame_path`; write `null` when `last_frame` is `None` or has no `path`
-- [ ] 1.3 In `FeedbackStore.load()`, read `frame_path` from the JSON (defaulting to `None` for entries written before this change) onto the reconstructed `FeedbackResponse`
-- [ ] 1.4 Add `FeedbackStore.frame_path_for(response) -> Path | None` that resolves `response.frame_path` against `self._dir.parent` and returns it only when `.is_file()`
+- [x] 1.1 Add `frame_path: str | None = None` to the `FeedbackResponse` dataclass in `src/drawing_coach/feedback_engine.py` (after `frame_hashes`), keeping the default so every existing construction site is unaffected
+- [x] 1.2 In `FeedbackStore.save()` (`src/drawing_coach/feedback_store.py`), derive the session-relative path of `last_frame.path` (relative to `self._dir.parent`) and write it into the entry JSON as `frame_path`; write `null` when `last_frame` is `None` or has no `path`
+- [x] 1.3 In `FeedbackStore.load()`, read `frame_path` from the JSON (defaulting to `None` for entries written before this change) onto the reconstructed `FeedbackResponse`
+- [x] 1.4 Add `FeedbackStore.frame_path_for(response) -> Path | None` that resolves `response.frame_path` against `self._dir.parent` and returns it only when `.is_file()`
 
 ## 2. Remove thumbnail generation from the store
 

@@ -25,6 +25,24 @@ class FeedbackStore:
     def _stem(self, response: FeedbackResponse) -> str:
         return f"{response.timestamp.strftime('%Y%m%d_%H%M%S')}_{response.mode}"
 
+    @property
+    def _session_dir(self) -> Path:
+        """The session directory `self._dir` lives under (see `paths.feedback_dir`)."""
+        return self._dir.parent
+
+    def _relative_frame_path(self, last_frame: CapturedFrame | None) -> str | None:
+        """`last_frame`'s path relative to the session dir, for storing in JSON.
+
+        Stored relative so a session directory stays valid if the data dir moves.
+        Falls back to None for a frame outside this session (nothing to reference).
+        """
+        if last_frame is None or last_frame.path is None:
+            return None
+        try:
+            return last_frame.path.relative_to(self._session_dir).as_posix()
+        except ValueError:
+            return None
+
     def save(
         self,
         response: FeedbackResponse,
@@ -44,6 +62,7 @@ class FeedbackStore:
             "used_structured_output": response.used_structured_output,
             "frame_hashes": response.frame_hashes,
             "thumbnail_path": thumb_name,
+            "frame_path": self._relative_frame_path(last_frame),
         }
         (self._dir / f"{stem}.json").write_text(json.dumps(data, indent=2))
 
@@ -70,6 +89,7 @@ class FeedbackStore:
                     observations=data.get("observations", []),
                     used_structured_output=data.get("used_structured_output", False),
                     frame_hashes=data.get("frame_hashes", []),
+                    frame_path=data.get("frame_path"),
                 )
             except (json.JSONDecodeError, KeyError, ValueError) as exc:
                 _log.warning("Skipping malformed feedback file %s: %s", json_path, exc)
@@ -86,6 +106,17 @@ class FeedbackStore:
     def thumbnail_path_for(self, response: FeedbackResponse) -> Path | None:
         thumb_path = self._dir / f"{self._stem(response)}_thumb.jpg"
         return thumb_path if thumb_path.is_file() else None
+
+    def frame_path_for(self, response: FeedbackResponse) -> Path | None:
+        """The full-resolution frame `response` was based on, if still on disk.
+
+        Returns None for entries saved before frame paths were recorded, and for
+        frames since removed (e.g. by session pruning).
+        """
+        if not response.frame_path:
+            return None
+        frame_path = self._session_dir / response.frame_path
+        return frame_path if frame_path.is_file() else None
 
     def last_entry_for(
         self, mode: str, frame_hashes: list[str]

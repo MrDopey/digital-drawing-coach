@@ -201,6 +201,9 @@ class FeedbackResponse:
     observations: list[dict] = field(default_factory=list)
     used_structured_output: bool = False
     frame_hashes: list[str] = field(default_factory=list)
+    # Session-relative path of the full-resolution frame this feedback was based
+    # on (e.g. "frames/094132_0007.png"); None when no frame was available.
+    frame_path: str | None = None
 
 
 class FeedbackEngine:
