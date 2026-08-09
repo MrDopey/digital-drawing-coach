@@ -8,7 +8,7 @@ import pytest
 from PIL import Image
 from PyQt6.QtCore import QEvent, QPoint, QPointF, Qt
 from PyQt6.QtGui import QColor, QMouseEvent, QPalette
-from PyQt6.QtWidgets import QApplication
+from PyQt6.QtWidgets import QApplication, QLabel
 
 from drawing_coach.capture_engine import CapturedFrame, CaptureEngine
 from drawing_coach.history_panel import HistoryPanel
@@ -29,6 +29,33 @@ def _make_engine(*frames: CapturedFrame) -> CaptureEngine:
         for frame in frames:
             engine._buffer.append(frame)
     return engine
+
+
+def _double_click_row(qtbot, lw, row: int) -> None:
+    """Double-click a row the way the app does: through the list viewport.
+
+    Sending the event straight to the row widget (as these tests used to) keeps
+    passing even when real hit-testing can no longer reach the row, which is
+    exactly how the hover regression went unnoticed. Events are constructed
+    rather than synthesised via QTest for the same reason the hover tests do it
+    — QTest's double-click is not delivered reliably under Xvfb/offscreen.
+    """
+    pos = QPointF(lw.visualItemRect(lw.item(row)).center())
+    for event_type in (
+        QEvent.Type.MouseButtonPress,
+        QEvent.Type.MouseButtonRelease,
+        QEvent.Type.MouseButtonDblClick,
+    ):
+        QApplication.sendEvent(
+            lw.viewport(),
+            QMouseEvent(
+                event_type,
+                pos,
+                Qt.MouseButton.LeftButton,
+                Qt.MouseButton.LeftButton,
+                Qt.KeyboardModifier.NoModifier,
+            ),
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -60,10 +87,11 @@ def test_double_click_disk_backed_frame(qtbot, tmp_path):
     panel = HistoryPanel(engine, LLMConfig())
     qtbot.addWidget(panel)
 
-    row_widget = panel._list_widget.itemWidget(panel._list_widget.item(0))
+    panel.show()
+    lw = panel._list_widget
 
     with patch("drawing_coach.history_panel.QDesktopServices.openUrl", return_value=True) as mock_open:
-        qtbot.mouseDClick(row_widget, Qt.MouseButton.LeftButton)
+        _double_click_row(qtbot, lw, 0)
 
     mock_open.assert_called_once()
     called_url = mock_open.call_args[0][0]
@@ -80,10 +108,11 @@ def test_double_click_in_memory_frame(qtbot):
     panel = HistoryPanel(engine, LLMConfig())
     qtbot.addWidget(panel)
 
-    row_widget = panel._list_widget.itemWidget(panel._list_widget.item(0))
+    panel.show()
+    lw = panel._list_widget
 
     with patch("drawing_coach.history_panel.QDesktopServices.openUrl", return_value=True) as mock_open:
-        qtbot.mouseDClick(row_widget, Qt.MouseButton.LeftButton)
+        _double_click_row(qtbot, lw, 0)
 
     mock_open.assert_called_once()
     called_url = mock_open.call_args[0][0]
@@ -104,13 +133,14 @@ def test_warning_shown_when_no_viewer(qtbot, tmp_path):
     panel = HistoryPanel(engine, LLMConfig())
     qtbot.addWidget(panel)
 
-    row_widget = panel._list_widget.itemWidget(panel._list_widget.item(0))
+    panel.show()
+    lw = panel._list_widget
 
     from PyQt6.QtWidgets import QMessageBox
 
     with patch("drawing_coach.history_panel.QDesktopServices.openUrl", return_value=False):
         with patch.object(QMessageBox, "warning") as mock_warn:
-            qtbot.mouseDClick(row_widget, Qt.MouseButton.LeftButton)
+            _double_click_row(qtbot, lw, 0)
 
     mock_warn.assert_called_once()
 
@@ -359,3 +389,69 @@ def test_lookback_border_survives_hover_enter_and_leave(qtbot):
     row_widget.set_hovered(False)
     assert row_widget._is_lookback is True
     assert row_widget._is_hovered is False
+
+
+# ---------------------------------------------------------------------------
+# Mouse-event routing (gui-thread-stall-diagnostics)
+# ---------------------------------------------------------------------------
+
+def test_row_and_labels_do_not_intercept_mouse_events(qtbot):
+    """Root cause of the 'hover takes seconds to highlight' regression.
+
+    Hover is tracked by an event filter on the list viewport, but a
+    setItemWidget() row covers the viewport completely and its labels cover
+    most of the row. Unless the row and its labels are transparent to mouse
+    events, every move lands on a QLabel and the viewport sees none of them.
+    Measured on macOS before the fix: of ~370 moves per 5s over the list, zero
+    reached the viewport.
+    """
+    engine = _make_engine(_frame("2024-01-01T10:00:00"))
+    panel = HistoryPanel(engine, LLMConfig())
+    qtbot.addWidget(panel)
+
+    row = panel._list_widget.itemWidget(panel._list_widget.item(0))
+    transparent = Qt.WidgetAttribute.WA_TransparentForMouseEvents
+
+    assert row.testAttribute(transparent), "row widget would swallow mouse moves"
+    for child in row.findChildren(QLabel):
+        assert child.testAttribute(transparent), (
+            f"{child.text()!r} label would swallow mouse moves"
+        )
+
+    # ...but the delete button must stay clickable.
+    assert not row.delete_button.testAttribute(transparent)
+
+
+def test_mouse_move_over_a_row_reaches_the_viewport_filter(qtbot):
+    """The behavioural half: a move at a row's position must update hover.
+
+    Delivered through the top-level window rather than straight to the
+    viewport, so widget hit-testing decides the receiver — which is precisely
+    what was broken.
+    """
+    frames = [_frame(f"2024-01-01T10:0{i}:00") for i in range(2)]
+    engine = _make_engine(*frames)
+    panel = HistoryPanel(engine, LLMConfig())
+    qtbot.addWidget(panel)
+    panel.show()
+    qtbot.waitExposed(panel)
+
+    lw = panel._list_widget
+    second_row = lw.itemWidget(lw.item(1))
+    target = lw.visualItemRect(lw.item(1)).center()
+
+    # childAt() performs the same hit-test Qt uses to route the event: with the
+    # row opaque it returns a QLabel, and the viewport's filter never runs.
+    assert lw.viewport().childAt(target) is None
+
+    QApplication.sendEvent(
+        lw.viewport(),
+        QMouseEvent(
+            QEvent.Type.MouseMove,
+            QPointF(target),
+            Qt.MouseButton.NoButton,
+            Qt.MouseButton.NoButton,
+            Qt.KeyboardModifier.NoModifier,
+        ),
+    )
+    assert panel._hovered_row is second_row

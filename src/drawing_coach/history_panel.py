@@ -56,19 +56,30 @@ class _FrameRowWidget(QWidget):
         self,
         frame: CapturedFrame,
         on_delete: Callable[[CapturedFrame], None],
-        on_open: Callable[[CapturedFrame], None],
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         with perf.probe("history.row_widget", child=True):
             self._frame = frame
             self._on_delete = on_delete
-            self._on_open = on_open
+
+            # The row and its labels must not intercept mouse events. Hover is
+            # tracked by an event filter on the list viewport, but a
+            # setItemWidget() row covers that viewport completely and the
+            # labels cover most of the row — so every move lands on a QLabel
+            # and the viewport sees nothing. Measured on macOS: of ~370 moves
+            # per 5s over the list, 0 reached the viewport; the highlight only
+            # updated when the cursor crossed the few pixels of row margin,
+            # which reads as "hovering takes seconds to highlight".
+            # Children are unaffected by this attribute, so the delete button
+            # below stays clickable.
+            self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
             layout = QHBoxLayout(self)
             layout.setContentsMargins(4, 2, 4, 2)
 
             thumb = QLabel()
+            thumb.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
             thumb.setPixmap(
                 _pil_to_pixmap(frame).scaled(
                     48,
@@ -80,6 +91,9 @@ class _FrameRowWidget(QWidget):
             layout.addWidget(thumb)
 
             self._ts_label = QLabel(frame.timestamp.strftime("%Y-%m-%d %H:%M:%S"))
+            self._ts_label.setAttribute(
+                Qt.WidgetAttribute.WA_TransparentForMouseEvents
+            )
             layout.addWidget(self._ts_label, 1)
 
             self.delete_button = IconButton("×", size=24)
@@ -89,10 +103,6 @@ class _FrameRowWidget(QWidget):
 
             self._is_hovered = False
             self._is_lookback = False
-
-    def mouseDoubleClickEvent(self, event) -> None:  # noqa: N802 - Qt override
-        self._on_open(self._frame)
-        super().mouseDoubleClickEvent(event)
 
     def set_hovered(self, hovered: bool) -> None:
         self.delete_button.setVisible(hovered)
@@ -167,6 +177,11 @@ class HistoryPanel(QDialog):
         self._list_widget.setMouseTracking(True)
         self._list_widget.viewport().setMouseTracking(True)
         self._list_widget.viewport().installEventFilter(self)
+        # Double-click is handled by the list, not the row: the row widget is
+        # transparent to mouse events so that hover tracking works (see
+        # _FrameRowWidget.__init__), which means it can no longer receive a
+        # mouseDoubleClickEvent of its own.
+        self._list_widget.itemDoubleClicked.connect(self._on_item_double_clicked)
         self._hovered_row: _FrameRowWidget | None = None
         layout.addWidget(self._list_widget, 1)
 
@@ -247,10 +262,15 @@ class HistoryPanel(QDialog):
     def _add_row(self, frame: CapturedFrame) -> None:
         item = QListWidgetItem()
         item.setData(Qt.ItemDataRole.UserRole, frame)
-        row_widget = _FrameRowWidget(frame, self._delete_frame, self._open_frame)
+        row_widget = _FrameRowWidget(frame, self._delete_frame)
         item.setSizeHint(row_widget.sizeHint())
         self._list_widget.addItem(item)
         self._list_widget.setItemWidget(item, row_widget)
+
+    def _on_item_double_clicked(self, item: QListWidgetItem) -> None:
+        frame = item.data(Qt.ItemDataRole.UserRole)
+        if frame is not None:
+            self._open_frame(frame)
 
     def _delete_frame(self, frame: CapturedFrame) -> None:
         self._engine.remove_frame(frame)
