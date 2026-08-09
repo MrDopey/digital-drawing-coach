@@ -32,6 +32,31 @@
 
 ## 5. Verify
 
-- [ ] 5.1 Run `xvfb-run -a uv run pytest tests/test_feedback_store.py tests/test_feedback_panel.py` and record the result.
-- [ ] 5.2 Run the full suite (`xvfb-run -a uv run pytest`) to confirm nothing else depended on empty-hash entries matching.
-- [ ] 5.3 Manually confirm against a real session directory containing a pre-`frame_hashes` entry: opening the app leaves Request Feedback enabled before the first capture, and it still disables immediately after feedback is generated.
+- [x] 5.1 Run `xvfb-run -a uv run pytest tests/test_feedback_store.py tests/test_feedback_panel.py` and record the result. → 60 passed.
+- [x] 5.2 Run the full suite (`xvfb-run -a uv run pytest`) to confirm nothing else depended on empty-hash entries matching. → 435 passed, 0 failed.
+- [x] 5.3 Manually confirm against a real session directory containing a pre-`frame_hashes` entry: opening the app leaves Request Feedback enabled before the first capture, and it still disables immediately after feedback is generated.
+
+### Verification results
+
+Sections 5.1 / 5.2: `xvfb-run -a uv run pytest` — 435 passed, 0 failed. Targeted run of
+`tests/test_feedback_store.py tests/test_feedback_panel.py` — 60 passed.
+
+Section 5.3: driven against hand-built session directories on disk (`meta.json`,
+`frames/`, `feedback/` laid out as `CaptureEngine`/`FeedbackStore` write them), resumed
+through the real `CaptureEngine.load_session()` and rendered by a real `FeedbackPanel`
+bound to a real `FeedbackStore`:
+
+- Session A — entry with neither `frame_hashes` nor `frame_path`: buffer empty on resume,
+  Request Feedback **enabled**, tooltip empty, history entry still loaded.
+- Session B — entry with `frame_path` but no `frame_hashes`: frame reloaded from disk;
+  button **enabled** before the first capture; hashing the resumed frame the way
+  `MainWindow._current_frame_hashes()` does **disables** the button with the
+  "Already generated for this drawing and mode" tooltip; a different hash re-enables it.
+
+The same script run against the pre-fix `feedback_store.py` (commit `604a389`) fails 5 of
+those 9 checks — reproducing the reported bug (button disabled with the misleading tooltip
+before any capture) and confirming the checks are load-bearing rather than vacuous.
+
+Not covered: the packaged GUI was not launched end-to-end. Driving it needs a real drawing
+window to monitor and a configured LLM, neither available in this headless container; the
+verification above exercises the real capture-resume, store, and panel objects instead.
