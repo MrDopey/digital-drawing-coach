@@ -35,9 +35,9 @@
 
 ## 4. User-facing snapshot affordance
 
-- [ ] 4.1 Add a "Copy Perf Snapshot" `QPushButton` to the existing button row in `src/drawing_coach/diagnostics.py`, visible only when `perf.ON`, wired to copy `perf.snapshot()` to the clipboard following the existing `_copy_report` pattern.
-- [ ] 4.2 Add tests mirroring the existing Copy Report tests: button hidden when instrumentation is disabled, and clipboard contents include the log path and stall statistics when enabled.
-- [ ] 4.3 Confirm `tests/test_design_system_compliance.py` still passes — the new button must be a plain `QPushButton` with no stylesheet or hex literal.
+- [x] 4.1 Add a "Copy Perf Snapshot" `QPushButton` to the existing button row in `src/drawing_coach/diagnostics.py`, visible only when `perf.ON`, wired to copy `perf.snapshot()` to the clipboard following the existing `_copy_report` pattern.
+- [x] 4.2 Add tests mirroring the existing Copy Report tests: button hidden when instrumentation is disabled, and clipboard contents include the log path and stall statistics when enabled.
+- [x] 4.3 Confirm `tests/test_design_system_compliance.py` still passes — the new button must be a plain `QPushButton` with no stylesheet or hex literal.
 
 ## 5. Documentation
 

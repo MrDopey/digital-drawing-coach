@@ -23,6 +23,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from drawing_coach import perf
 from drawing_coach.design_system import MutedLabel, PillBadge
 from drawing_coach.llm_config import LLMConfig
 from drawing_coach.paths import config_path, sessions_dir
@@ -344,7 +345,13 @@ class DiagnosticsDialog(QDialog):
         self._copy_report_btn = QPushButton("Copy Report")
         self._copy_report_btn.clicked.connect(self._copy_report)
         self._copy_report_btn.setEnabled(False)
+        # Only meaningful during an instrumented run, so it stays out of the
+        # way entirely on a normal one.
+        self._copy_perf_btn = QPushButton("Copy Perf Snapshot")
+        self._copy_perf_btn.clicked.connect(self._copy_perf_snapshot)
+        self._copy_perf_btn.setVisible(perf.ON)
         btn_row.addStretch()
+        btn_row.addWidget(self._copy_perf_btn)
         btn_row.addWidget(self._copy_report_btn)
         btn_row.addWidget(self._rerun_btn)
         layout.addLayout(btn_row)
@@ -407,6 +414,9 @@ class DiagnosticsDialog(QDialog):
                 hint_lbl.setVisible(True)
             elif hint_lbl:
                 hint_lbl.setVisible(False)
+
+    def _copy_perf_snapshot(self) -> None:
+        QApplication.clipboard().setText(perf.snapshot())
 
     def _copy_report(self) -> None:
         lines: list[str] = []
