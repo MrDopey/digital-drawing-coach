@@ -166,6 +166,8 @@ Real shell environment variables always take precedence over the `.env` file. Th
 | `DRAWING_COACH_LOG_LEVEL` | No | `WARNING` | Log verbosity: `DEBUG`, `INFO`, `WARNING`, `ERROR`, or `CRITICAL`. Set to `INFO` to see the session directory path, API key status, and LLM call outcomes. |
 | `DRAWING_COACH_LOG_FILE` | No | *(stderr only)* | Path to a log file. Log output is written here in addition to stderr. Parent directory must exist. |
 | `DRAWING_COACH_LOG_MAX_BYTES` | No | `10485760` | Maximum log file size in bytes (10 MB). When reached, the file is discarded and a new one begins. |
+| `DRAWING_COACH_PERF_WATCHDOG` | No | *(off)* | Enable GUI-thread stall diagnostics: `1`/`on`/`true`, or `full` to also arm the `faulthandler` fallback. See [Reporting a sluggish or frozen UI](#reporting-a-sluggish-or-frozen-ui). Off by default and costs nothing when off. |
+| `DRAWING_COACH_PERF_STALL_MS` | No | `250` | How long the UI must be blocked before it counts as a stall, in milliseconds. Only used when the watchdog is enabled. |
 | `XDG_CONFIG_HOME` | No | `~/.config` | Override config directory root (Linux/macOS) |
 | `XDG_DATA_HOME` | No | `~/.local/share` | Override data directory root (Linux/macOS) |
 
@@ -203,6 +205,30 @@ DRAWING_COACH_LOG_LEVEL=DEBUG DRAWING_COACH_LOG_FILE=/tmp/drawing_coach.log uv r
 Add these to `~/.config/drawing-coach/.env` to make them permanent.
 
 At `DEBUG` level, the active configuration is logged on startup once `ConfigManager.load()` completes — every field name and value, one per line. Fields whose name contains `key`, `token`, `secret`, or `password` are redacted to their first 5 characters followed by `…` (or `(not set)` if empty/short), so it's safe to share these logs when troubleshooting.
+
+### Reporting a sluggish or frozen UI
+
+If a window feels laggy — slow to hover, scroll, or click — the app can measure what is blocking its UI thread and write it to a log you can send back. This is off by default and costs nothing when off.
+
+```bash
+DRAWING_COACH_PERF_WATCHDOG=1 uv run drawing-coach
+```
+
+The log lands at `~/.local/share/drawing-coach/debug_logs/perf.log` (or wherever `DRAWING_COACH_LOG_FILE` points, if you have set it). You do **not** need to change `DRAWING_COACH_LOG_LEVEL` — stalls and any operation over 100 ms are recorded at `WARNING`.
+
+To get a useful log, do **two** runs:
+
+1. **With the slow window open.** Open it, hover, scroll and click around, and leave it open long enough for at least two screenshots to be captured (30 s apart by default).
+2. **Without ever opening it.** Just leave the app running for several captures. This separates "the app stalls whatever is on screen" from "this one window is slow", which is the single most useful thing you can tell us.
+
+Then send back:
+
+- `perf.log` from both runs, and
+- **Settings → Diagnostics… → Copy Perf Snapshot** (that button only appears while the watchdog is on).
+
+Remove the environment variable when you are done.
+
+If the log reports long stalls but the stack traces look unhelpful (they will be marked `sampled_late=1`), re-run with `DRAWING_COACH_PERF_WATCHDOG=full`, which additionally writes `debug_logs/faulthandler.txt` — that one works even when the UI is blocked inside native code.
 
 ### Frame save failures
 

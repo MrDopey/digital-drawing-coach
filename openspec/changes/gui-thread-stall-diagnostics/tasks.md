@@ -41,9 +41,9 @@
 
 ## 5. Documentation
 
-- [ ] 5.1 Add `DRAWING_COACH_PERF_WATCHDOG` and `DRAWING_COACH_PERF_STALL_MS` rows to the README environment-variable table, and matching commented entries in `.env.example`.
-- [ ] 5.2 Add a README Troubleshooting subsection, "Reporting a sluggish or frozen UI", giving the exact `uv run` command with the env var, where the log lands, and what to send back.
-- [ ] 5.3 Correct `.tmp/histor-latency-progress.md` in the primary checkout: the "200× speedup from `Image.reduce()`" is a misattribution — `reduce()` is ~1.5×, and the 200× came from attempt 4's cache. Record the confirmed `HistoryPanel` leak, the measured GUI-thread hashing cost, and that the first-open symptom rules the leak out as the primary cause.
+- [x] 5.1 Add `DRAWING_COACH_PERF_WATCHDOG` and `DRAWING_COACH_PERF_STALL_MS` rows to the README environment-variable table, and matching commented entries in `.env.example`.
+- [x] 5.2 Add a README Troubleshooting subsection, "Reporting a sluggish or frozen UI", giving the exact `uv run` command with the env var, where the log lands, and what to send back.
+- [x] 5.3 Correct `.tmp/histor-latency-progress.md` in the primary checkout: the "200× speedup from `Image.reduce()`" is a misattribution — `reduce()` is ~1.5×, and the 200× came from attempt 4's cache. Record the confirmed `HistoryPanel` leak, the measured GUI-thread hashing cost, and that the first-open symptom rules the leak out as the primary cause.
 
 ## 6. Verification and measurement
 
