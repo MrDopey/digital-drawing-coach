@@ -19,6 +19,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from drawing_coach import perf
 from drawing_coach.memory_store import MemoryStore
 from drawing_coach.paths import memory_path, memory_summaries_path
 
@@ -28,6 +29,7 @@ class MemoryViewerDialog(QDialog):
         self, memory_store: MemoryStore, parent: QWidget | None = None
     ) -> None:
         super().__init__(parent)
+        perf.track(self)
         self.setWindowTitle("Memory Viewer")
         self.setMinimumSize(520, 480)
         self._store = memory_store

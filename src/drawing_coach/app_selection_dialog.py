@@ -13,12 +13,14 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from drawing_coach import perf
 from drawing_coach.window_manager import WindowInfo, WindowManager
 
 
 class AppSelectionDialog(QDialog):
     def __init__(self, manager: WindowManager, parent: QWidget | None = None) -> None:
         super().__init__(parent)
+        perf.track(self)
         self.setWindowTitle("Select Drawing Application")
         self.setMinimumSize(480, 400)
         self._manager = manager

@@ -36,6 +36,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from drawing_coach import perf
 from drawing_coach._version import __version__
 from drawing_coach.app_selection_dialog import AppSelectionDialog
 from drawing_coach.capture_engine import CapturedFrame, CaptureEngine
@@ -482,15 +483,23 @@ class MainWindow(QMainWindow):
         self._update_request_dedup_state()
 
     def _current_frame_hashes(self, mode: str) -> list[str]:
-        frames = self._capture.get_frames()
-        if not frames:
-            return []
-        selected = self._feedback_engine._select_frames(frames, mode)
-        return [hashlib.sha256(frame.image.tobytes()).hexdigest() for frame in selected]
+        with perf.probe("main.frame_hashes", child=True):
+            frames = self._capture.get_frames()
+            if not frames:
+                return []
+            selected = self._feedback_engine._select_frames(frames, mode)
+            return [
+                hashlib.sha256(frame.image.tobytes()).hexdigest()
+                for frame in selected
+            ]
 
     def _update_request_dedup_state(self) -> None:
-        mode = self._feedback_panel.current_mode()
-        self._feedback_panel.update_request_state(self._current_frame_hashes(mode))
+        # Connected to frames_changed, so this runs on the GUI thread on every
+        # capture — including when the history panel is closed.
+        with perf.probe("main.update_request_dedup_state") as p:
+            mode = self._feedback_panel.current_mode()
+            p.set(mode=mode)
+            self._feedback_panel.update_request_state(self._current_frame_hashes(mode))
 
     def _on_window_lost(self) -> None:
         self._capture.pause()
@@ -649,6 +658,7 @@ class MainWindow(QMainWindow):
     def _open_history(self) -> None:
         dlg = HistoryPanel(self._capture, self._config, self)
         dlg.exec()
+        perf.log_open("HistoryPanel", self._capture)
 
     def _open_memory_viewer(self) -> None:
         dlg = MemoryViewerDialog(self._memory_store, self)

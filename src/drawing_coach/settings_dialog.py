@@ -16,6 +16,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from drawing_coach import perf
 from drawing_coach.config_manager import ConfigManager
 from drawing_coach.design_system import PillBadge
 from drawing_coach.diagnostics import DiagnosticsDialog
@@ -35,6 +36,7 @@ class SettingsDialog(QDialog):
         config_manager: ConfigManager | None = None,
     ) -> None:
         super().__init__(parent)
+        perf.track(self)
         self.setWindowTitle("Settings")
         self.setMinimumWidth(480)
         self._config = config

@@ -25,13 +25,13 @@
 
 ## 3. Probe call sites (no behaviour change)
 
-- [ ] 3.1 `src/drawing_coach/history_panel.py`: probe `_render` (fields: frame count, row count, live panel count, receiver count), `_pil_to_pixmap` (child, with pixel dimensions), `_FrameRowWidget.__init__` (child), and `_update_lookback_indicator` (child).
-- [ ] 3.2 `src/drawing_coach/history_panel.py`: probe `_FrameRowWidget.paintEvent` and the `eventFilter` mouse-move hit-test as parentless aggregated probes, each behind an `if perf.ON:` callsite guard.
-- [ ] 3.3 Call `perf.track(self)` in the `__init__` of all five leaking dialogs — `HistoryPanel`, `SettingsDialog`, `MemoryViewerDialog`, `ProgressPanel`, `AppSelectionDialog` — so the log reports per-class live counts.
-- [ ] 3.4 `src/drawing_coach/capture_engine.py`: wrap `_do_capture` in a parent probe with child scopes for `get_window_rect`, `capture_image`, `_compute_mae`, the PNG write in `_write_frame`, and the `frames_changed` emit; parent fields carry pixel dimensions, MAE, and whether the frame was stored.
-- [ ] 3.5 `src/drawing_coach/main_window.py`: probe `_update_request_dedup_state` (field: mode) and `_current_frame_hashes` (child; fields: frame count and total bytes hashed).
-- [ ] 3.6 `src/drawing_coach/main_window.py`: emit the `PERF-OPEN` record after `_open_history`'s `dlg.exec()` returns, reporting live panel count and `frames_changed` receiver count.
-- [ ] 3.7 Add a regression test that `HistoryPanel` and `CaptureEngine` behave identically with `perf.ON` both false and true, and that no probe changes any observable result.
+- [x] 3.1 `src/drawing_coach/history_panel.py`: probe `_render` (fields: frame count, row count, live panel count, receiver count), `_pil_to_pixmap` (child, with pixel dimensions), `_FrameRowWidget.__init__` (child), and `_update_lookback_indicator` (child).
+- [x] 3.2 `src/drawing_coach/history_panel.py`: probe `_FrameRowWidget.paintEvent` and the `eventFilter` mouse-move hit-test as parentless aggregated probes, each behind an `if perf.ON:` callsite guard.
+- [x] 3.3 Call `perf.track(self)` in the `__init__` of all five leaking dialogs — `HistoryPanel`, `SettingsDialog`, `MemoryViewerDialog`, `ProgressPanel`, `AppSelectionDialog` — so the log reports per-class live counts.
+- [x] 3.4 `src/drawing_coach/capture_engine.py`: wrap `_do_capture` in a parent probe with child scopes for `get_window_rect`, `capture_image`, `_compute_mae`, the PNG write in `_write_frame`, and the `frames_changed` emit; parent fields carry pixel dimensions, MAE, and whether the frame was stored.
+- [x] 3.5 `src/drawing_coach/main_window.py`: probe `_update_request_dedup_state` (field: mode) and `_current_frame_hashes` (child; fields: frame count and total bytes hashed).
+- [x] 3.6 `src/drawing_coach/main_window.py`: emit the `PERF-OPEN` record after `_open_history`'s `dlg.exec()` returns, reporting live panel count and `frames_changed` receiver count.
+- [x] 3.7 Add a regression test that `HistoryPanel` and `CaptureEngine` behave identically with `perf.ON` both false and true, and that no probe changes any observable result.
 
 ## 4. User-facing snapshot affordance
 
