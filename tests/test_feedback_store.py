@@ -1,5 +1,6 @@
 """Unit tests for FeedbackStore disk persistence."""
 
+import json
 from datetime import datetime
 
 from PIL import Image
@@ -27,6 +28,23 @@ def _frame() -> CapturedFrame:
     return CapturedFrame(image=Image.new("RGB", (200, 150), (10, 20, 30)))
 
 
+def _frame_on_disk(session_dir, name: str = "094132_0007.png") -> CapturedFrame:
+    """A frame written to `<session>/frames/`, as `CaptureEngine` stores them."""
+    frames_dir = session_dir / "frames"
+    frames_dir.mkdir(parents=True, exist_ok=True)
+    path = frames_dir / name
+    image = Image.new("RGB", (200, 150), (10, 20, 30))
+    image.save(path, format="PNG")
+    return CapturedFrame(image=image, path=path)
+
+
+def _entry_json(session_dir) -> dict:
+    """The single feedback entry JSON written under `session_dir`."""
+    entries = list((session_dir / "feedback").glob("*.json"))
+    assert len(entries) == 1
+    return json.loads(entries[0].read_text())
+
+
 def test_save_creates_feedback_dir(tmp_path):
     store = FeedbackStore(tmp_path)
     store.save(_response(), _frame())
@@ -52,20 +70,42 @@ def test_save_load_round_trip_preserves_all_fields(tmp_path):
     assert result.frame_hashes == response.frame_hashes
 
 
-def test_save_writes_thumbnail_always(tmp_path):
+def test_save_writes_no_thumbnail(tmp_path):
     store = FeedbackStore(tmp_path)
-    store.save(_response(), _frame())
+    store.save(_response(), _frame_on_disk(tmp_path))
 
-    thumb_files = list((tmp_path / "feedback").glob("*_thumb.jpg"))
-    assert len(thumb_files) == 1
+    assert list((tmp_path / "feedback").glob("*_thumb.jpg")) == []
+    assert "thumbnail_path" not in _entry_json(tmp_path)
 
 
-def test_save_without_last_frame_writes_no_thumbnail(tmp_path):
+def test_save_records_session_relative_frame_path(tmp_path):
+    store = FeedbackStore(tmp_path)
+    store.save(_response(), _frame_on_disk(tmp_path))
+
+    assert _entry_json(tmp_path)["frame_path"] == "frames/094132_0007.png"
+
+
+def test_save_writes_no_image_file_other_than_overlay(tmp_path):
+    store = FeedbackStore(tmp_path)
+    store.save(_response(), _frame_on_disk(tmp_path))
+
+    written = sorted(p.name for p in (tmp_path / "feedback").iterdir())
+    assert written == ["20240614_094100_quick_hint.json"]
+
+
+def test_save_without_last_frame_records_null_frame_path(tmp_path):
     store = FeedbackStore(tmp_path)
     store.save(_response(), None)
 
-    thumb_files = list((tmp_path / "feedback").glob("*_thumb.jpg"))
-    assert thumb_files == []
+    assert _entry_json(tmp_path)["frame_path"] is None
+
+
+def test_save_with_frame_outside_session_records_null_frame_path(tmp_path):
+    """A frame with no path, or one outside the session, has nothing to reference."""
+    store = FeedbackStore(tmp_path)
+    store.save(_response(), _frame())
+
+    assert _entry_json(tmp_path)["frame_path"] is None
 
 
 def test_save_writes_overlay_png_only_when_overlay_image_supplied(tmp_path):
@@ -134,23 +174,61 @@ def test_overlay_image_for_returns_none_when_absent(tmp_path):
     assert store.overlay_image_for(response) is None
 
 
-def test_thumbnail_path_for_returns_none_when_absent(tmp_path):
+# ---------------------------------------------------------------------------
+# frame_path
+# ---------------------------------------------------------------------------
+
+
+def test_load_round_trips_frame_path(tmp_path):
+    store = FeedbackStore(tmp_path)
+    store.save(_response(), _frame_on_disk(tmp_path))
+
+    assert store.load()[0].frame_path == "frames/094132_0007.png"
+
+
+def test_load_entry_without_frame_path_key(tmp_path):
+    """Entries written before frame paths were recorded still load."""
+    store = FeedbackStore(tmp_path)
+    store.save(_response(), _frame_on_disk(tmp_path))
+    entry = next((tmp_path / "feedback").glob("*.json"))
+    data = json.loads(entry.read_text())
+    del data["frame_path"]
+    data["thumbnail_path"] = "20240614_094100_quick_hint_thumb.jpg"
+    entry.write_text(json.dumps(data))
+
+    loaded = store.load()
+
+    assert len(loaded) == 1
+    assert loaded[0].frame_path is None
+    assert loaded[0].text == "Nice work"
+
+
+def test_frame_path_for_returns_path_when_frame_exists(tmp_path):
     store = FeedbackStore(tmp_path)
     response = _response()
-    store.save(response, None)
+    store.save(response, _frame_on_disk(tmp_path))
 
-    assert store.thumbnail_path_for(response) is None
+    resolved = store.frame_path_for(store.load()[0])
+
+    assert resolved is not None
+    assert resolved.is_file()
+    assert resolved == tmp_path / "frames" / "094132_0007.png"
 
 
-def test_thumbnail_path_for_returns_path_when_present(tmp_path):
+def test_frame_path_for_returns_none_when_never_recorded(tmp_path):
     store = FeedbackStore(tmp_path)
-    response = _response()
-    store.save(response, _frame())
+    store.save(_response(), None)
 
-    thumb_path = store.thumbnail_path_for(response)
+    assert store.frame_path_for(store.load()[0]) is None
 
-    assert thumb_path is not None
-    assert thumb_path.is_file()
+
+def test_frame_path_for_returns_none_when_frame_deleted(tmp_path):
+    store = FeedbackStore(tmp_path)
+    frame = _frame_on_disk(tmp_path)
+    store.save(_response(), frame)
+    frame.path.unlink()
+
+    assert store.frame_path_for(store.load()[0]) is None
 
 
 # ---------------------------------------------------------------------------

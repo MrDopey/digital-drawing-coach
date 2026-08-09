@@ -14,12 +14,12 @@
 
 ## 3. Test the persistence layer
 
-- [ ] 3.1 In `tests/test_feedback_store.py`, delete `test_thumbnail_path_for_returns_none_when_absent` and `test_thumbnail_path_for_returns_path_when_present`
-- [ ] 3.2 Update any remaining store tests that assert on `thumbnail_path` in the JSON or on a `_thumb.jpg` file existing
-- [ ] 3.3 Add a test that saving with a `CapturedFrame` whose `path` is under `<session>/frames/` records a session-relative `frame_path` and writes **no** image file other than the overlay PNG for overlay entries
-- [ ] 3.4 Add a test that saving with `last_frame=None` records `frame_path` as `null` and completes without error
-- [ ] 3.5 Add a test that `load()` round-trips `frame_path`, that an entry JSON with no `frame_path` key loads with `frame_path is None`, and that a legacy JSON carrying `thumbnail_path` loads without error
-- [ ] 3.6 Add tests that `frame_path_for` returns the resolved path when the frame file exists and `None` when the entry has no `frame_path` or the referenced file has been deleted
+- [x] 3.1 In `tests/test_feedback_store.py`, delete `test_thumbnail_path_for_returns_none_when_absent` and `test_thumbnail_path_for_returns_path_when_present`
+- [x] 3.2 Update any remaining store tests that assert on `thumbnail_path` in the JSON or on a `_thumb.jpg` file existing
+- [x] 3.3 Add a test that saving with a `CapturedFrame` whose `path` is under `<session>/frames/` records a session-relative `frame_path` and writes **no** image file other than the overlay PNG for overlay entries
+- [x] 3.4 Add a test that saving with `last_frame=None` records `frame_path` as `null` and completes without error
+- [x] 3.5 Add a test that `load()` round-trips `frame_path`, that an entry JSON with no `frame_path` key loads with `frame_path is None`, and that a legacy JSON carrying `thumbnail_path` loads without error
+- [x] 3.6 Add tests that `frame_path_for` returns the resolved path when the frame file exists and `None` when the entry has no `frame_path` or the referenced file has been deleted
 
 ## 4. Reduce the panel to one image display path
 
