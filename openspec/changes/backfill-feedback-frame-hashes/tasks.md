@@ -26,9 +26,9 @@
 
 ## 4. Tests — panel (`tests/test_feedback_panel.py`)
 
-- [ ] 4.1 `update_request_state([])` leaves the Request Feedback button enabled and its tooltip empty, for a store whose history contains an entry with no `frame_hashes`.
-- [ ] 4.2 `update_request_state()` with hashes matching a backfilled entry disables the button and sets the "Already generated…" tooltip, proving derived entries de-duplicate like recorded ones.
-- [ ] 4.3 Confirm the existing enable/disable tests still pass unchanged.
+- [x] 4.1 `update_request_state([])` leaves the Request Feedback button enabled and its tooltip empty, for a store whose history contains an entry with no `frame_hashes`.
+- [x] 4.2 `update_request_state()` with hashes matching a backfilled entry disables the button and sets the "Already generated…" tooltip, proving derived entries de-duplicate like recorded ones.
+- [x] 4.3 Confirm the existing enable/disable tests still pass unchanged.
 
 ## 5. Verify
 

@@ -1,5 +1,7 @@
 """Tests for FeedbackPanel default size, mode selection, and overlay resizing."""
 
+import hashlib
+import json
 from datetime import datetime
 from unittest.mock import MagicMock
 
@@ -244,6 +246,53 @@ def test_update_request_state_enabled_with_no_history(qtbot):
     panel.update_request_state(["anything"])
 
     assert panel._request_btn.isEnabled()
+
+
+def _store_with_unhashed_entry(tmp_path, mode="quick_hint"):
+    """A store whose one entry predates frame-hash tracking, with its frame on disk."""
+    frames_dir = tmp_path / "frames"
+    frames_dir.mkdir(parents=True, exist_ok=True)
+    frame_path = frames_dir / "094132_0007.png"
+    Image.new("RGB", (120, 90), (7, 8, 9)).save(frame_path, format="PNG")
+
+    store = FeedbackStore(tmp_path)
+    store.save(
+        FeedbackResponse(mode=mode, text="ok", frame_hashes=[]),
+        CapturedFrame(image=Image.open(frame_path).copy(), path=frame_path),
+    )
+    entry = next((tmp_path / "feedback").glob("*.json"))
+    data = json.loads(entry.read_text())
+    del data["frame_hashes"]
+    entry.write_text(json.dumps(data))
+
+    live_hash = hashlib.sha256(Image.open(frame_path).copy().tobytes()).hexdigest()
+    return store, live_hash
+
+
+def test_update_request_state_enabled_with_no_frames_captured(tmp_path, qtbot):
+    """Regression: an entry with no frame hashes used to match an empty frame set."""
+    panel = FeedbackPanel()
+    qtbot.addWidget(panel)
+    store, _ = _store_with_unhashed_entry(tmp_path)
+    panel.set_store(store)
+
+    panel.update_request_state([])
+
+    assert panel._request_btn.isEnabled()
+    assert panel._request_btn.toolTip() == ""
+
+
+def test_update_request_state_disables_button_on_backfilled_match(tmp_path, qtbot):
+    """An entry whose hashes came from disk de-duplicates like a recorded one."""
+    panel = FeedbackPanel()
+    qtbot.addWidget(panel)
+    store, live_hash = _store_with_unhashed_entry(tmp_path)
+    panel.set_store(store)
+
+    panel.update_request_state([live_hash])
+
+    assert not panel._request_btn.isEnabled()
+    assert panel._request_btn.toolTip() == "Already generated for this drawing and mode"
 
 
 # ---------------------------------------------------------------------------
