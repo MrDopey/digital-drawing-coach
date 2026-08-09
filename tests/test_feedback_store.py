@@ -1,5 +1,6 @@
 """Unit tests for FeedbackStore disk persistence."""
 
+import hashlib
 import json
 from datetime import datetime
 
@@ -275,3 +276,125 @@ def test_last_entry_for_returns_most_recent_match(tmp_path):
 
     assert result is not None
     assert result.text == "newer"
+
+
+# ---------------------------------------------------------------------------
+# Frame-hash backfill
+# ---------------------------------------------------------------------------
+
+
+def _live_hash(path) -> str:
+    """The hash the live capture path produces for a frame file.
+
+    Mirrors `MainWindow._current_frame_hashes()` over a buffer rebuilt by
+    `CaptureEngine._load_frames_from_disk()`.
+    """
+    return hashlib.sha256(Image.open(path).copy().tobytes()).hexdigest()
+
+
+def _drop_hashes(session_dir) -> None:
+    """Strip `frame_hashes` from the single entry, as older versions wrote it."""
+    entry = next((session_dir / "feedback").glob("*.json"))
+    data = json.loads(entry.read_text())
+    del data["frame_hashes"]
+    entry.write_text(json.dumps(data))
+
+
+def test_last_entry_for_derives_hashes_from_frame_on_disk(tmp_path):
+    store = FeedbackStore(tmp_path)
+    frame = _frame_on_disk(tmp_path)
+    store.save(_response(), frame)
+    _drop_hashes(tmp_path)
+
+    result = store.last_entry_for("quick_hint", [_live_hash(frame.path)])
+
+    assert result is not None
+    assert result.text == "Nice work"
+
+
+def test_derived_hash_matches_live_capture_hash(tmp_path):
+    """A derived hash and a live hash of the same image must be equal."""
+    store = FeedbackStore(tmp_path)
+    frame = _frame_on_disk(tmp_path)
+    store.save(_response(), frame)
+    _drop_hashes(tmp_path)
+
+    derived = store._hashes_for(store.load()[0])
+
+    assert derived == [_live_hash(frame.path)]
+
+
+def test_deriving_hashes_leaves_entry_json_untouched(tmp_path):
+    store = FeedbackStore(tmp_path)
+    frame = _frame_on_disk(tmp_path)
+    store.save(_response(), frame)
+    _drop_hashes(tmp_path)
+    entry = next((tmp_path / "feedback").glob("*.json"))
+    before = entry.read_bytes()
+
+    store.last_entry_for("quick_hint", [_live_hash(frame.path)])
+
+    assert entry.read_bytes() == before
+
+
+def test_last_entry_for_empty_hashes_never_matches_unhashed_entry(tmp_path):
+    """Regression: `[] == []` used to disable Request Feedback spuriously."""
+    store = FeedbackStore(tmp_path)
+    store.save(_response(), None)
+    _drop_hashes(tmp_path)
+
+    assert store.last_entry_for("quick_hint", []) is None
+
+
+def test_unhashed_entry_with_deleted_frame_never_matches(tmp_path):
+    store = FeedbackStore(tmp_path)
+    frame = _frame_on_disk(tmp_path)
+    store.save(_response(), frame)
+    _drop_hashes(tmp_path)
+    expected = _live_hash(frame.path)
+    frame.path.unlink()
+
+    assert store.last_entry_for("quick_hint", []) is None
+    assert store.last_entry_for("quick_hint", [expected]) is None
+
+    loaded = store.load()
+    assert len(loaded) == 1
+    assert loaded[0].text == "Nice work"
+    assert loaded[0].mode == "quick_hint"
+    assert loaded[0].timestamp == datetime(2024, 6, 14, 9, 41, 0)
+
+
+def test_undecodable_frame_is_logged_and_does_not_raise(tmp_path, caplog):
+    store = FeedbackStore(tmp_path)
+    frame = _frame_on_disk(tmp_path)
+    store.save(_response(), frame)
+    _drop_hashes(tmp_path)
+    frame.path.write_bytes(b"not a png")
+
+    with caplog.at_level("WARNING", logger="drawing_coach.feedback_store"):
+        result = store.last_entry_for("quick_hint", ["anything"])
+
+    assert result is None
+    assert any("cannot hash frame" in rec.message.lower() for rec in caplog.records)
+    assert len(store.load()) == 1
+
+
+def test_last_entry_for_empty_hashes_never_matches_recorded_entry(tmp_path):
+    store = FeedbackStore(tmp_path)
+    store.save(_response(frame_hashes=["a", "b"]), _frame())
+
+    assert store.last_entry_for("quick_hint", []) is None
+
+
+def test_recorded_hashes_match_without_reading_the_frame(tmp_path, monkeypatch):
+    store = FeedbackStore(tmp_path)
+    store.save(_response(frame_hashes=["a", "b"]), _frame_on_disk(tmp_path))
+
+    def _fail(*args, **kwargs):
+        raise AssertionError("frame image should not be opened for a hashed entry")
+
+    monkeypatch.setattr(Image, "open", _fail)
+    result = store.last_entry_for("quick_hint", ["a", "b"])
+
+    assert result is not None
+    assert result.frame_hashes == ["a", "b"]

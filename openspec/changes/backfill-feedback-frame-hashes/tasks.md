@@ -15,14 +15,14 @@
 
 ## 3. Tests — store (`tests/test_feedback_store.py`)
 
-- [ ] 3.1 Entry JSON with no `frame_hashes` but a `frame_path` pointing at a real frame PNG: `last_entry_for(mode, [<sha256 of that image>])` returns that entry.
-- [ ] 3.2 The derived hash equals the hash the live path produces for the same file — compute the expectation with `hashlib.sha256(Image.open(png).copy().tobytes()).hexdigest()`, mirroring `MainWindow._current_frame_hashes()`.
-- [ ] 3.3 Deriving hashes leaves the entry's JSON file byte-for-byte unchanged (read the file before and after).
-- [ ] 3.4 Entry with no `frame_hashes` and no `frame_path`: `last_entry_for(mode, [])` returns `None` — the regression test for the reported bug.
-- [ ] 3.5 Entry with no `frame_hashes` and a `frame_path` whose file was deleted: never matches, including against `[]`, and the entry still loads with its text/mode/timestamp intact.
-- [ ] 3.6 `frame_path` referencing an undecodable file (write junk bytes to a `.png`): `last_entry_for()` returns `None` rather than raising, and the remaining entries still load.
-- [ ] 3.7 `last_entry_for(mode, [])` returns `None` even when an entry with recorded non-empty hashes exists for that mode.
-- [ ] 3.8 An entry with recorded non-empty hashes still matches exactly as before, and no frame file is opened for it (assert via a monkeypatched `Image.open` or an absent `frame_path`).
+- [x] 3.1 Entry JSON with no `frame_hashes` but a `frame_path` pointing at a real frame PNG: `last_entry_for(mode, [<sha256 of that image>])` returns that entry.
+- [x] 3.2 The derived hash equals the hash the live path produces for the same file — compute the expectation with `hashlib.sha256(Image.open(png).copy().tobytes()).hexdigest()`, mirroring `MainWindow._current_frame_hashes()`.
+- [x] 3.3 Deriving hashes leaves the entry's JSON file byte-for-byte unchanged (read the file before and after).
+- [x] 3.4 Entry with no `frame_hashes` and no `frame_path`: `last_entry_for(mode, [])` returns `None` — the regression test for the reported bug.
+- [x] 3.5 Entry with no `frame_hashes` and a `frame_path` whose file was deleted: never matches, including against `[]`, and the entry still loads with its text/mode/timestamp intact.
+- [x] 3.6 `frame_path` referencing an undecodable file (write junk bytes to a `.png`): `last_entry_for()` returns `None` rather than raising, and the remaining entries still load.
+- [x] 3.7 `last_entry_for(mode, [])` returns `None` even when an entry with recorded non-empty hashes exists for that mode.
+- [x] 3.8 An entry with recorded non-empty hashes still matches exactly as before, and no frame file is opened for it (assert via a monkeypatched `Image.open` or an absent `frame_path`).
 
 ## 4. Tests — panel (`tests/test_feedback_panel.py`)
 
