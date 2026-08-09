@@ -42,8 +42,8 @@
 
 ## 6. Verify
 
-- [ ] 6.1 Grep the repo for `thumbnail_path`, `THUMBNAIL_SIZE`, `_thumb`, and `_ClickableThumbnail` to confirm no stragglers remain in `feedback_panel.py` / `feedback_store.py`, and that `history_panel.py`'s own 48px thumbnails are untouched
-- [ ] 6.2 Run the full suite with `xvfb-run -a uv run pytest` and confirm no regressions, including `tests/test_design_system_compliance.py`
-- [ ] 6.3 Launch the app, generate a fresh Quick Hint (or Full Critique) entry, and confirm the panel shows the full-resolution frame large, scrollable, and zoomable via the buttons and `Ctrl+Wheel`
-- [ ] 6.4 Confirm an Overlay entry is unchanged in behaviour, and that an entry from a pre-change session now shows no image with the feedback text filling the panel — the accepted consequence, not a crash
-- [ ] 6.5 Confirm a newly-saved entry's `feedback/` directory contains only the JSON and, for overlay entries, `_overlay.png` — no `_thumb.jpg`
+- [x] 6.1 Grep the repo for `thumbnail_path`, `THUMBNAIL_SIZE`, `_thumb`, and `_ClickableThumbnail` to confirm no stragglers remain in `feedback_panel.py` / `feedback_store.py`, and that `history_panel.py`'s own 48px thumbnails are untouched
+- [x] 6.2 Run the full suite with `xvfb-run -a uv run pytest` and confirm no regressions, including `tests/test_design_system_compliance.py` — 340 passed
+- [x] 6.3 Launch the app, generate a fresh Quick Hint (or Full Critique) entry, and confirm the panel shows the full-resolution frame large, scrollable, and zoomable via the buttons and `Ctrl+Wheel` — verified headlessly: a real `FeedbackPanel`+`FeedbackStore` driven with a 1920×1080 frame renders it at 1920×1080 (was capped at 160px) and zooms to 2400px at 125%; `MainWindow` constructs with the reworked panel. Not exercised: a live LLM round-trip or real window capture (no API key / drawing window available here)
+- [x] 6.4 Confirm an Overlay entry is unchanged in behaviour, and that an entry from a pre-change session now shows no image with the feedback text filling the panel — the accepted consequence, not a crash — verified: overlay renders at full size with "Save Overlay" shown; a legacy JSON (no `frame_path`, stale `thumbnail_path`) loads with the image pane hidden and its text displayed
+- [x] 6.5 Confirm a newly-saved entry's `feedback/` directory contains only the JSON and, for overlay entries, `_overlay.png` — no `_thumb.jpg` — verified: directory contained exactly the two JSONs and one `_overlay.png`
