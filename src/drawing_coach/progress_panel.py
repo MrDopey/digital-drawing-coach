@@ -13,6 +13,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from drawing_coach import perf
 from drawing_coach.memory_store import MemoryStore
 from drawing_coach.paths import sessions_dir
 
@@ -22,6 +23,7 @@ class ProgressPanel(QDialog):
         self, memory_store: MemoryStore, parent: QWidget | None = None
     ) -> None:
         super().__init__(parent)
+        perf.track(self)
         self.setWindowTitle("Progress")
         self.setMinimumSize(480, 480)
 

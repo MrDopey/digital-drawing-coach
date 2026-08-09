@@ -27,6 +27,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from drawing_coach import perf
 from drawing_coach.capture_engine import CapturedFrame, CaptureEngine
 from drawing_coach.design_system import IconButton
 from drawing_coach.llm_config import LLMConfig
@@ -34,13 +35,18 @@ from drawing_coach.theme import Theme
 
 
 def _pil_to_pixmap(frame: CapturedFrame, max_size: int = 48) -> QPixmap:
-    img = frame.image.copy()
-    img.thumbnail((max_size, max_size))
-    data = img.convert("RGB").tobytes("raw", "RGB")
-    qimg = QImage(
-        data, img.width, img.height, img.width * 3, QImage.Format.Format_RGB888
-    )
-    return QPixmap.fromImage(qimg)
+    with perf.probe(
+        "history.pil_to_pixmap",
+        child=True,
+        px=f"{frame.image.width}x{frame.image.height}",
+    ):
+        img = frame.image.copy()
+        img.thumbnail((max_size, max_size))
+        data = img.convert("RGB").tobytes("raw", "RGB")
+        qimg = QImage(
+            data, img.width, img.height, img.width * 3, QImage.Format.Format_RGB888
+        )
+        return QPixmap.fromImage(qimg)
 
 
 class _FrameRowWidget(QWidget):
@@ -54,34 +60,35 @@ class _FrameRowWidget(QWidget):
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
-        self._frame = frame
-        self._on_delete = on_delete
-        self._on_open = on_open
+        with perf.probe("history.row_widget", child=True):
+            self._frame = frame
+            self._on_delete = on_delete
+            self._on_open = on_open
 
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(4, 2, 4, 2)
+            layout = QHBoxLayout(self)
+            layout.setContentsMargins(4, 2, 4, 2)
 
-        thumb = QLabel()
-        thumb.setPixmap(
-            _pil_to_pixmap(frame).scaled(
-                48,
-                48,
-                Qt.AspectRatioMode.KeepAspectRatio,
-                Qt.TransformationMode.SmoothTransformation,
+            thumb = QLabel()
+            thumb.setPixmap(
+                _pil_to_pixmap(frame).scaled(
+                    48,
+                    48,
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation,
+                )
             )
-        )
-        layout.addWidget(thumb)
+            layout.addWidget(thumb)
 
-        self._ts_label = QLabel(frame.timestamp.strftime("%Y-%m-%d %H:%M:%S"))
-        layout.addWidget(self._ts_label, 1)
+            self._ts_label = QLabel(frame.timestamp.strftime("%Y-%m-%d %H:%M:%S"))
+            layout.addWidget(self._ts_label, 1)
 
-        self.delete_button = IconButton("×", size=24)
-        self.delete_button.setVisible(False)
-        self.delete_button.clicked.connect(lambda: self._on_delete(self._frame))
-        layout.addWidget(self.delete_button)
+            self.delete_button = IconButton("×", size=24)
+            self.delete_button.setVisible(False)
+            self.delete_button.clicked.connect(lambda: self._on_delete(self._frame))
+            layout.addWidget(self.delete_button)
 
-        self._is_hovered = False
-        self._is_lookback = False
+            self._is_hovered = False
+            self._is_lookback = False
 
     def mouseDoubleClickEvent(self, event) -> None:  # noqa: N802 - Qt override
         self._on_open(self._frame)
@@ -108,6 +115,15 @@ class _FrameRowWidget(QWidget):
         self.update()
 
     def paintEvent(self, event) -> None:  # noqa: N802 - Qt override
+        # Guarded at the callsite: this runs per row per repaint, so when
+        # instrumentation is off it must not even construct a probe.
+        if not perf.ON:
+            self._paint(event)
+            return
+        with perf.probe("history.row_paint", child=True):
+            self._paint(event)
+
+    def _paint(self, event) -> None:
         painter = QPainter(self)
         if self._is_hovered:
             # Runtime QPalette-driven hover color, must follow the OS's
@@ -131,6 +147,7 @@ class HistoryPanel(QDialog):
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
+        perf.track(self)
         self._engine = engine
         self._config = config
         self.setWindowTitle("Session History")
@@ -172,14 +189,20 @@ class HistoryPanel(QDialog):
     def eventFilter(self, obj, event):  # noqa: N802 - Qt override
         if obj is self._list_widget.viewport():
             if event.type() == QEvent.Type.MouseMove:
-                item = self._list_widget.itemAt(event.pos())
-                widget = self._list_widget.itemWidget(item) if item is not None else None
-                self._set_hovered_row(
-                    widget if isinstance(widget, _FrameRowWidget) else None
-                )
+                # Guarded at the callsite: fires on every mouse-move.
+                if perf.ON:
+                    with perf.probe("history.hover_hit_test", child=True):
+                        self._hover_at(event.pos())
+                else:
+                    self._hover_at(event.pos())
             elif event.type() == QEvent.Type.Leave:
                 self._set_hovered_row(None)
         return super().eventFilter(obj, event)
+
+    def _hover_at(self, pos) -> None:
+        item = self._list_widget.itemAt(pos)
+        widget = self._list_widget.itemWidget(item) if item is not None else None
+        self._set_hovered_row(widget if isinstance(widget, _FrameRowWidget) else None)
 
     def _set_hovered_row(self, widget: _FrameRowWidget | None) -> None:
         if widget is self._hovered_row:
@@ -191,23 +214,35 @@ class HistoryPanel(QDialog):
             widget.set_hovered(True)
 
     def _render(self) -> None:
-        self._hovered_row = None
-        self._list_widget.clear()
-        frames = self._engine.get_frames()
+        with perf.probe("history.render") as p:
+            self._hovered_row = None
+            self._list_widget.clear()
+            frames = self._engine.get_frames()
 
-        has_frames = bool(frames)
-        self._list_widget.setVisible(has_frames)
-        self._hint_label.setVisible(has_frames)
-        if not has_frames:
-            self._info_label.setText(
-                "No captures yet — wait for the first screenshot."
+            has_frames = bool(frames)
+            self._list_widget.setVisible(has_frames)
+            self._hint_label.setVisible(has_frames)
+            if not has_frames:
+                self._info_label.setText(
+                    "No captures yet — wait for the first screenshot."
+                )
+            else:
+                self._info_label.setText(f"{len(frames)} frames captured this session:")
+                for frame in reversed(frames):
+                    self._add_row(frame)
+
+            self._update_lookback_indicator()
+
+            # Panel/receiver counts ride along on every render so the log states
+            # how many closed-but-still-subscribed panels are doing this work.
+            p.set(
+                frames=len(frames),
+                rows=self._list_widget.count(),
+                panels=perf.instance_count("HistoryPanel"),
+                receivers=perf.signal_receivers(
+                    self._engine, self._engine.frames_changed
+                ),
             )
-        else:
-            self._info_label.setText(f"{len(frames)} frames captured this session:")
-            for frame in reversed(frames):
-                self._add_row(frame)
-
-        self._update_lookback_indicator()
 
     def _add_row(self, frame: CapturedFrame) -> None:
         item = QListWidgetItem()
@@ -221,18 +256,19 @@ class HistoryPanel(QDialog):
         self._engine.remove_frame(frame)
 
     def _update_lookback_indicator(self) -> None:
-        frames = self._engine.get_frames()
-        if not frames:
-            return
-        lookback = max(0, self._config.lookback_frames)
-        window = frames[-(lookback + 1) :]
+        with perf.probe("history.lookback", child=True):
+            frames = self._engine.get_frames()
+            if not frames:
+                return
+            lookback = max(0, self._config.lookback_frames)
+            window = frames[-(lookback + 1) :]
 
-        for i in range(self._list_widget.count()):
-            item = self._list_widget.item(i)
-            frame: CapturedFrame = item.data(Qt.ItemDataRole.UserRole)
-            widget = self._list_widget.itemWidget(item)
-            if isinstance(widget, _FrameRowWidget):
-                widget.set_highlighted(any(f is frame for f in window))
+            for i in range(self._list_widget.count()):
+                item = self._list_widget.item(i)
+                frame: CapturedFrame = item.data(Qt.ItemDataRole.UserRole)
+                widget = self._list_widget.itemWidget(item)
+                if isinstance(widget, _FrameRowWidget):
+                    widget.set_highlighted(any(f is frame for f in window))
 
     def _open_frame(self, frame: CapturedFrame) -> None:
         if frame.path is not None:

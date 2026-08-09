@@ -15,6 +15,7 @@ import numpy as np
 from PIL import Image
 from PyQt6.QtCore import QObject, pyqtSignal
 
+from drawing_coach import perf
 from drawing_coach.paths import sessions_dir
 from drawing_coach.session_manager import default_session_name
 from drawing_coach.window_manager import WindowInfo, WindowManager
@@ -300,9 +301,14 @@ class CaptureEngine(QObject):
             time.sleep(0.5)
 
     def _do_capture(self) -> CapturedFrame | None:
+        with perf.probe("capture.do_capture") as p:
+            return self._do_capture_inner(p)
+
+    def _do_capture_inner(self, p) -> CapturedFrame | None:
         if self._target is None:
             return None
-        rect = self._manager.get_window_rect(self._target.id)
+        with perf.probe("capture.get_window_rect", child=True):
+            rect = self._manager.get_window_rect(self._target.id)
         if rect is None:
             _log.warning("Drawing window lost — capture paused")
             if self.on_window_lost:
@@ -313,21 +319,26 @@ class CaptureEngine(QObject):
         if width <= 0 or height <= 0:
             return None
 
-        img = self._manager.capture_image(self._target.id)
+        with perf.probe("capture.capture_image", child=True):
+            img = self._manager.capture_image(self._target.id)
         if img is None:
             _log.warning("Drawing window lost — capture paused")
             if self.on_window_lost:
                 self.on_window_lost()
             return None
+        p.set(px=f"{img.width}x{img.height}")
 
         # Dedup check
         dedup_threshold = self._config.dedup_threshold if self._config else 2.0
         if self._last_stored_image is not None:
-            mae = _compute_mae(self._last_stored_image, img)
+            with perf.probe("capture.compute_mae", child=True):
+                mae = _compute_mae(self._last_stored_image, img)
+            p.set(mae=f"{mae:.2f}")
             if mae < dedup_threshold:
                 _log.debug(
                     "Frame skipped: MAE=%.2f < threshold=%.2f", mae, dedup_threshold
                 )
+                p.set(wrote=0)
                 return None  # duplicate — discard
 
         # Write to disk
@@ -337,7 +348,9 @@ class CaptureEngine(QObject):
 
         with self._lock:
             self._buffer.append(frame)
-        self.frames_changed.emit()
+        with perf.probe("capture.emit_frames_changed", child=True):
+            self.frames_changed.emit()
+        p.set(wrote=1)
 
         if self.on_frame_captured:
             self.on_frame_captured(frame)
@@ -351,7 +364,8 @@ class CaptureEngine(QObject):
         filename = f"{ts}_{self._frame_count:04d}.png"
         path = self._session_dir / "frames" / filename
         try:
-            img.save(path, format="PNG")
+            with perf.probe("capture.write_png", child=True):
+                img.save(path, format="PNG")
             _log.debug("Frame saved: %s (%dx%d)", filename, img.width, img.height)
             return path
         except Exception as exc:

@@ -53,3 +53,23 @@ def test_log_max_bytes_returns_env_var():
 def test_log_max_bytes_returns_empty_when_absent():
     with patch.dict("os.environ", {"DRAWING_COACH_LOG_MAX_BYTES": ""}, clear=False):
         assert env_mod.log_max_bytes() == ""
+
+
+def test_perf_watchdog_returns_env_var():
+    with patch.dict("os.environ", {"DRAWING_COACH_PERF_WATCHDOG": "1"}):
+        assert env_mod.perf_watchdog() == "1"
+
+
+def test_perf_watchdog_returns_empty_when_absent():
+    with patch.dict("os.environ", {"DRAWING_COACH_PERF_WATCHDOG": ""}, clear=False):
+        assert env_mod.perf_watchdog() == ""
+
+
+def test_perf_stall_ms_returns_env_var():
+    with patch.dict("os.environ", {"DRAWING_COACH_PERF_STALL_MS": "500"}):
+        assert env_mod.perf_stall_ms() == "500"
+
+
+def test_perf_stall_ms_returns_empty_when_absent():
+    with patch.dict("os.environ", {"DRAWING_COACH_PERF_STALL_MS": ""}, clear=False):
+        assert env_mod.perf_stall_ms() == ""

@@ -1,9 +1,34 @@
-# app-logging Specification
+## ADDED Requirements
 
-## Purpose
-Defines how the application configures and emits structured log output. Logging is controlled via environment variables (populated from the XDG `.env` file) and uses the Python `logging` hierarchy with a consistent format across all modules.
+### Requirement: Performance logging is routed without raising the global log level
 
-## Requirements
+When performance instrumentation is enabled, the system SHALL set the `drawing_coach.perf` child logger to `DEBUG` while leaving the `drawing_coach` root logger at its configured level, so that performance output is emitted without increasing verbosity for any other module or third-party library.
+
+Performance records whose measured duration reaches or exceeds 100 ms, and all stall records, SHALL be emitted at `WARNING` so they are visible at the default log level without any change to `DRAWING_COACH_LOG_LEVEL`.
+
+When instrumentation is enabled and `DRAWING_COACH_LOG_FILE` is unset, the system SHALL additionally attach a rotating file handler writing to a default performance log path under the XDG data directory, and SHALL report that path once at startup. The existing `DRAWING_COACH_LOG_MAX_BYTES` cap SHALL apply to it.
+
+#### Scenario: Perf logging enabled with default log level
+- **WHEN** `DRAWING_COACH_PERF_WATCHDOG=1` and `DRAWING_COACH_LOG_LEVEL` is unset
+- **THEN** the `drawing_coach` logger remains at `WARNING`, the `drawing_coach.perf` logger is at `DEBUG`, and stalls plus operations of 100 ms or longer are still recorded
+
+#### Scenario: Third-party verbosity is unaffected
+- **WHEN** performance instrumentation is enabled
+- **THEN** loggers outside the `drawing_coach.perf` hierarchy retain the level configured by `DRAWING_COACH_LOG_LEVEL`
+
+#### Scenario: No log file configured
+- **WHEN** performance instrumentation is enabled and `DRAWING_COACH_LOG_FILE` is unset
+- **THEN** a rotating performance log file is created under the XDG data directory and its path is reported at startup
+
+#### Scenario: A log file is already configured
+- **WHEN** performance instrumentation is enabled and `DRAWING_COACH_LOG_FILE` is set
+- **THEN** performance output goes to that configured file and no additional performance log file is created
+
+#### Scenario: Instrumentation disabled
+- **WHEN** `DRAWING_COACH_PERF_WATCHDOG` is not enabled
+- **THEN** no performance logger level is altered and no performance log handler is attached
+
+## MODIFIED Requirements
 
 ### Requirement: Logging is configurable via env vars in .env
 The system SHALL read `DRAWING_COACH_LOG_LEVEL`, `DRAWING_COACH_LOG_FILE`, `DRAWING_COACH_LOG_MAX_BYTES`, `DRAWING_COACH_PERF_WATCHDOG`, and `DRAWING_COACH_PERF_STALL_MS` from the environment (populated by `.env` in the XDG config dir) and configure the Python `logging` hierarchy accordingly before any other module initialises.
@@ -61,51 +86,3 @@ The system SHALL read `DRAWING_COACH_LOG_LEVEL`, `DRAWING_COACH_LOG_FILE`, `DRAW
 #### Scenario: Invalid stall threshold value
 - **WHEN** `DRAWING_COACH_PERF_STALL_MS=abc` or `DRAWING_COACH_PERF_STALL_MS=0`
 - **THEN** the system defaults to 250 ms and emits a WARNING to stderr
-
-### Requirement: Log messages use a consistent human-readable format
-All log output SHALL use the format: `%(asctime)s %(levelname)s %(name)s — %(message)s`.
-
-Module loggers SHALL follow the naming convention `drawing_coach.<module>` so they are controlled by the `drawing_coach` root logger.
-
-#### Scenario: Log line format
-- **WHEN** any log event is emitted
-- **THEN** the output line contains timestamp, level, module path, and message in the defined format
-
-### Requirement: App startup is logged
-The system SHALL emit an INFO log at startup with the application version and a DEBUG log confirming the resolved log level and file destination.
-
-#### Scenario: Application starts
-- **WHEN** the application launches
-- **THEN** an INFO line is logged: `Drawing Coach v<version> starting`
-
-#### Scenario: Logging configuration is confirmed at DEBUG
-- **WHEN** `DRAWING_COACH_LOG_LEVEL=DEBUG`
-- **THEN** a DEBUG line is logged immediately after setup: `Log level=DEBUG file=<path or none>`
-
-### Requirement: Performance logging is routed without raising the global log level
-
-When performance instrumentation is enabled, the system SHALL set the `drawing_coach.perf` child logger to `DEBUG` while leaving the `drawing_coach` root logger at its configured level, so that performance output is emitted without increasing verbosity for any other module or third-party library.
-
-Performance records whose measured duration reaches or exceeds 100 ms, and all stall records, SHALL be emitted at `WARNING` so they are visible at the default log level without any change to `DRAWING_COACH_LOG_LEVEL`.
-
-When instrumentation is enabled and `DRAWING_COACH_LOG_FILE` is unset, the system SHALL additionally attach a rotating file handler writing to a default performance log path under the XDG data directory, and SHALL report that path once at startup. The existing `DRAWING_COACH_LOG_MAX_BYTES` cap SHALL apply to it.
-
-#### Scenario: Perf logging enabled with default log level
-- **WHEN** `DRAWING_COACH_PERF_WATCHDOG=1` and `DRAWING_COACH_LOG_LEVEL` is unset
-- **THEN** the `drawing_coach` logger remains at `WARNING`, the `drawing_coach.perf` logger is at `DEBUG`, and stalls plus operations of 100 ms or longer are still recorded
-
-#### Scenario: Third-party verbosity is unaffected
-- **WHEN** performance instrumentation is enabled
-- **THEN** loggers outside the `drawing_coach.perf` hierarchy retain the level configured by `DRAWING_COACH_LOG_LEVEL`
-
-#### Scenario: No log file configured
-- **WHEN** performance instrumentation is enabled and `DRAWING_COACH_LOG_FILE` is unset
-- **THEN** a rotating performance log file is created under the XDG data directory and its path is reported at startup
-
-#### Scenario: A log file is already configured
-- **WHEN** performance instrumentation is enabled and `DRAWING_COACH_LOG_FILE` is set
-- **THEN** performance output goes to that configured file and no additional performance log file is created
-
-#### Scenario: Instrumentation disabled
-- **WHEN** `DRAWING_COACH_PERF_WATCHDOG` is not enabled
-- **THEN** no performance logger level is altered and no performance log handler is attached

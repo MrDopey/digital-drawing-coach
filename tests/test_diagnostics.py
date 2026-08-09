@@ -9,6 +9,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from PyQt6.QtWidgets import QApplication
 
+from drawing_coach import perf
 from drawing_coach.diagnostics import (
     CheckResult,
     DiagnosticsDialog,
@@ -542,3 +543,66 @@ def test_copy_report_text(qtbot):
     assert "[✗] LLM Connection" in copied
     assert "AuthenticationError" in copied
     assert "Hint: Check your API key" in copied
+
+
+# ---------------------------------------------------------------------------
+# DiagnosticsDialog — Copy Perf Snapshot button (gui-thread-stall-diagnostics)
+# ---------------------------------------------------------------------------
+
+
+def test_copy_perf_btn_hidden_when_instrumentation_disabled(qtbot):
+    perf.reset_for_tests()
+    cfg = LLMConfig(model="gpt-4o")
+    with patch("drawing_coach.diagnostics.build_checks", side_effect=_noop_checks):
+        dlg = DiagnosticsDialog(config=cfg)
+        qtbot.addWidget(dlg)
+        qtbot.waitSignal(dlg._coordinator.all_done, timeout=5000)
+        qtbot.wait(200)
+
+    assert dlg._copy_perf_btn.isVisible() is False
+
+
+def test_copy_perf_btn_shown_when_instrumentation_enabled(qtbot):
+    perf.reset_for_tests()
+    perf.init("1")
+    try:
+        cfg = LLMConfig(model="gpt-4o")
+        with patch("drawing_coach.diagnostics.build_checks", side_effect=_noop_checks):
+            dlg = DiagnosticsDialog(config=cfg)
+            qtbot.addWidget(dlg)
+            dlg.show()
+            qtbot.waitSignal(dlg._coordinator.all_done, timeout=5000)
+            qtbot.wait(200)
+
+        assert dlg._copy_perf_btn.isVisible() is True
+    finally:
+        perf.reset_for_tests()
+
+
+def test_copy_perf_snapshot_text(qtbot):
+    perf.reset_for_tests()
+    perf.init("1")
+    perf.set_log_destination("/tmp/perf.log")
+    try:
+        with perf.probe("history.render"):
+            pass
+
+        cfg = LLMConfig(model="gpt-4o")
+        with patch("drawing_coach.diagnostics.build_checks", side_effect=_noop_checks):
+            dlg = DiagnosticsDialog(config=cfg)
+            qtbot.addWidget(dlg)
+            qtbot.waitSignal(dlg._coordinator.all_done, timeout=5000)
+            qtbot.wait(200)
+
+        mock_clipboard = MagicMock()
+        with patch("drawing_coach.diagnostics.QApplication") as mock_app:
+            mock_app.clipboard.return_value = mock_clipboard
+            dlg._copy_perf_snapshot()
+
+        copied = mock_clipboard.setText.call_args[0][0]
+        assert "instrumentation: on" in copied
+        assert "/tmp/perf.log" in copied
+        assert "stalls: 0" in copied
+        assert "history.render" in copied
+    finally:
+        perf.reset_for_tests()
