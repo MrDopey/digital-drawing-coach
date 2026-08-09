@@ -223,3 +223,32 @@ def test_perf_full_mode_sets_both_flags(monkeypatch, tmp_path):
     assert perf.ON is True
     assert perf.FULL is True
     _reset_logger()
+
+
+def test_disabled_instrumentation_creates_no_machinery(monkeypatch, tmp_path):
+    """The cost-when-off guarantee, asserted rather than assumed.
+
+    Instrumentation that quietly costs something would be a performance bug of
+    exactly the kind it exists to find.
+    """
+    import gc
+    import threading
+
+    _reset_logger()
+    monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path))
+    before = {t.name for t in threading.enumerate()}
+
+    _call_setup(monkeypatch)  # watchdog unset
+    assert perf.install_watchdog() is None
+
+    root = logging.getLogger("drawing_coach")
+    assert perf.ON is False
+    assert perf._watchdog is None                      # no watchdog thread
+    assert perf._heartbeat is None                     # no heartbeat QTimer
+    assert perf._on_gc not in gc.callbacks             # no GC callback
+    assert not any(                                    # no perf log handler
+        isinstance(h, RotatingFileHandler) for h in root.handlers
+    )
+    assert not (tmp_path / "drawing-coach" / "debug_logs").exists()
+    assert {t.name for t in threading.enumerate()} - before == set()
+    _reset_logger()
