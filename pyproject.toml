@@ -54,6 +54,9 @@ line-length = 88
 [tool.ruff.lint]
 select = ["E", "F", "I"]
 
+[tool.ruff.lint.per-file-ignores]
+"scripts/overlay_debug_tool.py" = ["E501"]  # embedded HTML/CSS/JS template
+
 [tool.pyright]
 pythonVersion = "3.11"
 typeCheckingMode = "basic"
