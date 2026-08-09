@@ -1,18 +1,18 @@
 ## 1. Core perf module (no app wiring — testable standalone)
 
-- [ ] 1.1 Create `src/drawing_coach/perf.py` with the module-level enable flag (`ON`), thresholds, and an `init(raw_watchdog, raw_stall_ms) -> bool` that parses the env values, validates them, and warns to stderr on invalid input. Import `PyQt6.QtCore` lazily inside `install_watchdog()` only, so the module stays importable from `capture_engine.py`.
-- [ ] 1.2 Implement the scoped probe: a `Probe` class usable via `probe(label, *, child=False, **fields)` as a context manager and `timed(label, **fields)` as a decorator, with a `set(**fields)` for values only known inside the block, and a no-op singleton returned when disabled.
-- [ ] 1.3 Implement probe nesting via a `threading.local()` stack — nested probes fold count/total/max into the enclosing probe on the *same* thread; parentless high-frequency probes accumulate into a process-wide bucket. Every emitted line carries the executing thread's name.
-- [ ] 1.4 Implement the periodic aggregate flush (`PERF-AGG`) with a fixed window, reporting label, window length, call count, total, and maximum.
-- [ ] 1.5 Implement `StallWatchdog` with an injectable clock, `beat()`, and a synchronous `check_once()` holding the begin/sample/end state machine. Record the GUI thread ident from `beat()`. Measure stall duration heartbeat-to-heartbeat.
-- [ ] 1.6 Add stack sampling to `check_once()`: `sys._current_frames()` for the GUI thread (deepest frames) plus the top frames of other live threads; tag the record when the watchdog's own iteration ran late.
-- [ ] 1.7 Add spam control: one begin + one end per stall, capped continuation samples on exponential backoff, and signature-based dedupe emitting `PERF-STALL-REPEAT` with a count. Emit each stall record as a single logging record with the stack embedded.
-- [ ] 1.8 Escalate stall records and any probe at or above the slow threshold from `DEBUG` to `WARNING`.
-- [ ] 1.9 Implement `track()`/`instance_count()` over per-class `WeakSet`s, `signal_receivers(obj, signal)` via `QObject.receivers`, and the periodic `PERF-LIVE` flush reporting every tracked class with a non-zero count.
-- [ ] 1.10 Implement the GC pause probe via `gc.callbacks`, reporting generation, pause ms, collected count, and triggering thread above a fixed threshold. Provide an uninstall path for test teardown.
-- [ ] 1.11 Implement `install_watchdog()` (heartbeat `QTimer` with a module-level reference so it is not collected, watchdog thread start, `PERF-WATCHDOG-START` line), `log_summary()` (`PERF-SUMMARY`), and `snapshot() -> str` (forces `gc.collect()` first).
-- [ ] 1.12 Implement the `full`-mode `faulthandler` arming to a dedicated file with `repeat=True` and no process termination; never armed at any other setting.
-- [ ] 1.13 Write `tests/test_perf.py`: probe nesting and folding, cross-thread isolation, aggregate flush, disabled-mode no-ops and no allocations, stall detection driven by a fake clock through `check_once()`, duration measured heartbeat-to-heartbeat, late-sample tagging, spam caps and signature dedupe, `WeakSet` not retaining tracked objects, and GC callback removal on teardown.
+- [x] 1.1 Create `src/drawing_coach/perf.py` with the module-level enable flag (`ON`), thresholds, and an `init(raw_watchdog, raw_stall_ms) -> bool` that parses the env values, validates them, and warns to stderr on invalid input. Import `PyQt6.QtCore` lazily inside `install_watchdog()` only, so the module stays importable from `capture_engine.py`.
+- [x] 1.2 Implement the scoped probe: a `Probe` class usable via `probe(label, *, child=False, **fields)` as a context manager and `timed(label, **fields)` as a decorator, with a `set(**fields)` for values only known inside the block, and a no-op singleton returned when disabled.
+- [x] 1.3 Implement probe nesting via a `threading.local()` stack — nested probes fold count/total/max into the enclosing probe on the *same* thread; parentless high-frequency probes accumulate into a process-wide bucket. Every emitted line carries the executing thread's name.
+- [x] 1.4 Implement the periodic aggregate flush (`PERF-AGG`) with a fixed window, reporting label, window length, call count, total, and maximum.
+- [x] 1.5 Implement `StallWatchdog` with an injectable clock, `beat()`, and a synchronous `check_once()` holding the begin/sample/end state machine. Record the GUI thread ident from `beat()`. Measure stall duration heartbeat-to-heartbeat.
+- [x] 1.6 Add stack sampling to `check_once()`: `sys._current_frames()` for the GUI thread (deepest frames) plus the top frames of other live threads; tag the record when the watchdog's own iteration ran late.
+- [x] 1.7 Add spam control: one begin + one end per stall, capped continuation samples on exponential backoff, and signature-based dedupe emitting `PERF-STALL-REPEAT` with a count. Emit each stall record as a single logging record with the stack embedded.
+- [x] 1.8 Escalate stall records and any probe at or above the slow threshold from `DEBUG` to `WARNING`.
+- [x] 1.9 Implement `track()`/`instance_count()` over per-class `WeakSet`s, `signal_receivers(obj, signal)` via `QObject.receivers`, and the periodic `PERF-LIVE` flush reporting every tracked class with a non-zero count.
+- [x] 1.10 Implement the GC pause probe via `gc.callbacks`, reporting generation, pause ms, collected count, and triggering thread above a fixed threshold. Provide an uninstall path for test teardown.
+- [x] 1.11 Implement `install_watchdog()` (heartbeat `QTimer` with a module-level reference so it is not collected, watchdog thread start, `PERF-WATCHDOG-START` line), `log_summary()` (`PERF-SUMMARY`), and `snapshot() -> str` (forces `gc.collect()` first).
+- [x] 1.12 Implement the `full`-mode `faulthandler` arming to a dedicated file with `repeat=True` and no process termination; never armed at any other setting.
+- [x] 1.13 Write `tests/test_perf.py`: probe nesting and folding, cross-thread isolation, aggregate flush, disabled-mode no-ops and no allocations, stall detection driven by a fake clock through `check_once()`, duration measured heartbeat-to-heartbeat, late-sample tagging, spam caps and signature dedupe, `WeakSet` not retaining tracked objects, and GC callback removal on teardown.
 
 ## 2. Environment and logging wiring
 
