@@ -5,15 +5,23 @@ TBD - created by archiving change feedback-history. Update Purpose after archive
 
 ## Requirements
 ### Requirement: Save feedback response to disk on arrival
-When a `FeedbackResponse` is received the system SHALL save it to disk as a JSON file at `feedback/<session-id>/YYYYMMDD_HHMMSS_<mode>.json`. The JSON SHALL include: `mode`, `text`, `timestamp` (ISO-8601), `frame_hashes` (list of SHA-256 hex strings), `annotation_json` (null if not overlay mode), `observations` (list of category/note objects), `used_structured_output` (boolean), and `thumbnail_path` (relative path to the saved thumbnail). A thumbnail of the last frame used SHALL be saved alongside as `YYYYMMDD_HHMMSS_<mode>_thumb.jpg` scaled to 160×160. When the response's mode is `overlay`, the composited annotated image SHALL additionally be saved alongside as `YYYYMMDD_HHMMSS_<mode>_overlay.png` at full resolution, so it can still be viewed, zoomed, and saved after the app restarts.
+When a `FeedbackResponse` is received the system SHALL save it to disk as a JSON file at `feedback/<session-id>/YYYYMMDD_HHMMSS_<mode>.json`. The JSON SHALL include: `mode`, `text`, `timestamp` (ISO-8601), `frame_hashes` (list of SHA-256 hex strings), `annotation_json` (null if not overlay mode), `observations` (list of category/note objects), `used_structured_output` (boolean), and `frame_path` (path to the full-resolution captured frame the feedback was based on, or null when no frame was available). The `frame_path` SHALL reference the already-captured frame file under the session's `frames/` directory — no additional full-resolution copy is written. The system SHALL NOT write a downscaled thumbnail of the frame, and the JSON SHALL NOT carry a `thumbnail_path` field. When the response's mode is `overlay`, the composited annotated image SHALL additionally be saved alongside as `YYYYMMDD_HHMMSS_<mode>_overlay.png` at full resolution, so it can still be viewed, zoomed, and saved after the app restarts.
 
 #### Scenario: Feedback response saved on arrival
 - **WHEN** a `FeedbackResponse` is received from the LLM
 - **THEN** a JSON file is written to the session's feedback directory within one second of arrival
 
-#### Scenario: Thumbnail saved alongside JSON
+#### Scenario: No thumbnail is written
 - **WHEN** a feedback JSON file is saved
-- **THEN** a 160×160 JPEG thumbnail of the last frame used is saved in the same directory with the `_thumb.jpg` suffix
+- **THEN** no `_thumb.jpg` file is created in the feedback directory and the JSON contains no `thumbnail_path` field
+
+#### Scenario: Full-resolution frame recorded in the JSON
+- **WHEN** a feedback response is saved and the last frame used has a file on disk
+- **THEN** the entry JSON records that frame's path in `frame_path`, and no additional full-resolution image file is written
+
+#### Scenario: No frame available when saving
+- **WHEN** a feedback response is saved and no last frame is available
+- **THEN** the entry JSON records `frame_path` as null and the save completes without error
 
 #### Scenario: Overlay entries also save the composited image
 - **WHEN** an overlay-mode `FeedbackResponse` is saved and a composited annotated image is available
@@ -24,7 +32,7 @@ When a `FeedbackResponse` is received the system SHALL save it to disk as a JSON
 - **THEN** the system creates it before writing the first entry
 
 ### Requirement: Load session feedback history on startup and on session change
-On startup, and whenever the active session changes (a new session is started, or the user switches sessions via the Sessions menu), the system SHALL read all JSON files in that session's feedback directory (in filename order), reconstruct their saved overlay images where present, and make them available in the feedback panel's sidebar — replacing whatever was previously loaded.
+On startup, and whenever the active session changes (a new session is started, or the user switches sessions via the Sessions menu), the system SHALL read all JSON files in that session's feedback directory (in filename order), reconstruct their saved overlay images where present, resolve each entry's recorded full-resolution `frame_path` where the file still exists on disk, and make them available in the feedback panel's sidebar — replacing whatever was previously loaded. An entry whose JSON has no `frame_path`, or whose referenced frame file no longer exists, SHALL still load successfully with no full-resolution image resolved.
 
 #### Scenario: History loaded on startup
 - **WHEN** the application starts and the active session has saved feedback entries
@@ -33,6 +41,14 @@ On startup, and whenever the active session changes (a new session is started, o
 #### Scenario: History reloaded after switching sessions
 - **WHEN** the user switches to a different session via the Sessions menu
 - **THEN** the feedback panel's sidebar replaces the previous session's entries with the newly active session's saved entries
+
+#### Scenario: Entry saved before frame paths were recorded
+- **WHEN** an entry JSON written by an older version of the app (with no `frame_path` field, and carrying a now-unused `thumbnail_path` field) is loaded
+- **THEN** the entry loads successfully with no full-resolution frame resolved, the obsolete `thumbnail_path` is ignored, and no error is raised
+
+#### Scenario: Referenced frame file has been removed
+- **WHEN** an entry records a `frame_path` whose file no longer exists on disk
+- **THEN** the entry loads successfully with no full-resolution frame resolved, and no error is raised
 
 #### Scenario: No saved history for session
 - **WHEN** the application starts (or switches to a session) and no feedback files exist for that session
