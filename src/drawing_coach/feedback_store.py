@@ -49,6 +49,9 @@ class FeedbackStore:
     ) -> None:
         self._dir.mkdir(parents=True, exist_ok=True)
         stem = self._stem(response)
+        # Record the frame reference on the live object too, so a just-generated
+        # entry resolves its frame exactly like one reloaded from disk.
+        response.frame_path = self._relative_frame_path(last_frame)
 
         data = {
             "mode": response.mode,
@@ -58,7 +61,7 @@ class FeedbackStore:
             "observations": response.observations,
             "used_structured_output": response.used_structured_output,
             "frame_hashes": response.frame_hashes,
-            "frame_path": self._relative_frame_path(last_frame),
+            "frame_path": response.frame_path,
         }
         (self._dir / f"{stem}.json").write_text(json.dumps(data, indent=2))
 

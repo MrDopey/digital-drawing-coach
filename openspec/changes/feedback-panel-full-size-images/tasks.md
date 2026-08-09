@@ -23,14 +23,14 @@
 
 ## 4. Reduce the panel to one image display path
 
-- [ ] 4.1 In `src/drawing_coach/feedback_panel.py`, delete the `_ClickableThumbnail` class, the `THUMBNAIL_SIZE` constant, and the `_thumb_pane` / `_thumb_label` / `_thumb_caption` widget construction (including the caption "Click to open full image") and their splitter registration
-- [ ] 4.2 Delete `self._thumb_paths`, `_show_thumbnail()`, and every remaining reference to the thumbnail pane in `show_feedback()`, `set_store()`, `show_error()`, and `_clear_display()`; drop any now-unused imports (e.g. `QDesktopServices`, `QUrl`) if nothing else uses them
-- [ ] 4.3 Replace the per-zoom pixmap conversion with a per-entry cache: add `self._current_pixmap: QPixmap | None`, and rename `_render_overlay_image` to a source-agnostic `_render_image` that scales from that cached pixmap by `self._zoom_factor` instead of re-converting the PIL image on every zoom step
-- [ ] 4.4 Add `self._frame_paths: dict[int, Path]`, populated from `store.frame_path_for(response)` in both `set_store()` and `show_feedback()` — paths only, no eager image decoding
-- [ ] 4.5 Rework `_render_current()` to select one image source — overlay image, else the entry's full-resolution frame (opened lazily here and converted into `self._current_pixmap`) — showing `_image_pane` for both and hiding it entirely when neither resolves, so the feedback text fills the panel
-- [ ] 4.6 Keep the "Save Overlay" button bound to the overlay case only, and keep the existing splitter sizing so overlay and non-overlay entries lay out consistently
-- [ ] 4.7 Ensure `_set_zoom` drives the shared `_render_image` so zoom controls and `Ctrl+Wheel` work for full-resolution frames as well as overlays, and that zoom still resets to 1.0 on navigation
-- [ ] 4.8 Confirm `_clear_display()` and `show_error()` hide the image pane and reset `self._current_pixmap`, so no stale image survives navigation to an entry with no image
+- [x] 4.1 In `src/drawing_coach/feedback_panel.py`, delete the `_ClickableThumbnail` class, the `THUMBNAIL_SIZE` constant, and the `_thumb_pane` / `_thumb_label` / `_thumb_caption` widget construction (including the caption "Click to open full image") and their splitter registration
+- [x] 4.2 Delete `self._thumb_paths`, `_show_thumbnail()`, and every remaining reference to the thumbnail pane in `show_feedback()`, `set_store()`, `show_error()`, and `_clear_display()`; drop any now-unused imports (e.g. `QDesktopServices`, `QUrl`) if nothing else uses them
+- [x] 4.3 Replace the per-zoom pixmap conversion with a per-entry cache: add `self._current_pixmap: QPixmap | None`, and rename `_render_overlay_image` to a source-agnostic `_render_image` that scales from that cached pixmap by `self._zoom_factor` instead of re-converting the PIL image on every zoom step
+- [x] 4.4 Add `self._frame_paths: dict[int, Path]`, populated from `store.frame_path_for(response)` in both `set_store()` and `show_feedback()` — paths only, no eager image decoding
+- [x] 4.5 Rework `_render_current()` to select one image source — overlay image, else the entry's full-resolution frame (opened lazily here and converted into `self._current_pixmap`) — showing `_image_pane` for both and hiding it entirely when neither resolves, so the feedback text fills the panel
+- [x] 4.6 Keep the "Save Overlay" button bound to the overlay case only, and keep the existing splitter sizing so overlay and non-overlay entries lay out consistently
+- [x] 4.7 Ensure `_set_zoom` drives the shared `_render_image` so zoom controls and `Ctrl+Wheel` work for full-resolution frames as well as overlays, and that zoom still resets to 1.0 on navigation
+- [x] 4.8 Confirm `_clear_display()` and `show_error()` hide the image pane and reset `self._current_pixmap`, so no stale image survives navigation to an entry with no image
 
 ## 5. Test the panel
 
