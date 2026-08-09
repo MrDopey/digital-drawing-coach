@@ -240,3 +240,47 @@ def test_rate_limit_shows_correct_message():
     ):
         result = engine.request_feedback([_frame()])
     assert "wait" in result.lower() or "rate limit" in result.lower()
+
+
+def test_starting_the_hotkey_manager_twice_leaves_one_listener():
+    """Regression: _start() used to overwrite self._listener without stopping
+    the previous one, orphaning a pynput listener (and its macOS event tap and
+    run-loop thread) for the life of the process. MainWindow does exactly this
+    by calling set_hotkey() then start()."""
+    from unittest.mock import MagicMock, patch
+
+    from drawing_coach.hotkey_manager import HotkeyManager
+
+    created = []
+
+    def _make(_mapping):
+        listener = MagicMock()
+        created.append(listener)
+        return listener
+
+    with patch("drawing_coach.hotkey_manager.keyboard.GlobalHotKeys", side_effect=_make):
+        mgr = HotkeyManager()
+        mgr.set_hotkey("<ctrl>+<shift>+f")
+        mgr.start()
+
+    assert len(created) == 2, "expected a second listener to be constructed"
+    created[0].stop.assert_called_once()   # the first must have been stopped
+    created[1].stop.assert_not_called()
+    assert mgr._listener is created[1]
+
+
+def test_empty_hotkey_creates_no_listener_and_stops_any_existing():
+    from unittest.mock import MagicMock, patch
+
+    from drawing_coach.hotkey_manager import HotkeyManager
+
+    listener = MagicMock()
+    with patch(
+        "drawing_coach.hotkey_manager.keyboard.GlobalHotKeys", return_value=listener
+    ):
+        mgr = HotkeyManager()
+        mgr.start()
+        mgr.set_hotkey("")
+
+    listener.stop.assert_called_once()
+    assert mgr._listener is None

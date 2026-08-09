@@ -93,6 +93,12 @@ class HotkeyManager:
     # ------------------------------------------------------------------
 
     def _start(self) -> None:
+        # Stop any existing listener first. Without this, a second _start()
+        # overwrites self._listener and orphans the previous pynput listener —
+        # its macOS event tap and run-loop thread then live for the rest of the
+        # process, unreachable by _stop(). MainWindow triggers exactly that by
+        # calling set_hotkey() and then start().
+        self._stop()
         if not self._hotkey_str:
             return
         try:

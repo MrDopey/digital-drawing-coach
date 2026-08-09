@@ -263,6 +263,113 @@ def flush_aggregates() -> None:
         )
 
 
+# --- Application-wide input probe ------------------------------------------
+#
+# Counts every mouse event the process receives, independently of whether Qt
+# routes it anywhere useful. The viewport-level `history.hover_hit_test` probe
+# only sees moves that reach one widget; comparing the two separates "events
+# never arrive" from "events arrive but are not routed to the dialog".
+
+_input_lock = threading.Lock()
+_input_counts: dict[str, int] = defaultdict(int)
+_move_receivers: dict[str, int] = defaultdict(int)
+_input_state: str = "unknown"
+_input_probe: Any = None
+_input_timer: Any = None
+
+
+def _record_input(name: str, receiver: str | None) -> None:
+    with _input_lock:
+        _input_counts[name] += 1
+        if receiver is not None:
+            _move_receivers[receiver] += 1
+
+
+def set_input_state(state: str) -> None:
+    global _input_state
+    _input_state = state
+
+
+def install_input_probe() -> bool:
+    """Install an application-wide mouse-event counter. No-op when disabled."""
+    global _input_probe, _input_timer
+    if not ON or _input_probe is not None:
+        return False
+
+    from PyQt6.QtCore import QEvent, QObject, QTimer
+    from PyQt6.QtWidgets import QApplication
+
+    app = QApplication.instance()
+    if app is None:
+        return False
+
+    # An event filter on the application object receives events for every
+    # object in the app, so it must stay a dict increment and nothing more.
+    types = {
+        QEvent.Type.MouseMove: "move",
+        QEvent.Type.HoverMove: "hover_move",
+        QEvent.Type.MouseButtonPress: "press",
+        QEvent.Type.MouseButtonRelease: "release",
+        QEvent.Type.Enter: "enter",
+        QEvent.Type.Leave: "leave",
+        QEvent.Type.Wheel: "wheel",
+    }
+
+    class _InputProbe(QObject):
+        def eventFilter(self, obj, event):  # noqa: N802 - Qt override
+            name = types.get(event.type())
+            if name is not None:
+                _record_input(
+                    name,
+                    type(obj).__name__ if name in ("move", "hover_move") else None,
+                )
+            return False
+
+    probe_obj = _InputProbe()
+    app.installEventFilter(probe_obj)
+
+    def _sample_state() -> None:
+        # Sampled on the GUI thread — the flush runs on the watchdog thread and
+        # must never touch Qt objects.
+        active = QApplication.activeWindow()
+        focus = QApplication.focusWidget()
+        set_input_state(
+            f"app_state={int(QApplication.applicationState().value)}"
+            f" active={type(active).__name__ if active else 'none'}"
+            f" focus={type(focus).__name__ if focus else 'none'}"
+        )
+
+    timer = QTimer()
+    timer.setInterval(1000)
+    timer.timeout.connect(_sample_state)
+    timer.start()
+
+    _input_probe = probe_obj
+    _input_timer = timer
+    return True
+
+
+def flush_input() -> None:
+    """Emit one PERF-INPUT line per aggregation window."""
+    if not ON:
+        return
+    with _input_lock:
+        if not _input_counts:
+            return
+        counts = dict(_input_counts)
+        receivers = dict(_move_receivers)
+        _input_counts.clear()
+        _move_receivers.clear()
+
+    top = sorted(receivers.items(), key=lambda kv: -kv[1])[:4]
+    _log.warning(
+        "PERF-INPUT %s %s move_to=%s",
+        " ".join(f"{k}={v}" for k, v in sorted(counts.items())),
+        _input_state,
+        ",".join(f"{k}:{v}" for k, v in top) or "none",
+    )
+
+
 # --- Live instance / receiver counts ---------------------------------------
 
 _instances: dict[str, weakref.WeakSet[Any]] = defaultdict(weakref.WeakSet)
@@ -568,6 +675,7 @@ class StallWatchdog:
                 if self._clock() - self._last_agg_flush >= AGG_WINDOW_S:
                     self._last_agg_flush = self._clock()
                     flush_aggregates()
+                    flush_input()
                     _log_live()
             except Exception:  # never let the watchdog kill itself
                 _log.debug("PERF watchdog iteration failed", exc_info=True)
@@ -658,6 +766,7 @@ def install_watchdog() -> StallWatchdog | None:
     wd.beat()
     wd.start()
     install_gc_probe()
+    install_input_probe()
 
     _log.warning(
         "PERF-WATCHDOG-START stall_ms=%.0f heartbeat_ms=%d poll_ms=%.0f"
@@ -780,14 +889,22 @@ def _log_destination() -> str:
 def reset_for_tests() -> None:
     """Restore module state. Tests must call this so gc.callbacks stays clean."""
     global ON, FULL, _watchdog, _heartbeat, _stall_threshold_s
+    global _input_probe, _input_timer
     if _watchdog is not None:
         _watchdog.stop()
     _watchdog = None
     _heartbeat = None
+    if _input_timer is not None:
+        _input_timer.stop()
+    _input_probe = None
+    _input_timer = None
     ON = FULL = False
     _stall_threshold_s = DEFAULT_STALL_MS / 1000.0
     uninstall_gc_probe()
     _tls.stack = []
+    with _input_lock:
+        _input_counts.clear()
+        _move_receivers.clear()
     with _agg_lock:
         _agg.clear()
     with _totals_lock:

@@ -277,3 +277,49 @@ def test_duplicate_capture_is_reported_as_not_written(tmp_path, perf_records):
     assert "wrote=0" in line
     assert "c.capture.compute_mae.n=1" in line
     assert "c.capture.write_png" not in line
+
+
+# ---------------------------------------------------------------------------
+# Application-wide input probe
+# ---------------------------------------------------------------------------
+
+def test_input_probe_counts_mouse_events_app_wide(qtbot, perf_records):
+    """Separates 'events never arrive' from 'events arrive but aren't routed'."""
+    from PyQt6.QtCore import QEvent, QPointF, Qt
+    from PyQt6.QtGui import QMouseEvent
+    from PyQt6.QtWidgets import QApplication, QWidget
+
+    perf.init("1")
+    assert perf.install_input_probe() is True
+
+    target = QWidget()
+    qtbot.addWidget(target)
+    for _ in range(12):
+        QApplication.sendEvent(
+            target,
+            QMouseEvent(
+                QEvent.Type.MouseMove,
+                QPointF(1, 1),
+                Qt.MouseButton.NoButton,
+                Qt.MouseButton.NoButton,
+                Qt.KeyboardModifier.NoModifier,
+            ),
+        )
+
+    perf.flush_input()
+    line = next(m for m in _messages(perf_records) if m.startswith("PERF-INPUT"))
+    assert "move=12" in line
+    assert "move_to=QWidget:12" in line
+
+
+def test_input_probe_is_a_no_op_when_disabled(qtbot, perf_records):
+    perf.init("0")
+    assert perf.install_input_probe() is False
+    perf.flush_input()
+    assert _messages(perf_records) == []
+
+
+def test_input_flush_emits_nothing_without_events(perf_records):
+    perf.init("1")
+    perf.flush_input()
+    assert _messages(perf_records) == []
