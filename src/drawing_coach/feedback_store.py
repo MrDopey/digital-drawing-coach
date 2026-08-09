@@ -13,8 +13,6 @@ from drawing_coach.paths import feedback_dir
 
 _log = logging.getLogger("drawing_coach.feedback_store")
 
-_THUMBNAIL_SIZE = (160, 160)
-
 
 class FeedbackStore:
     """Disk persistence for `FeedbackResponse` entries within one session."""
@@ -51,7 +49,6 @@ class FeedbackStore:
     ) -> None:
         self._dir.mkdir(parents=True, exist_ok=True)
         stem = self._stem(response)
-        thumb_name = f"{stem}_thumb.jpg"
 
         data = {
             "mode": response.mode,
@@ -61,15 +58,9 @@ class FeedbackStore:
             "observations": response.observations,
             "used_structured_output": response.used_structured_output,
             "frame_hashes": response.frame_hashes,
-            "thumbnail_path": thumb_name,
             "frame_path": self._relative_frame_path(last_frame),
         }
         (self._dir / f"{stem}.json").write_text(json.dumps(data, indent=2))
-
-        if last_frame is not None:
-            thumb = last_frame.image.copy()
-            thumb.thumbnail(_THUMBNAIL_SIZE)
-            thumb.convert("RGB").save(self._dir / thumb_name, format="JPEG")
 
         if overlay_image is not None:
             overlay_image.save(self._dir / f"{stem}_overlay.png", format="PNG")
@@ -102,10 +93,6 @@ class FeedbackStore:
         if not overlay_path.is_file():
             return None
         return PilImage.open(overlay_path).convert("RGB")
-
-    def thumbnail_path_for(self, response: FeedbackResponse) -> Path | None:
-        thumb_path = self._dir / f"{self._stem(response)}_thumb.jpg"
-        return thumb_path if thumb_path.is_file() else None
 
     def frame_path_for(self, response: FeedbackResponse) -> Path | None:
         """The full-resolution frame `response` was based on, if still on disk.

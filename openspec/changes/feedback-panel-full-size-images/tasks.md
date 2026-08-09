@@ -7,10 +7,10 @@
 
 ## 2. Remove thumbnail generation from the store
 
-- [ ] 2.1 Delete the `_THUMBNAIL_SIZE` constant and the thumbnail-writing block from `FeedbackStore.save()` — saving an entry no longer performs a PIL resize or JPEG encode
-- [ ] 2.2 Remove the `thumbnail_path` key from the entry JSON written by `save()`
-- [ ] 2.3 Delete the `thumbnail_path_for()` method; confirm with a repo-wide grep that its only callers are the panel call sites rewritten in group 4
-- [ ] 2.4 Confirm `load()` tolerates the now-obsolete `thumbnail_path` key present in entries written by older builds (unknown keys are ignored, not passed to the dataclass)
+- [x] 2.1 Delete the `_THUMBNAIL_SIZE` constant and the thumbnail-writing block from `FeedbackStore.save()` — saving an entry no longer performs a PIL resize or JPEG encode
+- [x] 2.2 Remove the `thumbnail_path` key from the entry JSON written by `save()`
+- [x] 2.3 Delete the `thumbnail_path_for()` method; confirm with a repo-wide grep that its only callers are the panel call sites rewritten in group 4
+- [x] 2.4 Confirm `load()` tolerates the now-obsolete `thumbnail_path` key present in entries written by older builds (unknown keys are ignored, not passed to the dataclass)
 
 ## 3. Test the persistence layer
 
