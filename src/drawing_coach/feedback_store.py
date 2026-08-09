@@ -111,7 +111,16 @@ class FeedbackStore:
     def last_entry_for(
         self, mode: str, frame_hashes: list[str]
     ) -> FeedbackResponse | None:
+        # An empty hash list means "no fingerprint available" — for the caller,
+        # no frames captured yet; for an entry, hashes neither recorded nor
+        # recoverable from disk. It is never a value two sides can match on, so
+        # both empty cases bail rather than comparing equal to each other.
+        if not frame_hashes:
+            return None
         for response in reversed(self.load()):
-            if response.mode == mode and response.frame_hashes == frame_hashes:
+            if response.mode != mode:
+                continue
+            hashes = response.frame_hashes
+            if hashes and hashes == frame_hashes:
                 return response
         return None

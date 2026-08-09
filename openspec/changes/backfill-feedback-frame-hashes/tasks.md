@@ -1,8 +1,8 @@
 ## 1. Never match on unknown or empty hashes
 
-- [ ] 1.1 In `FeedbackStore.last_entry_for()` (`src/drawing_coach/feedback_store.py`), return `None` immediately when the requested `frame_hashes` is empty — with no frames captured there is nothing to de-duplicate against.
-- [ ] 1.2 In the same method, skip any candidate entry whose resolved hashes are empty, so an entry with unknown hashes can never match. Keep the newest-first walk and the existing mode filter.
-- [ ] 1.3 Add a short comment recording why empty means "unknown, never equal" rather than "matches another empty".
+- [x] 1.1 In `FeedbackStore.last_entry_for()` (`src/drawing_coach/feedback_store.py`), return `None` immediately when the requested `frame_hashes` is empty — with no frames captured there is nothing to de-duplicate against.
+- [x] 1.2 In the same method, skip any candidate entry whose resolved hashes are empty, so an entry with unknown hashes can never match. Keep the newest-first walk and the existing mode filter.
+- [x] 1.3 Add a short comment recording why empty means "unknown, never equal" rather than "matches another empty".
 
 ## 2. Derive missing hashes from the frame on disk
 
