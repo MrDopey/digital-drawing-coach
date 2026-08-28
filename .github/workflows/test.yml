@@ -19,8 +19,12 @@ jobs:
       - name: Install dependencies
         run: uv sync --extra gui
 
-      - name: Install Xvfb
-        run: sudo apt-get update && sudo apt-get install -y xvfb
+      - name: Install Xvfb and Qt runtime libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb libegl1 libgl1 libxkbcommon0 \
+            libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
+            libxcb-randr0 libxcb-render-util0 libxcb-shape0 libxcb-xinerama0
 
       - name: Run tests
         # A virtual X display is required even for "offscreen" Qt tests,
