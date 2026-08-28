@@ -15,6 +15,8 @@ ZIP_NAME="digital-drawing-coach-${VERSION}-${PLATFORM}.zip"
 if [[ "${PLATFORM}" == "darwin" ]]; then
     DIST_DIR="dist/Drawing Coach.app"
     ZIP_NAME="digital-drawing-coach-${VERSION}-macos.zip"
+    echo "Ad-hoc signing ${DIST_DIR}..."
+    codesign --force --deep --sign - "${DIST_DIR}"
     cd dist
     zip -r "../${ZIP_NAME}" "Drawing Coach.app"
     cd ..

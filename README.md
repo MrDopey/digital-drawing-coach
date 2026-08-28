@@ -85,7 +85,9 @@ Download the latest release for your platform from the [GitHub Releases][release
 
 Unzip and run the `drawing-coach` executable inside.
 
-> **macOS**: On first launch, right-click → Open to bypass Gatekeeper. Then grant **Screen Recording** permission in **System Settings → Privacy & Security → Screen Recording**, **Accessibility** permission for window listing, and **Input Monitoring** permission if the global hotkey is needed.
+> **macOS**: The app is ad-hoc signed, not notarized, so Gatekeeper may still quarantine/translocate it — running it from a mounted volume or straight out of the archive can crash it on launch. **Move `Drawing Coach.app` to `/Applications` before running it.** On first launch, right-click → Open to bypass Gatekeeper. Then grant **Screen Recording**, **Accessibility**, and **Input Monitoring** permissions in **System Settings → Privacy & Security**.
+>
+> Still crashes, or want to run it in place? Strip the quarantine flag: `xattr -cr "/path/to/Drawing Coach.app"`
 
 > **Linux**: Install `xdotool` (`apt install xdotool`) for window detection.
 
