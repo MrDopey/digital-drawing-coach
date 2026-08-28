@@ -9,7 +9,7 @@ Write-Host "Building Drawing Coach $Version for windows..."
 
 pyinstaller --clean --noconfirm drawing_coach.spec
 
-$ZipName = "drawing-coach-$Version-windows.zip"
+$ZipName = "digital-drawing-coach-$Version-windows.zip"
 Compress-Archive -Path dist\drawing-coach -DestinationPath $ZipName -Force
 
 Write-Host "Created $ZipName"

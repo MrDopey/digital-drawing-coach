@@ -10,11 +10,11 @@ echo "Building Drawing Coach ${VERSION} for ${PLATFORM}..."
 pyinstaller --clean --noconfirm drawing_coach.spec
 
 DIST_DIR="dist/drawing-coach"
-ZIP_NAME="drawing-coach-${VERSION}-${PLATFORM}.zip"
+ZIP_NAME="digital-drawing-coach-${VERSION}-${PLATFORM}.zip"
 
 if [[ "${PLATFORM}" == "darwin" ]]; then
     DIST_DIR="dist/Drawing Coach.app"
-    ZIP_NAME="drawing-coach-${VERSION}-macos.zip"
+    ZIP_NAME="digital-drawing-coach-${VERSION}-macos.zip"
     cd dist
     zip -r "../${ZIP_NAME}" "Drawing Coach.app"
     cd ..

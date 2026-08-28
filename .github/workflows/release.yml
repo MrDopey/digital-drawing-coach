@@ -30,15 +30,15 @@ jobs:
           - os: ubuntu-latest
             platform: linux
             script: bash scripts/package.sh
-            zip_glob: drawing-coach-*-linux.zip
+            zip_glob: digital-drawing-coach-*-linux.zip
           - os: windows-latest
             platform: windows
             script: pwsh scripts/package.ps1
-            zip_glob: drawing-coach-*-windows.zip
+            zip_glob: digital-drawing-coach-*-windows.zip
           - os: macos-latest
             platform: macos
             script: bash scripts/package.sh
-            zip_glob: drawing-coach-*-macos.zip
+            zip_glob: digital-drawing-coach-*-macos.zip
 
     steps:
       - uses: actions/checkout@v7
